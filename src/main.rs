@@ -6,6 +6,7 @@ use bevy::{
         render_graph::{self, RenderGraph},
         render_resource::*,
         renderer::{RenderContext, RenderDevice},
+        texture::GpuImage,
         RenderApp, RenderStage,
     },
     window::WindowDescriptor,
@@ -28,7 +29,6 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(GameOfLifeComputePlugin)
         .add_startup_system(setup)
-        .add_system(read_image)
         .add_plugin(debug::DebugPlugin)
         .run();
 }
@@ -76,6 +76,17 @@ fn debug_image(image: &Image) {
 }
 
 // Trying to extract data from the texture each frame to print data
+// fn read_image(
+// gpu_images: Res<RenderAssets<Image>>,
+// image: Res<GameOfLifeImage>,
+// render_device: Res<RenderDevice>,
+// ) {
+// let view: &GpuImage = &gpu_images[&image.0];
+// let tex_view = BindingResource::TextureView(&view.texture_view);
+// println!("{:?}", tex_view);
+
+// println!("{:?}",);
+
 fn read_image(images: ResMut<Assets<Image>>, image: Res<GameOfLifeImage>) {
     if let Some::<&Image>(image) = images.get(&image.0) {
         debug_image(image);
@@ -90,7 +101,8 @@ impl Plugin for GameOfLifeComputePlugin {
         render_app
             .init_resource::<GameOfLifePipeline>()
             .add_system_to_stage(RenderStage::Extract, extract_game_of_life_image)
-            .add_system_to_stage(RenderStage::Queue, queue_bind_group);
+            .add_system_to_stage(RenderStage::Queue, queue_bind_group)
+            .add_system_to_stage(RenderStage::Extract, read_image);
 
         let mut render_graph = render_app.world.resource_mut::<RenderGraph>();
         render_graph.add_node("game_of_life", GameOfLifeNode::default());
@@ -237,6 +249,9 @@ impl render_graph::Node for GameOfLifeNode {
             .begin_compute_pass(&ComputePassDescriptor::default());
 
         pass.set_bind_group(0, texture_bind_group, &[]);
+
+        // Test, copy output
+        // render_context.command_encoder.copy_texture_to_buffer(source, destination, copy_size)
 
         // select the pipeline based on the current state
         match self.state {
