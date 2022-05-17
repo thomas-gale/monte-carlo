@@ -1,4 +1,5 @@
 use bevy::{
+    asset::*,
     core_pipeline::node::MAIN_PASS_DEPENDENCIES,
     prelude::*,
     render::{
@@ -11,6 +12,8 @@ use bevy::{
     window::WindowDescriptor,
 };
 use std::borrow::Cow;
+
+mod debug;
 
 const SIZE: (u32, u32) = (1280, 720);
 const WORKGROUP_SIZE: u32 = 8;
@@ -26,6 +29,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(GameOfLifeComputePlugin)
         .add_startup_system(setup)
+        .add_plugin(debug::DebugPlugin)
         .run();
 }
 
@@ -77,6 +81,8 @@ impl Plugin for GameOfLifeComputePlugin {
 
 #[derive(Deref)]
 struct GameOfLifeImage(Handle<Image>);
+
+
 struct GameOfLifeImageBindGroup(BindGroup);
 
 fn extract_game_of_life_image(mut commands: Commands, image: Res<GameOfLifeImage>) {
