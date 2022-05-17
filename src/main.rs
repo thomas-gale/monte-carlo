@@ -61,13 +61,24 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     commands.insert_resource(GameOfLifeImage(image));
 }
 
+fn debug_image(image: &Image) {
+    println!("Len of data {:?}", image.data.len());
+    println!(
+        "Num alive {:?}",
+        image.data.iter().fold(0, |acc, &x| {
+            if x > 0 {
+                acc + 1
+            } else {
+                acc
+            }
+        })
+    );
+}
+
 // Trying to extract data from the texture each frame to print data
-fn read_image(image: Res<Assets<Image>>, image_handle: Res<GameOfLifeImage>) {
-    if let Some::<&Image>(vec) = image.get(&image_handle.0) {
-        println!("Len of data {:?}", vec.data.len());
-        println!("Num alive {:?}", vec.data.iter().fold(0, |acc, &x| {
-            if x > 0 { acc + 1 } else { acc }
-    }));
+fn read_image(images: ResMut<Assets<Image>>, image: Res<GameOfLifeImage>) {
+    if let Some::<&Image>(image) = images.get(&image.0) {
+        debug_image(image);
     }
 }
 
