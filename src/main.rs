@@ -1,5 +1,4 @@
 use bevy::{
-    asset::*,
     core_pipeline::node::MAIN_PASS_DEPENDENCIES,
     prelude::*,
     render::{
@@ -29,6 +28,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(GameOfLifeComputePlugin)
         .add_startup_system(setup)
+        .add_system(read_image)
         .add_plugin(debug::DebugPlugin)
         .run();
 }
@@ -61,6 +61,16 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     commands.insert_resource(GameOfLifeImage(image));
 }
 
+// Trying to extract data from the texture each frame to print data
+fn read_image(image: Res<Assets<Image>>, image_handle: Res<GameOfLifeImage>) {
+    if let Some::<&Image>(vec) = image.get(&image_handle.0) {
+        println!("Len of data {:?}", vec.data.len());
+        println!("Num alive {:?}", vec.data.iter().fold(0, |acc, &x| {
+            if x > 0 { acc + 1 } else { acc }
+    }));
+    }
+}
+
 pub struct GameOfLifeComputePlugin;
 
 impl Plugin for GameOfLifeComputePlugin {
@@ -81,7 +91,6 @@ impl Plugin for GameOfLifeComputePlugin {
 
 #[derive(Deref)]
 struct GameOfLifeImage(Handle<Image>);
-
 
 struct GameOfLifeImageBindGroup(BindGroup);
 
