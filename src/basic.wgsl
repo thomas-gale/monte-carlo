@@ -32,12 +32,6 @@ fn ray_at(ray: ptr<function,Ray>, t: f32) -> vec3<f32> {
     return (*ray).origin + (*ray).direction * t;
 }
 
-fn ray_color(ray: ptr<function, Ray>) -> vec3<f32> {
-    var norm_dir = normalize((*ray).direction);
-    var t = norm_dir.y + 1.0;
-    return (1.0 - t) * vec3<f32>(1.0, 1.0, 1.0) + t * vec3<f32>(0.5, 0.7, 1.0);
-}
-
 // Camera
 struct Camera {
     focal_length: f32;
@@ -47,14 +41,36 @@ struct Camera {
 fn new_camera() -> Camera {
     return Camera(
         1.0,
-        vec3<f32>(0.5, 0.5, 0.0),
+        vec3<f32>(0.0, 0.0, 0.0),
     );
 }
+
+// Sphere
+fn hit_sphere(center: ptr<function, vec3<f32>>, radius: f32, ray: ptr<function, Ray>) -> bool {
+    var oc = (*ray).origin - *center;
+    var a = dot((*ray).direction, (*ray).direction);
+    var b = 2.0 * dot(oc, (*ray).direction);
+    var c = dot(oc, oc) - radius * radius;
+    var discriminant = b * b - 4.0 * a * c;
+    return discriminant > 0.0;
+}
+
+// Ray trace
+fn ray_color(ray: ptr<function, Ray>) -> vec3<f32> {
+    var center = vec3<f32>(0.0, 0.0, -1.0);
+    if (hit_sphere(&center, 0.25, ray)) {
+        return vec3<f32>(1.0, 0.0, 0.0);
+    }
+    var norm_dir = normalize((*ray).direction);
+    var t = norm_dir.y + 1.0;
+    return (1.0 - t) * vec3<f32>(1.0, 1.0, 1.0) + t * vec3<f32>(0.5, 0.7, 1.0);
+}
+
 
 [[stage(fragment)]]
 fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     var camera = new_camera();
-    var ray = Ray(camera.origin, vec3<f32>(in.tex_coords, camera.focal_length));
+    var ray = Ray(camera.origin, vec3<f32>(in.tex_coords.x - 0.5, in.tex_coords.y - 0.5, camera.focal_length));
     var color_pixel_color = ray_color(&ray);
     return vec4<f32>(color_pixel_color, 1.0);
 }
