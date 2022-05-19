@@ -46,23 +46,29 @@ fn new_camera() -> Camera {
 }
 
 // Sphere
-fn hit_sphere(center: ptr<function, vec3<f32>>, radius: f32, ray: ptr<function, Ray>) -> bool {
+fn hit_sphere(center: ptr<function, vec3<f32>>, radius: f32, ray: ptr<function, Ray>) -> f32 {
     var oc = (*ray).origin - *center;
     var a = dot((*ray).direction, (*ray).direction);
     var b = 2.0 * dot(oc, (*ray).direction);
     var c = dot(oc, oc) - radius * radius;
     var discriminant = b * b - 4.0 * a * c;
-    return discriminant > 0.0;
+    if (discriminant < 0.0) {
+        return -1.0;
+    } else {
+        return (-b - sqrt(discriminant)) / (2.0 * a);
+    }
 }
 
 // Ray trace
 fn ray_color(ray: ptr<function, Ray>) -> vec3<f32> {
-    var center = vec3<f32>(0.0, 0.0, -1.0);
-    if (hit_sphere(&center, 0.25, ray)) {
-        return vec3<f32>(1.0, 0.0, 0.0);
+    var center = vec3<f32>(0.0, 0.0, 1.0);
+    var t = hit_sphere(&center, 0.25, ray);
+    if (t > 0.0) {
+        var n = normalize(ray_at(ray, t) - center);
+        return 0.5 * vec3<f32>(n.x + 1.0, n.y + 1.0, n.z + 1.0);
     }
     var norm_dir = normalize((*ray).direction);
-    var t = norm_dir.y + 1.0;
+    t = norm_dir.y + 1.0;
     return (1.0 - t) * vec3<f32>(1.0, 1.0, 1.0) + t * vec3<f32>(0.5, 0.7, 1.0);
 }
 
