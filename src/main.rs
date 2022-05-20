@@ -1,4 +1,4 @@
-mod basic;
+mod basic_raytracing;
 mod quad;
 mod vertex;
 
@@ -19,7 +19,7 @@ async fn run() {
         .unwrap();
 
     // Create the renderers
-    let mut basic_renderer = basic::Basic::new(&window).await;
+    let mut basic_renderer = basic_raytracing::BasicRaytracing::new(&window).await;
 
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {

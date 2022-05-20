@@ -2,7 +2,7 @@ use crate::{quad, vertex};
 use log::info;
 use winit::window::Window;
 
-pub struct Basic {
+pub struct BasicRaytracing {
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -12,7 +12,7 @@ pub struct Basic {
     render_pipeline: wgpu::RenderPipeline,
 }
 
-impl Basic {
+impl BasicRaytracing {
     pub async fn new(window: &Window) -> Self {
         let size = window.inner_size();
 
@@ -56,7 +56,7 @@ impl Basic {
         let quad = quad::Quad::create_buffers(&device);
 
         // Load shader
-        let shader = device.create_shader_module(&wgpu::include_wgsl!("basic.wgsl"));
+        let shader = device.create_shader_module(&wgpu::include_wgsl!("basic_raytracing.wgsl"));
 
         // Create the render pipeline
         let render_pipeline_layout =
