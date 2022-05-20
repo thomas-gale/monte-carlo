@@ -25,6 +25,21 @@ fn vs_main(
 // Implementing https://raytracing.github.io/books/RayTracingInOneWeekend.html
 // Attribution to assitance from https://www.shadertoy.com/view/lssBD7
 
+// Buffers
+
+// Scene
+struct Sphere {
+    center: vec3<f32>;
+    radius: f32;
+};
+
+struct Scene {
+    spheres: array<Sphere>;
+};
+
+[[group(0), binding(0)]]
+var<storage, read> scene: Scene;
+
 // Constants (not very effiecient - move to uniforms)
 struct Constants {
     infinity: f32;
@@ -93,10 +108,7 @@ fn new_camera() -> Camera {
 }
 
 // Sphere
-struct Sphere {
-    center: vec3<f32>;
-    radius: f32;
-};
+
 
 // Refactored into hittable_sphere
 // fn hit_sphere(center: ptr<function, vec3<f32>>, radius: f32, ray: ptr<function, Ray>) -> f32 {
@@ -118,12 +130,7 @@ struct Sphere {
 // );
 
 fn sphere_hit(sphere_worlds_index: i32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
-    // Super inefficient, move to buffer/uniform
-    // var sphere = spheres_world[sphere_worlds_index];
-    var sphere = Sphere(
-        vec3<f32>(0.0, 0.0, 1.0),
-        0.25,
-    );
+    var sphere = scene.spheres[sphere_worlds_index];
 
     var oc = (*ray).origin - sphere.center;
     var a = dot((*ray).direction, (*ray).direction);
@@ -157,7 +164,7 @@ fn sphere_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<functio
     var hit_anything = false;
     var closest_so_far = t_max;
 
-    var num_spheres_world = 1; // TODO: Move to buffer/uniform data linked to sphere world
+    var num_spheres_world = i32(arrayLength(&scene.spheres)); // TODO: Move to buffer/uniform data linked to sphere world
     for (var i = 0; i < num_spheres_world; i = i + 1) {
         var hit_sphere = sphere_hit(i, ray, t_min, closest_so_far, rec);
         if (hit_sphere) {

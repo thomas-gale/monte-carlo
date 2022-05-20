@@ -1,5 +1,8 @@
+mod scene;
+mod sphere;
+
 use crate::{quad, vertex};
-use log::info;
+use scene::Scene;
 use winit::window::Window;
 
 pub struct BasicRaytracing {
@@ -10,13 +13,14 @@ pub struct BasicRaytracing {
     size: winit::dpi::PhysicalSize<u32>,
     quad: quad::Quad,
     render_pipeline: wgpu::RenderPipeline,
+    scene_bind_group: wgpu::BindGroup,
 }
 
 impl BasicRaytracing {
     pub async fn new(window: &Window) -> Self {
         let size = window.inner_size();
 
-        info!("Creating basic renderer");
+        // Create instance, adapter, surface, device, queue and configuration
 
         // The instance is a handle to our GPU
         // Backends::all => Vulkan + Metal + DX12 + Browser WebGPU
@@ -52,17 +56,45 @@ impl BasicRaytracing {
         };
         surface.configure(&device, &config);
 
-        // Create basic quad to render
+        // Setup scene
+        let scene = Scene::new();
+        let scene_buffer = scene.create_scene_buffer(&device);
+
+        // Create basic quad to render fragments onto.
         let quad = quad::Quad::create_buffers(&device);
 
         // Load shader
         let shader = device.create_shader_module(&wgpu::include_wgsl!("basic_raytracing.wgsl"));
 
+        // Bind groups
+        let scene_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("Scene Bind Group Layout"),
+                entries: &[wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    count: None,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: true },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                }],
+            });
+        let scene_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &scene_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: scene_buffer.as_entire_binding(),
+            }],
+            label: Some("Scene Bind Group"),
+        });
+
         // Create the render pipeline
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[],
+                bind_group_layouts: &[&scene_bind_group_layout],
                 push_constant_ranges: &[],
             });
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -108,6 +140,7 @@ impl BasicRaytracing {
             size,
             quad,
             render_pipeline,
+            scene_bind_group,
         }
     }
 
@@ -162,6 +195,7 @@ impl BasicRaytracing {
             render_pass.set_pipeline(&self.render_pipeline);
             render_pass.set_vertex_buffer(0, self.quad.vertices.slice(..));
             render_pass.set_index_buffer(self.quad.indices.slice(..), wgpu::IndexFormat::Uint16);
+            render_pass.set_bind_group(0, &self.scene_bind_group, &[]);
             render_pass.draw_indexed(0..self.quad.num_indices, 0, 0..1);
         }
 
