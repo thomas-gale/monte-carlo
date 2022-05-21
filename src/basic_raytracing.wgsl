@@ -197,6 +197,18 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     var pixel_color = vec3<f32>(0.0, 0.0, 0.0);
     var num_samples = constants.samples_per_pixel;
     for (var s = 0; s < num_samples; s = s + 1) {
+        // Notes
+
+        // tex_coords x and y are in range [0, 1] (f32)
+        // tex_coords bottom left is (0, 0)
+        // focal_length is 1.0
+
+        // window.width_pixels and window.height_pixels are in range [0, n] (u32)
+
+        // Camera is currently defined in screen/tex_coords space
+        // TODO - decide if to move camera / scene to a world space and how to store that transformation
+        // TODO - decide how to use the screen size/aspect ratio to stop output image in window from being stretched
+
         var ray = Ray(camera.origin, vec3<f32>(in.tex_coords.x - 0.5, in.tex_coords.y - 0.5, 1.0));
         // var ray = camera_get_ray(u, v);
         // var ray = camera_get_ray(in.tex_coords.x, in.tex_coords.y);
