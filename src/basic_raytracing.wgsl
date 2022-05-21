@@ -60,6 +60,14 @@ fn random_float_range(entropy: u32, min: f32, max: f32) -> f32 {
     return random_float(entropy) * (max - min) + min;
 }
 
+fn random_vec3(entropy: u32) -> vec3<f32> {
+    return vec3<f32>(random_float(entropy), random_float(entropy + u32(1)), random_float(entropy + u32(2)));
+}
+
+fn random_vec3_range(entropy: u32, min: f32, max: f32) -> vec3<f32> {
+    return vec3<f32>(random_float_range(entropy, min, max), random_float_range(entropy + u32(1), min, max), random_float_range(entropy + u32(2), min, max));
+}
+
 // Window
 struct Window {
     width_pixels: u32;
