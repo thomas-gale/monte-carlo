@@ -209,9 +209,10 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
         // TODO - decide if to move camera / scene to a world space and how to store that transformation
         // TODO - decide how to use the screen size/aspect ratio to stop output image in window from being stretched
 
-        var ray = Ray(camera.origin, vec3<f32>(in.tex_coords.x - 0.5, in.tex_coords.y - 0.5, 1.0));
-        // var ray = camera_get_ray(u, v);
-        // var ray = camera_get_ray(in.tex_coords.x, in.tex_coords.y);
+        // Multisampled pixels
+        var u = in.tex_coords.x + (random_float(u32(f32(s) / f32(num_samples) * in.tex_coords.x * 4294967295.0)) / f32(window.width_pixels));
+        var v = in.tex_coords.y + (random_float(u32(f32(s) / f32(num_samples) * in.tex_coords.y * 4294967295.0)) / f32(window.height_pixels));
+        var ray = camera_get_ray(u, v);
         pixel_color = pixel_color + ray_color(&ray);
     }
     return vec4<f32>(pixel_color / f32(num_samples), 1.0);
