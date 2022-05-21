@@ -1,6 +1,5 @@
 use wgpu::util::DeviceExt;
 
-// Note: Due to wgsl uniforms requiring 16 byte (4 float) spacing, we need to use a padding fields here.
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Constants {
@@ -23,13 +22,13 @@ impl Constants {
         device: &wgpu::Device,
     ) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
         let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Camera Uniform Buffer"),
+            label: None,
             contents: bytemuck::cast_slice(&[self]),
             usage: wgpu::BufferUsages::UNIFORM,
         });
 
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("Bind Group Layout"),
+            label: None,
             entries: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
                 count: None,

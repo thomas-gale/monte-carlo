@@ -1,5 +1,6 @@
 mod camera;
 mod constants;
+mod device_uniform_buffer_bindable;
 mod quad;
 mod scene;
 mod sphere;
@@ -101,7 +102,7 @@ impl BasicRaytracing {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: "vs_main",
-                buffers: &[vertex::Vertex::desc()],
+                buffers: &[vertex::Vertex::layout_description()],
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
