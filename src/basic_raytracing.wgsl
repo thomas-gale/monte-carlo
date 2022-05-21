@@ -58,6 +58,27 @@ fn degrees_to_radians(degrees: f32) -> f32 {
     return degrees * new_constants().pi / 180.0;
 }
 
+// Attribution: https://github.com/bevyengine/bevy/blob/main/assets/shaders/game_of_life.wgsl
+fn hash(value: u32) -> u32 {
+    var state = value;
+    state = state ^ 2747636419u;
+    state = state * 2654435769u;
+    state = state ^ state >> 16u;
+    state = state * 2654435769u;
+    state = state ^ state >> 16u;
+    state = state * 2654435769u;
+    return state;
+}
+
+fn random_float(entropy: u32) -> f32 {
+    return f32(hash(entropy)) / 4294967295.0;
+}
+
+fn random_float_range(entropy: u32, min: f32, max: f32) -> f32 {
+    return random_float(entropy) * (max - min) + min;
+}
+
+
 // Ray
 struct Ray {
     origin: vec3<f32>;
