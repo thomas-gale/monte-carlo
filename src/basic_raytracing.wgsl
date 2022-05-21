@@ -226,7 +226,7 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
         var ray = Ray(camera.origin, vec3<f32>(in.tex_coords.x - 0.5, in.tex_coords.y - 0.5, 1.0));
         // var ray = camera_get_ray(u, v);
         // var ray = camera_get_ray(in.tex_coords.x, in.tex_coords.y);
-        pixel_color = ray_color(&ray);
+        pixel_color = pixel_color + ray_color(&ray);
     }
-    return vec4<f32>(pixel_color, 1.0);
+    return vec4<f32>(pixel_color / f32(num_samples), 1.0);
 }
