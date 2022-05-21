@@ -1,5 +1,3 @@
-use wgpu::util::DeviceExt;
-
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Window {
@@ -8,7 +6,7 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn new(size: &PhysicalSize<u32>) -> Self {
+    pub fn new(size: &winit::dpi::PhysicalSize<u32>) -> Self {
         Window {
             width_pixels: size.width,
             height_pixels: size.height,

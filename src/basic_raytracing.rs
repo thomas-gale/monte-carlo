@@ -5,9 +5,11 @@ mod quad;
 mod scene;
 mod sphere;
 mod vertex;
+mod window;
 
 use winit::window::Window;
 
+// I don't like this massive blob.
 pub struct BasicRaytracing {
     surface: wgpu::Surface,
     device: wgpu::Device,
@@ -17,6 +19,7 @@ pub struct BasicRaytracing {
     quad: quad::Quad,
     render_pipeline: wgpu::RenderPipeline,
     constants_bind_group: wgpu::BindGroup,
+    window_bind_group: wgpu::BindGroup,
     camera_bind_group: wgpu::BindGroup,
     scene_bind_group: wgpu::BindGroup,
 }
@@ -71,6 +74,16 @@ impl BasicRaytracing {
                 wgpu::BufferBindingType::Uniform,
             );
 
+        // Window
+        let window = window::Window::new(&size);
+        let (window_bind_group_layout, window_bind_group) =
+            buffer_bindings::create_device_buffer_binding(
+                &[window],
+                &device,
+                wgpu::BufferUsages::UNIFORM,
+                wgpu::BufferBindingType::Uniform,
+            );
+
         // Camera
         let camera = camera::Camera::new();
         let (camera_bind_group_layout, camera_bind_group) =
@@ -80,9 +93,6 @@ impl BasicRaytracing {
                 wgpu::BufferUsages::UNIFORM,
                 wgpu::BufferBindingType::Uniform,
             );
-
-        let test = camera.horizontal;
-        println!("{:?}", test);
 
         // Scene
         let scene = scene::Scene::new();
@@ -106,6 +116,7 @@ impl BasicRaytracing {
                 label: Some("Render Pipeline Layout"),
                 bind_group_layouts: &[
                     &constants_bind_group_layout,
+                    &window_bind_group_layout,
                     &camera_bind_group_layout,
                     &scene_bind_group_layout,
                 ],
@@ -155,6 +166,7 @@ impl BasicRaytracing {
             quad,
             render_pipeline,
             constants_bind_group,
+            window_bind_group,
             camera_bind_group,
             scene_bind_group,
         }
@@ -212,8 +224,9 @@ impl BasicRaytracing {
             render_pass.set_vertex_buffer(0, self.quad.vertices.slice(..));
             render_pass.set_index_buffer(self.quad.indices.slice(..), wgpu::IndexFormat::Uint16);
             render_pass.set_bind_group(0, &self.constants_bind_group, &[]);
-            render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
-            render_pass.set_bind_group(2, &self.scene_bind_group, &[]);
+            render_pass.set_bind_group(1, &self.window_bind_group, &[]);
+            render_pass.set_bind_group(2, &self.camera_bind_group, &[]);
+            render_pass.set_bind_group(3, &self.scene_bind_group, &[]);
             render_pass.draw_indexed(0..self.quad.num_indices, 0, 0..1);
         }
 

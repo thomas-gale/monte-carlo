@@ -60,6 +60,15 @@ fn random_float_range(entropy: u32, min: f32, max: f32) -> f32 {
     return random_float(entropy) * (max - min) + min;
 }
 
+// Window
+struct Window {
+    width_pixels: u32;
+    height_pixels: u32;
+};
+
+[[group(1), binding(0)]]
+var<uniform> window: Window;
+
 // Camera
 struct Camera {
     origin: vec3<f32>;
@@ -68,7 +77,7 @@ struct Camera {
     vertical: vec3<f32>;
 };
 
-[[group(1), binding(0)]]
+[[group(2), binding(0)]]
 var<uniform> camera: Camera;
 
 // Scene
@@ -81,7 +90,7 @@ struct Scene {
     spheres: array<Sphere>;
 };
 
-[[group(2), binding(0)]]
+[[group(3), binding(0)]]
 var<storage, read> scene: Scene;
 
 // Ray
