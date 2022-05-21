@@ -1,4 +1,5 @@
 mod camera;
+mod constants;
 mod quad;
 mod scene;
 mod sphere;
@@ -14,6 +15,7 @@ pub struct BasicRaytracing {
     size: winit::dpi::PhysicalSize<u32>,
     quad: quad::Quad,
     render_pipeline: wgpu::RenderPipeline,
+    constants_bind_group: wgpu::BindGroup,
     camera_bind_group: wgpu::BindGroup,
     scene_bind_group: wgpu::BindGroup,
 }
@@ -58,7 +60,12 @@ impl BasicRaytracing {
         };
         surface.configure(&device, &config);
 
-        // Setup camera
+        // Constants
+        let constants = constants::Constants::new();
+        let (constants_bind_group_layout, constants_bind_group) =
+            constants.create_device_buffer_binding(&device);
+
+        // Camera
         let camera = camera::Camera::new();
         let camera_buffer = camera.to_device_buffer(&device);
         let (camera_bind_group_layout, camera_bind_group) =
@@ -67,7 +74,7 @@ impl BasicRaytracing {
         let test = camera.horizontal;
         println!("{:?}", test);
 
-        // Setup scene
+        // Scene
         let scene = scene::Scene::new();
         let scene_buffer = scene.create_scene_buffer(&device);
         let (scene_bind_group_layout, scene_bind_group) =
@@ -124,7 +131,11 @@ impl BasicRaytracing {
         let render_pipeline_layout =
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[&camera_bind_group_layout, &scene_bind_group_layout],
+                bind_group_layouts: &[
+                    &constants_bind_group_layout,
+                    &camera_bind_group_layout,
+                    &scene_bind_group_layout,
+                ],
                 push_constant_ranges: &[],
             });
         let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -170,6 +181,7 @@ impl BasicRaytracing {
             size,
             quad,
             render_pipeline,
+            constants_bind_group,
             camera_bind_group,
             scene_bind_group,
         }
@@ -226,8 +238,9 @@ impl BasicRaytracing {
             render_pass.set_pipeline(&self.render_pipeline);
             render_pass.set_vertex_buffer(0, self.quad.vertices.slice(..));
             render_pass.set_index_buffer(self.quad.indices.slice(..), wgpu::IndexFormat::Uint16);
-            render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
-            render_pass.set_bind_group(1, &self.scene_bind_group, &[]);
+            render_pass.set_bind_group(0, &self.constants_bind_group, &[]);
+            render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
+            render_pass.set_bind_group(2, &self.scene_bind_group, &[]);
             render_pass.draw_indexed(0..self.quad.num_indices, 0, 0..1);
         }
 

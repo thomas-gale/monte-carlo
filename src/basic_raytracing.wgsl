@@ -25,57 +25,19 @@ fn vs_main(
 // Implementing https://raytracing.github.io/books/RayTracingInOneWeekend.html
 // Attribution to assitance from https://www.shadertoy.com/view/lssBD7
 
-// Camera
-struct Camera {
-    origin: vec3<f32>;
-    lower_left_corner: vec3<f32>;
-    horizontal: vec3<f32>;
-    vertical: vec3<f32>;
-    // pad1: vec4<f32>;
-};
-
-[[group(0), binding(0)]]
-var<uniform> camera: Camera;
-
-// fn new_camera() -> Camera {
-//     return Camera(
-//         1.0,
-//         vec3<f32>(0.0, 0.0, 0.0),
-//     );
-// }
-
-
-// Scene
-struct Sphere {
-    center: vec3<f32>;
-    radius: f32;
-};
-
-struct Scene {
-    spheres: array<Sphere>;
-};
-
-[[group(1), binding(0)]]
-var<storage, read> scene: Scene;
-
-// Constants (not very effiecient - move to uniforms)
+// Constants
 struct Constants {
     infinity: f32;
     pi: f32;
     samples_per_pixel: i32;
 };
 
-fn new_constants() -> Constants {
-    return Constants(
-        1.0 / 0.0,
-        3.14159265358979323846264338327950288,
-        100,
-    );
-}
+[[group(0), binding(0)]]
+var<uniform> constants: Constants;
 
 // Utilities
 fn degrees_to_radians(degrees: f32) -> f32 {
-    return degrees * new_constants().pi / 180.0;
+    return degrees * constants.pi / 180.0;
 }
 
 // Attribution: https://github.com/bevyengine/bevy/blob/main/assets/shaders/game_of_life.wgsl
@@ -97,6 +59,32 @@ fn random_float(entropy: u32) -> f32 {
 fn random_float_range(entropy: u32, min: f32, max: f32) -> f32 {
     return random_float(entropy) * (max - min) + min;
 }
+
+// Camera
+struct Camera {
+    origin: vec3<f32>;
+    lower_left_corner: vec3<f32>;
+    horizontal: vec3<f32>;
+    vertical: vec3<f32>;
+};
+
+[[group(1), binding(0)]]
+var<uniform> camera: Camera;
+
+// Scene
+struct Sphere {
+    center: vec3<f32>;
+    radius: f32;
+};
+
+struct Scene {
+    spheres: array<Sphere>;
+};
+
+[[group(2), binding(0)]]
+var<storage, read> scene: Scene;
+
+
 
 // Ray
 struct Ray {
@@ -209,7 +197,7 @@ fn camera_get_ray(u: f32, v: f32) -> Ray {
 
 fn ray_color(ray: ptr<function, Ray>) -> vec3<f32> {
     var hit_record = new_hit_record();
-    if (sphere_hits(ray, 0.0, new_constants().infinity, &hit_record)) {
+    if (sphere_hits(ray, 0.0, constants.infinity, &hit_record)) {
         return 0.5 * (hit_record.normal + vec3<f32>(1.0, 1.0, 1.0));
     }
     var unit_direction = normalize((*ray).direction);
@@ -221,7 +209,7 @@ fn ray_color(ray: ptr<function, Ray>) -> vec3<f32> {
 [[stage(fragment)]]
 fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     var pixel_color = vec3<f32>(0.0, 0.0, 0.0);
-    var num_samples = new_constants().samples_per_pixel;
+    var num_samples = constants.samples_per_pixel;
     for (var s = 0; s < num_samples; s = s + 1) {
         var ray = Ray(camera.origin, vec3<f32>(in.tex_coords.x - 0.5, in.tex_coords.y - 0.5, 1.0));
         // var ray = camera_get_ray(u, v);
