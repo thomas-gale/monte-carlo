@@ -31,9 +31,6 @@ impl Scene {
             label: Some("Scene Buffer"),
             contents: bytemuck::cast_slice(&self.spheres[..]),
             usage: wgpu::BufferUsages::STORAGE
-                | wgpu::BufferUsages::MAP_READ
-                | wgpu::BufferUsages::COPY_DST
-                | wgpu::BufferUsages::COPY_SRC,
         });
 
         // SceneBuffer {
