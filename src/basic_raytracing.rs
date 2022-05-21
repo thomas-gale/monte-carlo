@@ -1,6 +1,6 @@
+mod buffer_bindings;
 mod camera;
 mod constants;
-mod device_uniform_buffer_bindable;
 mod quad;
 mod scene;
 mod sphere;
@@ -64,12 +64,22 @@ impl BasicRaytracing {
         // Constants
         let constants = constants::Constants::new();
         let (constants_bind_group_layout, constants_bind_group) =
-            constants.create_device_buffer_binding(&device);
+            buffer_bindings::create_device_buffer_binding(
+                &[constants],
+                &device,
+                wgpu::BufferUsages::UNIFORM,
+                wgpu::BufferBindingType::Uniform,
+            );
 
         // Camera
         let camera = camera::Camera::new();
         let (camera_bind_group_layout, camera_bind_group) =
-            camera.create_device_buffer_binding(&device);
+            buffer_bindings::create_device_buffer_binding(
+                &[camera],
+                &device,
+                wgpu::BufferUsages::UNIFORM,
+                wgpu::BufferBindingType::Uniform,
+            );
 
         let test = camera.horizontal;
         println!("{:?}", test);
@@ -77,7 +87,12 @@ impl BasicRaytracing {
         // Scene
         let scene = scene::Scene::new();
         let (scene_bind_group_layout, scene_bind_group) =
-            scene.create_device_buffer_binding(&device);
+            buffer_bindings::create_device_buffer_binding(
+                &scene.spheres[..],
+                &device,
+                wgpu::BufferUsages::STORAGE,
+                wgpu::BufferBindingType::Storage { read_only: (true) },
+            );
 
         // Create basic quad to render fragments onto.
         let quad = quad::Quad::new(&device);

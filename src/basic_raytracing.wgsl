@@ -84,7 +84,6 @@ struct Scene {
 [[group(2), binding(0)]]
 var<storage, read> scene: Scene;
 
-
 // Ray
 struct Ray {
     origin: vec3<f32>;
