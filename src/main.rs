@@ -1,6 +1,4 @@
 mod basic_raytracing;
-mod quad;
-mod vertex;
 
 use winit::{
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},

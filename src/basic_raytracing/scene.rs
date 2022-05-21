@@ -27,17 +27,40 @@ impl Scene {
     }
 
     pub fn create_scene_buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
-        let scene_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Scene Buffer"),
+        device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Scene Storage Buffer"),
             contents: bytemuck::cast_slice(&self.spheres[..]),
-            usage: wgpu::BufferUsages::STORAGE
+            usage: wgpu::BufferUsages::STORAGE,
+        })
+    }
+
+    // TODO - passed the buffer back into this function seems clunky
+    pub fn create_binding(
+        &self,
+        buffer: &wgpu::Buffer,
+        device: &wgpu::Device,
+    ) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Bind Group Layout"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                count: None,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Storage { read_only: true },
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+            }],
         });
-
-        // SceneBuffer {
-        // 	buffer: scene__buffer,
-
-        // }
-
-        scene_buffer
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: buffer.as_entire_binding(),
+            }],
+            label: None,
+        });
+        (bind_group_layout, bind_group)
     }
 }

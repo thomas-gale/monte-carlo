@@ -4,5 +4,3 @@ pub struct Sphere {
     pub center: [f32; 3],
     pub radius: f32,
 }
-
-impl Sphere {}

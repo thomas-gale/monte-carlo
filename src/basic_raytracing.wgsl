@@ -25,7 +25,25 @@ fn vs_main(
 // Implementing https://raytracing.github.io/books/RayTracingInOneWeekend.html
 // Attribution to assitance from https://www.shadertoy.com/view/lssBD7
 
-// Buffers
+// Camera
+struct Camera {
+    origin: vec3<f32>;
+    lower_left_corner: vec3<f32>;
+    horizontal: vec3<f32>;
+    vertical: vec3<f32>;
+    // pad1: vec4<f32>;
+};
+
+[[group(0), binding(0)]]
+var<uniform> camera: Camera;
+
+// fn new_camera() -> Camera {
+//     return Camera(
+//         1.0,
+//         vec3<f32>(0.0, 0.0, 0.0),
+//     );
+// }
+
 
 // Scene
 struct Sphere {
@@ -37,19 +55,21 @@ struct Scene {
     spheres: array<Sphere>;
 };
 
-[[group(0), binding(0)]]
+[[group(1), binding(0)]]
 var<storage, read> scene: Scene;
 
 // Constants (not very effiecient - move to uniforms)
 struct Constants {
     infinity: f32;
     pi: f32;
+    samples_per_pixel: i32;
 };
 
 fn new_constants() -> Constants {
     return Constants(
         1.0 / 0.0,
         3.14159265358979323846264338327950288,
+        100,
     );
 }
 
@@ -77,7 +97,6 @@ fn random_float(entropy: u32) -> f32 {
 fn random_float_range(entropy: u32, min: f32, max: f32) -> f32 {
     return random_float(entropy) * (max - min) + min;
 }
-
 
 // Ray
 struct Ray {
@@ -113,19 +132,6 @@ fn set_face_normal(hit_record: ptr<function, HitRecord>, r: ptr<function, Ray>, 
     } else {
         (*hit_record).normal = -outward_normal
     };
-}
-
-// Camera
-struct Camera {
-    focal_length: f32;
-    origin: vec3<f32>;
-};
-
-fn new_camera() -> Camera {
-    return Camera(
-        1.0,
-        vec3<f32>(0.0, 0.0, 0.0),
-    );
 }
 
 // Sphere
@@ -197,6 +203,10 @@ fn sphere_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<functio
 }
 
 // Ray trace
+fn camera_get_ray(u: f32, v: f32) -> Ray {
+    return Ray(camera.origin, camera.lower_left_corner + u * camera.horizontal + v * camera.vertical - camera.origin);
+}
+
 fn ray_color(ray: ptr<function, Ray>) -> vec3<f32> {
     var hit_record = new_hit_record();
     if (sphere_hits(ray, 0.0, new_constants().infinity, &hit_record)) {
@@ -210,17 +220,13 @@ fn ray_color(ray: ptr<function, Ray>) -> vec3<f32> {
 
 [[stage(fragment)]]
 fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
-    // Create world - TODO - move to some form of input buffer
-    // var spheres = array<Sphere, 2>(
-    //     Sphere(vec3<f32>(0.5, 0.0, -1.0), 0.5),
-    //     Sphere(vec3<f32>(0.5, -100.5, -1.0), 100)
-    // );
-
-    // Create camera - TODO - move to uniform
-    var camera = new_camera();
-    var ray = Ray(camera.origin, vec3<f32>(in.tex_coords.x - 0.5, in.tex_coords.y - 0.5, camera.focal_length));
-
-    // var temp_rec = new_hit_record();
-    var color_pixel_color = ray_color(&ray);
-    return vec4<f32>(color_pixel_color, 1.0);
+    var pixel_color = vec3<f32>(0.0, 0.0, 0.0);
+    var num_samples = new_constants().samples_per_pixel;
+    for (var s = 0; s < num_samples; s = s + 1) {
+        var ray = Ray(camera.origin, vec3<f32>(in.tex_coords.x - 0.5, in.tex_coords.y - 0.5, 1.0));
+        // var ray = camera_get_ray(u, v);
+        // var ray = camera_get_ray(in.tex_coords.x, in.tex_coords.y);
+        pixel_color = ray_color(&ray);
+    }
+    return vec4<f32>(pixel_color, 1.0);
 }

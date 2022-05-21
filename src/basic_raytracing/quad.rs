@@ -1,6 +1,6 @@
 use wgpu::util::DeviceExt;
 
-use crate::vertex::Vertex;
+use super::vertex::Vertex;
 
 // Wgsl uses dx12/metal screen coordinate systems
 // See normalized coordinate diagrams https://github.com/gfx-rs/gfx/tree/master/src/backend/dx12
@@ -32,7 +32,7 @@ pub struct Quad {
 }
 
 impl Quad {
-    pub fn create_buffers(device: &wgpu::Device) -> Self {
+    pub fn new(device: &wgpu::Device) -> Self {
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
             contents: bytemuck::cast_slice(VERTICES),
