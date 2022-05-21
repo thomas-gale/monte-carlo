@@ -85,7 +85,6 @@ struct Scene {
 var<storage, read> scene: Scene;
 
 
-
 // Ray
 struct Ray {
     origin: vec3<f32>;
@@ -122,28 +121,7 @@ fn set_face_normal(hit_record: ptr<function, HitRecord>, r: ptr<function, Ray>, 
     };
 }
 
-// Sphere
-
-
-// Refactored into hittable_sphere
-// fn hit_sphere(center: ptr<function, vec3<f32>>, radius: f32, ray: ptr<function, Ray>) -> f32 {
-//     var oc = (*ray).origin - *center;
-//     var a = dot((*ray).direction, (*ray).direction);
-//     var half_b = dot(oc, (*ray).direction);
-//     var c = dot(oc, oc) - radius * radius;
-//     var discriminant = half_b * half_b - a * c;
-//     if (discriminant < 0.0) {
-//         return -1.0;
-//     } else {
-//         return (-half_b - sqrt(discriminant)) / a;
-//     }
-// }
-
-// let spheres_world: array<Sphere, 2> = array<Sphere, 2>(
-//     Sphere(vec3<f32>(0.5, 0.0, -1.0), 0.5),
-//     Sphere(vec3<f32>(0.5, -100.5, -1.0), 100.0)
-// );
-
+// Sphere Helpers
 fn sphere_hit(sphere_worlds_index: i32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
     var sphere = scene.spheres[sphere_worlds_index];
 

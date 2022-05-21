@@ -5,11 +5,6 @@ pub struct Scene {
     spheres: Vec<Sphere>,
 }
 
-// pub struct SceneBuffer {
-// 	  pub buffer: wgpu::Buffer,
-// 		pub bind_group: wgpu::BindGroup,
-// }
-
 impl Scene {
     pub fn new() -> Scene {
         Scene {
@@ -19,27 +14,23 @@ impl Scene {
                     radius: 0.25,
                 },
                 Sphere {
-                    center: [0.0, -100.5, 1.0],
-                    radius: 100.0,
+                    center: [0.0, -1000.25, 1.0],
+                    radius: 1000.0,
                 },
             ],
         }
     }
 
-    pub fn create_scene_buffer(&self, device: &wgpu::Device) -> wgpu::Buffer {
-        device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+    pub fn create_device_buffer_binding(
+        &self,
+        device: &wgpu::Device,
+    ) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
+        let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Scene Storage Buffer"),
             contents: bytemuck::cast_slice(&self.spheres[..]),
             usage: wgpu::BufferUsages::STORAGE,
-        })
-    }
+        });
 
-    // TODO - passed the buffer back into this function seems clunky
-    pub fn create_binding(
-        &self,
-        buffer: &wgpu::Buffer,
-        device: &wgpu::Device,
-    ) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("Bind Group Layout"),
             entries: &[wgpu::BindGroupLayoutEntry {

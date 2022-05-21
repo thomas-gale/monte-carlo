@@ -67,65 +67,22 @@ impl BasicRaytracing {
 
         // Camera
         let camera = camera::Camera::new();
-        let camera_buffer = camera.to_device_buffer(&device);
         let (camera_bind_group_layout, camera_bind_group) =
-            camera.create_binding(&camera_buffer, &device);
+            camera.create_device_buffer_binding(&device);
 
         let test = camera.horizontal;
         println!("{:?}", test);
 
         // Scene
         let scene = scene::Scene::new();
-        let scene_buffer = scene.create_scene_buffer(&device);
         let (scene_bind_group_layout, scene_bind_group) =
-            scene.create_binding(&scene_buffer, &device);
+            scene.create_device_buffer_binding(&device);
 
         // Create basic quad to render fragments onto.
         let quad = quad::Quad::new(&device);
 
         // Load shader
         let shader = device.create_shader_module(&wgpu::include_wgsl!("basic_raytracing.wgsl"));
-
-        // Bind groups
-        // let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        //     label: Some("Bind Group Layout"),
-        //     entries: &[
-        //         wgpu::BindGroupLayoutEntry {
-        //             binding: 0,
-        //             count: None,
-        //             visibility: wgpu::ShaderStages::FRAGMENT,
-        //             ty: wgpu::BindingType::Buffer {
-        //                 ty: wgpu::BufferBindingType::Uniform,
-        //                 has_dynamic_offset: false,
-        //                 min_binding_size: None,
-        //             },
-        //         },
-        //         wgpu::BindGroupLayoutEntry {
-        //             binding: 1,
-        //             count: None,
-        //             visibility: wgpu::ShaderStages::FRAGMENT,
-        //             ty: wgpu::BindingType::Buffer {
-        //                 ty: wgpu::BufferBindingType::Storage { read_only: true },
-        //                 has_dynamic_offset: false,
-        //                 min_binding_size: None,
-        //             },
-        //         },
-        //     ],
-        // });
-        // let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        //     layout: &bind_group_layout,
-        //     entries: &[
-        //         wgpu::BindGroupEntry {
-        //             binding: 0,
-        //             resource: camera_buffer.as_entire_binding(),
-        //         },
-        //         wgpu::BindGroupEntry {
-        //             binding: 1,
-        //             resource: scene_buffer.as_entire_binding(),
-        //         },
-        //     ],
-        //     label: Some("Bind Group"),
-        // });
 
         // Create the render pipeline
         let render_pipeline_layout =
