@@ -30,6 +30,7 @@ struct Constants {
     infinity: f32;
     pi: f32;
     samples_per_pixel: i32;
+    max_depth: i32;
 };
 
 [[group(0), binding(0)]]
@@ -66,6 +67,19 @@ fn random_vec3(entropy: u32) -> vec3<f32> {
 
 fn random_vec3_range(entropy: u32, min: f32, max: f32) -> vec3<f32> {
     return vec3<f32>(random_float_range(entropy, min, max), random_float_range(entropy + u32(1), min, max), random_float_range(entropy + u32(2), min, max));
+}
+
+fn random_in_unit_sphere(entropy: u32) -> vec3<f32> {
+    var p: vec3<f32>;
+    var i = u32(0);
+    loop {
+        p = random_vec3(entropy + i);
+        i = i + u32(1);
+        if (length(p) < 1.0) {
+            break;
+        }
+    }
+    return p;
 }
 
 // Window
@@ -189,14 +203,39 @@ fn camera_get_ray(u: f32, v: f32) -> Ray {
     return Ray(camera.origin, camera.lower_left_corner + u * camera.horizontal + v * camera.vertical - camera.origin);
 }
 
-fn ray_color(ray: ptr<function, Ray>) -> vec3<f32> {
+// This is a loop version of the recursive reference implmentation.
+fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
     var hit_record = new_hit_record();
-    if (sphere_hits(ray, 0.0, constants.infinity, &hit_record)) {
-        return 0.5 * (hit_record.normal + vec3<f32>(1.0, 1.0, 1.0));
+    var current_ray = Ray((*ray).origin, (*ray).direction);
+    var current_ray_color = vec3<f32>(1.0, 1.0, 1.0);
+    for (var i = 0; i < depth; i = i + 1) {
+        // // Break if we've exceeded the ray bounce limit
+        // if (depth <= 0) {
+        //     break;
+        //     // return current_ray_color;
+        // }
+
+        // Check if we hit anything
+        if (sphere_hits(&current_ray, 0.0, constants.infinity, &hit_record)) {
+
+            // Basic diffuse lambertian sphere hack
+            var target = hit_record.p + hit_record.normal + random_in_unit_sphere(entropy);
+            current_ray = Ray(hit_record.p, target - hit_record.p);
+            // Simple 50% attenuation,   
+            current_ray_color = 0.5 * current_ray_color;
+
+            // Bounce ray
+            // var bounch_ray: Ray = Ray(hit_record.p, target - hit_record.p);
+            // current_ray_color = current_ray_color + 0.5 * ray_color(bounch_ray, depth - 1, entropy);            // return 0.5 * ray_color(&ray_rec, depth - 1, entropy);
+        } else {
+            // No hit, return background / sky color
+            var unit_direction = normalize(current_ray.direction);
+            var t = unit_direction.y + 1.0; // TODO - why not 0.5 * ?
+            // return (1.0 - t) * vec3<f32>(1.0, 1.0, 1.0) + t * vec3<f32>(0.5, 0.7, 1.0);
+            current_ray_color = current_ray_color * (1.0 - t) * vec3<f32>(1.0, 1.0, 1.0) + t * vec3<f32>(0.5, 0.7, 1.0);
+        }
     }
-    var unit_direction = normalize((*ray).direction);
-    var t = unit_direction.y + 1.0; // TODO - why not 0.5 * ?
-    return (1.0 - t) * vec3<f32>(1.0, 1.0, 1.0) + t * vec3<f32>(0.5, 0.7, 1.0);
+    return current_ray_color;
 }
 
 
@@ -221,7 +260,7 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
         var u = in.tex_coords.x + (random_float(u32(f32(s) / f32(num_samples) * in.tex_coords.x * 4294967295.0)) / f32(window.width_pixels));
         var v = in.tex_coords.y + (random_float(u32(f32(s) / f32(num_samples) * in.tex_coords.y * 4294967295.0)) / f32(window.height_pixels));
         var ray = camera_get_ray(u, v);
-        pixel_color = pixel_color + ray_color(&ray);
+        pixel_color = pixel_color + ray_color(&ray, constants.max_depth, u32(f32(s) / f32(num_samples) * in.tex_coords.x * in.tex_coords.y * 4294967295.0));
     }
     return vec4<f32>(pixel_color / f32(num_samples), 1.0);
 }
