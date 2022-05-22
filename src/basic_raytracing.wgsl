@@ -145,16 +145,11 @@ fn new_hit_record() -> HitRecord {
 fn set_face_normal(hit_record: ptr<function, HitRecord>, r: ptr<function, Ray>, outward_normal: vec3<f32>) {
     (*hit_record).front_face = dot((*r).direction, outward_normal) < 0.0;
     if ((*hit_record).front_face) {
-        (*hit_record).normal = outward_normal
+        (*hit_record).normal = outward_normal;
     } else {
-        (*hit_record).normal = -outward_normal
-    };
+        (*hit_record).normal = -1.0 * outward_normal;
+    }
 }
-
-// struct SphereHit{
-
-
-// }
 
 // Sphere Helpers
 fn sphere_hit(sphere_worlds_index: i32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
@@ -189,6 +184,9 @@ fn sphere_hit(sphere_worlds_index: i32, ray: ptr<function, Ray>, t_min: f32, t_m
 } 
 
 fn sphere_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function, HitRecord>) -> bool {
+
+    // Reset hitrecord
+
     var hit_anything = false;
     var closest_so_far = t_max;
 
@@ -210,6 +208,7 @@ fn camera_get_ray(u: f32, v: f32) -> Ray {
 
 // This is a loop version of the recursive reference implmentation.
 fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
+    var hit_record = new_hit_record();
     var current_ray = Ray((*ray).origin, (*ray).direction);
     var current_ray_color = vec3<f32>(1.0, 1.0, 1.0);
     for (var i = 0; i < depth; i = i + 1) {
@@ -219,16 +218,20 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
         //     // return current_ray_color;
         // }
 
-        var hit_record = new_hit_record();
         // Check if we hit anything
         if (sphere_hits(&current_ray, 0.0, constants.infinity, &hit_record)) {
 
             // Basic diffuse lambertian sphere hack
-            // var target = hit_record.p + (1.0 * hit_record.normal) + random_in_unit_sphere(entropy * (u32(i) / u32(depth)));
-            var target = hit_record.p + (1.0 * hit_record.normal);
+            var target = hit_record.p + hit_record.normal + random_in_unit_sphere(entropy * (u32(i) / u32(depth)));
+            // var target = hit_record.p + (1.0 * hit_record.normal);
             current_ray = Ray(hit_record.p, target - hit_record.p);
-            // Simple 50% attenuation,   
-            current_ray_color = current_ray_color * 0.5;
+            // var new_ray = Ray(hit_record.p, target - hit_record.p);
+            // current_ray.origin = new_ray.origin;
+            // current_ray.direction = new_ray.direction;
+
+            // Simple 50% attenuation,
+            // current_ray_color = current_ray_color * 0.5;
+            // break;
 
             // TEST
             current_ray_color = 0.5 * (hit_record.normal + vec3<f32>(1.0, 1.0, 1.0));
@@ -279,6 +282,6 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
         pixel_color = pixel_color + ray_color(&ray, constants.max_depth, u32((f32(s) / f32(num_samples)) * in.tex_coords.x * in.tex_coords.y * 4294967295.0));
     }
     pixel_color = pixel_color / f32(num_samples);
-    // color_gamma_correction(&pixel_color);
+    color_gamma_correction(&pixel_color);
     return vec4<f32>(pixel_color, 1.0);
 }
