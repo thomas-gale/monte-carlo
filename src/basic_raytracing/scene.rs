@@ -9,11 +9,11 @@ impl Scene {
         Scene {
             spheres: vec![
                 Sphere {
-                    center: [0.0, 0.0, 1.0],
+                    center: [0.0, 0.0, -1.0],
                     radius: 0.25,
                 },
                 Sphere {
-                    center: [0.0, -1000.25, 1.0],
+                    center: [0.0, -1000.25, -1.0],
                     radius: 1000.0,
                 },
             ],
