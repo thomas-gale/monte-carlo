@@ -96,6 +96,10 @@ fn random_in_unit_sphere(entropy: u32) -> vec3<f32> {
     return p;
 }
 
+fn random_unit_vector(entropy: u32) -> vec3<f32> {
+    return normalize(random_in_unit_sphere(entropy));
+}
+
 // Camera
 struct Camera {
     origin: vec3<f32>;
@@ -220,7 +224,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
         // Check if we hit anything
         if (sphere_hits(&current_ray, 0.001, constants.infinity, &hit_record)) {
             // Basic diffuse lambertian sphere hack
-            var target = hit_record.p + hit_record.normal + random_in_unit_sphere(hash(entropy * u32(i + 1)));
+            var target = hit_record.p + hit_record.normal + random_unit_vector(hash(entropy * u32(i + 1)));
             current_ray = Ray(hit_record.p, target - hit_record.p);
 
             // Simple 50% attenuation,
@@ -228,7 +232,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
         } else {
             // No hit, return background / sky color
             var unit_direction = normalize(current_ray.direction);
-            var t = 0.5 * (unit_direction.y + 1.0); // TODO - why not 0.5 * ?
+            var t = 0.5 *(unit_direction.y + 1.0);
             current_ray_color = current_ray_color * ((1.0 - t) * vec3<f32>(1.0, 1.0, 1.0) + t * vec3<f32>(0.5, 0.7, 1.0));
             break;
         }
@@ -263,13 +267,12 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
         // Multisampled pixels
         var pixel_entropy = hash(entropy_window_space(in.tex_coords));
         var pixel_sample_entropy = hash(pixel_entropy * u32(s + 1));
-        // var u = in.tex_coords.x + (random_float(pixel_sample_entropy) / f32(window.width_pixels));
         var u = in.tex_coords.x + random_float(hash(pixel_sample_entropy + 1u)) / f32(window.width_pixels);
         var v = in.tex_coords.y + random_float(hash(pixel_sample_entropy + 2u)) / f32(window.height_pixels);
         var ray = camera_get_ray(u, v);
         pixel_color = pixel_color + ray_color(&ray, constants.max_depth, hash(pixel_sample_entropy + 3u));
     }
     pixel_color = pixel_color / f32(num_samples);
-    // color_gamma_correction(&pixel_color);
+    color_gamma_correction(&pixel_color);
     return vec4<f32>(pixel_color, 1.0);
 }
