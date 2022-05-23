@@ -250,14 +250,28 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
         // Check if we hit anything
         if (sphere_hits(&current_ray, 0.001, constants.infinity, &hit_record)) {
             if (hit_record.material_type == 0u) {
-                    var target = hit_record.p + random_in_hemisphere(hit_record.normal, (entropy * u32(i + 1)));
+                // Lambertian material
+                var scattered = hit_record.p + random_in_hemisphere(hit_record.normal, (entropy * u32(i + 1)));
 
-                    if (vec3_near_zero(target)) {
-                        target = hit_record.normal;
-                    }
+                // Check for degenerate target scatter
+                if (vec3_near_zero(scattered)) {
+                    scattered = hit_record.normal;
+                }
 
-                    current_ray = Ray(hit_record.p, target - hit_record.p);
+                current_ray = Ray(hit_record.p, scattered - hit_record.p);
+                current_ray_color = current_ray_color * hit_record.albedo;
+            } else if (hit_record.material_type == 1u) {
+                // Metallic material
+                var reflected = vec3_reflect(normalize(current_ray.direction), hit_record.normal);
+                var scattered = Ray(hit_record.p, reflected);
+
+                if (dot(scattered.direction, hit_record.normal) > 0.0) {
+                    current_ray = scattered;
                     current_ray_color = current_ray_color * hit_record.albedo;
+                } else {
+                    current_ray_color = vec3<f32>(0.0, 0.0, 0.0);
+                    break;
+                }
             }
         } else {
             // No hit, return background / sky color
