@@ -50,6 +50,13 @@ fn vec3_reflect(v: vec3<f32>, n: vec3<f32>) -> vec3<f32> {
     return v - 2.0 * dot(v, n) * n;
 }
 
+fn vec3_refract(uv: vec3<f32>, n: vec3<f32>, etai_over_etat: f32) -> vec3<f32> {
+    var cos_theta = min(dot(-uv, n), 1.0);
+    var r_out_perp = etai_over_etat * (uv + cos_theta * n);
+    var r_out_parellel = -sqrt(abs(1.0 - dot(r_out_perp, r_out_perp))) * n;
+    return r_out_perp + r_out_parellel;
+}
+
 // Window
 struct Window {
     width_pixels: u32;
@@ -134,6 +141,7 @@ struct Sphere {
     radius: f32;
     material_type: u32; // 0 = lambertian, 1 = metal, 2 = dielectric
     fuzz: f32; // Roughness for metals
+    refraction_index: f32; // Refraction index for dielectrics
     albedo: vec3<f32>; // Ray bounce color
 };
 
@@ -164,6 +172,7 @@ struct HitRecord {
     material_type: u32; // 0 = lambertian, 1 = metal, 2 = dielectric
     albedo: vec3<f32>; // Ray bounce coloring
     fuzz: f32; // Roughness for metals
+    refraction_index: f32; // Refraction index for dielectrics
 };
 
 fn new_hit_record() -> HitRecord {
@@ -174,6 +183,7 @@ fn new_hit_record() -> HitRecord {
         false,
         0u,
         vec3<f32>(0.0, 0.0, 0.0),
+        0.0,
         0.0,
     );
 }
@@ -218,6 +228,7 @@ fn sphere_hit(sphere_worlds_index: i32, ray: ptr<function, Ray>, t_min: f32, t_m
     (*hit_record).material_type = sphere.material_type;
     (*hit_record).albedo = sphere.albedo;
     (*hit_record).fuzz = sphere.fuzz;
+    (*hit_record).refraction_index = sphere.refraction_index;
 
     return true;
 } 
@@ -276,6 +287,22 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
                     current_ray_color = vec3<f32>(0.0, 0.0, 0.0);
                     break;
                 }
+            } else if (hit_record.material_type == 2u) {
+                // Dielectric material
+                var attenuation = vec3<f32>(1.0, 1.0, 1.0);
+
+                var refaction_ratio = 0.0;
+                if (hit_record.front_face) {
+                    refaction_ratio = 1.0 / hit_record.refraction_index;
+                } else {
+                    refaction_ratio = hit_record.refraction_index;
+                }
+
+                var unit_direction = normalize(current_ray.direction);
+                var refracted = vec3_refract(unit_direction, hit_record.normal, refaction_ratio);
+
+                var scattered = Ray(hit_record.p, refracted);
+                current_ray = scattered;
             }
         } else {
             // No hit, return background / sky color
