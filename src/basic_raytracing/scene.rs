@@ -13,8 +13,8 @@ impl Scene {
                     radius: 0.25,
                 },
                 Sphere {
-                    center: [0.0, -10000.25, -1.0],
-                    radius: 10000.0,
+                    center: [0.0, -100.25, -1.0],
+                    radius: 100.0,
                 },
             ],
         }

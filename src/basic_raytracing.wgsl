@@ -51,6 +51,9 @@ struct Window {
 var<uniform> window: Window;
 
 // Random
+
+
+
 // Attribution: https://github.com/bevyengine/bevy/blob/main/assets/shaders/game_of_life.wgsl
 fn hash(value: u32) -> u32 {
     var state = value;
@@ -87,9 +90,9 @@ fn random_in_unit_sphere(entropy: u32) -> vec3<f32> {
     var p: vec3<f32>;
     var i = u32(0);
     loop {
-        p = random_vec3(hash(entropy + i));
+        p = random_vec3_range(hash(entropy + i), -1.0, 1.0);
         i = i + 1u;
-        if (length(p) < 1.0) {
+        if (pow(length(p), 2.0) < 1.0) {
             break;
         }
     }
@@ -231,9 +234,13 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
 
             // Basic diffuse lambertian sphere hack
             // var target = hit_record.p + hit_record.normal + random_in_unit_sphere(hash(entropy + u32(i)));
+            // current_ray_color = normalize(target);
 
             // var target = hit_record.p + (1.0 * hit_record.normal);
+            // var new_ray = Ray(hit_record.p, target - hit_record.p);
             // current_ray = Ray(hit_record.p, target - hit_record.p);
+
+            // current_ray_color = normalize(new_ray.origin);
 
             // var new_ray = Ray(hit_record.p, target - hit_record.p);
             // current_ray.origin = new_ray.origin;
@@ -244,7 +251,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
             // break;
 
             // TEST
-            // current_ray_color = normalize(0.5 * (hit_record.p + vec3<f32>(1.0, 1.0, 1.0)));
+            // current_ray_color = normalize(0.5 * (hit_record.normal + vec3<f32>(1.0, 1.0, 1.0)));
             // var test = entropy;
             // test = test ^ test >> u32(i + 1);
             // current_ray_color = normalize(random_in_unit_sphere(hash(test)));
@@ -291,11 +298,15 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
         // TODO - decide how to use the screen size/aspect ratio to stop output image in window from being stretched
 
         // Multisampled pixels
-        var u = in.tex_coords.x + (random_float(u32(f32(s + 1) / f32(num_samples + 1) * in.tex_coords.x * 4294967295.0)) / f32(window.width_pixels));
-        var v = in.tex_coords.y + (random_float(u32(f32(s + 1) / f32(num_samples + 1) * in.tex_coords.y * 4294967295.0)) / f32(window.height_pixels));
+        var pixel_entropy = hash(entropy_window_space(in.tex_coords));
+        var pixel_sample_entropy = hash(pixel_entropy + u32(s));
+        // var u = in.tex_coords.x + (random_float(pixel_sample_entropy) / f32(window.width_pixels));
+        var u = in.tex_coords.x + random_float(hash(pixel_sample_entropy + 1u)) / f32(window.width_pixels);
+        var v = in.tex_coords.y + random_float(hash(pixel_sample_entropy + 2u)) / f32(window.height_pixels);
         var ray = camera_get_ray(u, v);
         // pixel_color = pixel_color + ray_color(&ray, constants.max_depth, u32((f32(s + 1) / f32(num_samples + 1)) * in.tex_coords.x * in.tex_coords.y * 4294967295.0));
-        pixel_color = pixel_color + ray_color(&ray, constants.max_depth, hash(entropy_window_space(in.tex_coords) + u32(s)));
+        pixel_color = pixel_color + ray_color(&ray, constants.max_depth, hash(pixel_sample_entropy + 3u));
+        // pixel_color = vec3<f32>(u, v, 0.0);
     }
     pixel_color = pixel_color / f32(num_samples);
     // color_gamma_correction(&pixel_color);

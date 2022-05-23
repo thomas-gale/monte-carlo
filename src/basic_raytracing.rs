@@ -84,8 +84,6 @@ impl BasicRaytracing {
                 wgpu::BufferBindingType::Uniform,
             );
 
-        println!("{:?}", window);
-
         // Camera
         let camera = camera::Camera::new();
         let (camera_bind_group_layout, camera_bind_group) =

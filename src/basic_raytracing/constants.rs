@@ -10,10 +10,10 @@ pub struct Constants {
 impl Constants {
     pub fn new() -> Self {
         Constants {
-            infinity: std::f32::INFINITY,
+            infinity: f32::INFINITY,
             pi: std::f32::consts::PI,
-            samples_per_pixel: 1,
-            max_depth: 5,
+            samples_per_pixel: 100,
+            max_depth: 50,
         }
     }
 }
