@@ -18,11 +18,11 @@ impl Camera {
         Camera {
             origin: [0.0, 0.0, 0.0],
             _padding1: 0.0,
-            lower_left_corner: [-0.5, -0.5, -1.0],
+            lower_left_corner: [-1.0, -1.0, -1.0],
             _padding2: 0.0,
-            horizontal: [1.0, 0.0, 0.0],
+            horizontal: [2.0, 0.0, 0.0],
             _padding3: 0.0,
-            vertical: [0.0, 1.0, 0.0],
+            vertical: [0.0, 2.0, 0.0],
             _padding4: 0.0,
         }
     }
