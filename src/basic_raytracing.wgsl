@@ -267,8 +267,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
             } else if (hit_record.material_type == 1u) {
                 // Metallic material
                 var reflected = vec3_reflect(normalize(current_ray.direction), hit_record.normal);
-                var scattered = Ray(hit_record.p, reflected);
-                // var scattered = Ray(hit_record.p, reflected + hit_record.fuzz * random_in_unit_sphere(entropy * u32(i + 2)));
+                var scattered = Ray(hit_record.p, reflected + hit_record.fuzz * random_in_unit_sphere(entropy * u32(i + 2)));
 
                 if (dot(scattered.direction, hit_record.normal) > 0.0) {
                     current_ray = scattered;
