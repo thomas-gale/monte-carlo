@@ -96,6 +96,14 @@ fn random_in_unit_sphere(entropy: u32) -> vec3<f32> {
     return p;
 }
 
+fn random_in_hemisphere(normal: vec3<f32>, entropy: u32) -> vec3<f32> {
+    var in_unit_sphere = random_in_unit_sphere(entropy);
+    if (dot(in_unit_sphere, normal) > 0.0) {
+        return in_unit_sphere;
+    }
+    return -in_unit_sphere;
+}
+
 fn random_unit_vector(entropy: u32) -> vec3<f32> {
     return normalize(random_in_unit_sphere(entropy));
 }
@@ -224,7 +232,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
         // Check if we hit anything
         if (sphere_hits(&current_ray, 0.001, constants.infinity, &hit_record)) {
             // Basic diffuse lambertian sphere hack
-            var target = hit_record.p + hit_record.normal + random_unit_vector(hash(entropy * u32(i + 1)));
+            var target = hit_record.p + random_in_hemisphere(hit_record.normal, (entropy * u32(i + 1)));
             current_ray = Ray(hit_record.p, target - hit_record.p);
 
             // Simple 50% attenuation,
@@ -232,7 +240,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
         } else {
             // No hit, return background / sky color
             var unit_direction = normalize(current_ray.direction);
-            var t = 0.5 *(unit_direction.y + 1.0);
+            var t = 0.5 * (unit_direction.y + 1.0);
             current_ray_color = current_ray_color * ((1.0 - t) * vec3<f32>(1.0, 1.0, 1.0) + t * vec3<f32>(0.5, 0.7, 1.0));
             break;
         }
