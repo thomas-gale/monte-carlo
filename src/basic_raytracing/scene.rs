@@ -39,6 +39,16 @@ impl Scene {
                     _pad2: 0.0,
                 },
                 Sphere {
+                    center: [-0.5, 0.0, -1.0],
+                    radius: -0.125,
+                    material_type: 2,
+                    fuzz: 0.0,
+                    refraction_index: 1.5,
+                    _pad1: 0.0,
+                    albedo: [0.0, 0.0, 0.0],
+                    _pad2: 0.0,
+                },
+                Sphere {
                     center: [0.5, 0.0, -1.0],
                     radius: 0.25,
                     material_type: 1,
