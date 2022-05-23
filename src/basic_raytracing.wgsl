@@ -289,7 +289,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
                 }
             } else if (hit_record.material_type == 2u) {
                 // Dielectric material
-                var attenuation = vec3<f32>(1.0, 1.0, 1.0);
+                // var attenuation = vec3<f32>(1.0, 1.0, 1.0);
 
                 var refaction_ratio = 0.0;
                 if (hit_record.front_face) {
@@ -299,9 +299,19 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
                 }
 
                 var unit_direction = normalize(current_ray.direction);
-                var refracted = vec3_refract(unit_direction, hit_record.normal, refaction_ratio);
+                var cos_theta = min(dot(-unit_direction, hit_record.normal), 1.0);
+                var sin_theta = sqrt(1.0 - cos_theta * cos_theta);
 
-                var scattered = Ray(hit_record.p, refracted);
+                var cannot_refract = refaction_ratio * sin_theta > 1.0;
+                var direction = vec3<f32>(0.0);
+
+                if (cannot_refract) {
+                    direction = vec3_reflect(unit_direction, hit_record.normal);
+                } else {
+                    direction = vec3_refract(unit_direction, hit_record.normal, refaction_ratio);
+                }
+
+                var scattered = Ray(hit_record.p, direction);
                 current_ray = scattered;
             }
         } else {
@@ -347,6 +357,6 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
         pixel_color = pixel_color + ray_color(&ray, constants.max_depth, hash(pixel_sample_entropy + 3u));
     }
     pixel_color = pixel_color / f32(num_samples);
-    color_gamma_correction(&pixel_color);
+    // color_gamma_correction(&pixel_color);
     return vec4<f32>(pixel_color, 1.0);
 }
