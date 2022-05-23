@@ -215,27 +215,19 @@ impl BasicRaytracing {
                     },
                 ..
             } => match key {
-                Some(VirtualKeyCode::Left) => self.camera_controller.translate(
-                    &self.device,
-                    &self.queue,
-                    camera_controller::Direction::Left,
-                ),
-                Some(VirtualKeyCode::Right) => self.camera_controller.translate(
-                    &self.device,
-                    &self.queue,
-                    camera_controller::Direction::Right,
-                ),
+                Some(VirtualKeyCode::Left) => self
+                    .camera_controller
+                    .translate(&self.queue, camera_controller::Direction::Left),
+                Some(VirtualKeyCode::Right) => self
+                    .camera_controller
+                    .translate(&self.queue, camera_controller::Direction::Right),
 
-                Some(VirtualKeyCode::Up) => self.camera_controller.translate(
-                    &self.device,
-                    &self.queue,
-                    camera_controller::Direction::Forward,
-                ),
-                Some(VirtualKeyCode::Down) => self.camera_controller.translate(
-                    &self.device,
-                    &self.queue,
-                    camera_controller::Direction::Backward,
-                ),
+                Some(VirtualKeyCode::Up) => self
+                    .camera_controller
+                    .translate(&self.queue, camera_controller::Direction::Forward),
+                Some(VirtualKeyCode::Down) => self
+                    .camera_controller
+                    .translate(&self.queue, camera_controller::Direction::Backward),
                 _ => {}
             },
             _ => {}
