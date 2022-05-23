@@ -214,7 +214,28 @@ impl BasicRaytracing {
                         ..
                     },
                 ..
-            } => {}
+            } => {
+                self.camera_controller.delta_x_translate_origin(
+                    &self.device,
+                    &self.queue,
+                    camera_controller::Direction::Left,
+                );
+            }
+            WindowEvent::KeyboardInput {
+                input:
+                    KeyboardInput {
+                        state: ElementState::Pressed,
+                        virtual_keycode: Some(VirtualKeyCode::Right),
+                        ..
+                    },
+                ..
+            } => {
+                self.camera_controller.delta_x_translate_origin(
+                    &self.device,
+                    &self.queue,
+                    camera_controller::Direction::Right,
+                );
+            }
             _ => {}
         }
         true

@@ -41,7 +41,10 @@ async fn run() {
                 // new_inner_size is &&mut so we have to dereference it twice
                 basic_renderer.resize(**new_inner_size);
             }
-            _ => {}
+            _ => {
+                // Process input events
+                basic_renderer.input(event);
+            }
         },
         Event::RedrawRequested(window_id) if window_id == window.id() => {
             basic_renderer.update();
