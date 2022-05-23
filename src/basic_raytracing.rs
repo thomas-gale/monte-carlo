@@ -210,32 +210,34 @@ impl BasicRaytracing {
                 input:
                     KeyboardInput {
                         state: ElementState::Pressed,
-                        virtual_keycode: Some(VirtualKeyCode::Left),
+                        virtual_keycode: key,
                         ..
                     },
                 ..
-            } => {
-                self.camera_controller.delta_x_translate_origin(
+            } => match key {
+                Some(VirtualKeyCode::Left) => self.camera_controller.translate(
                     &self.device,
                     &self.queue,
                     camera_controller::Direction::Left,
-                );
-            }
-            WindowEvent::KeyboardInput {
-                input:
-                    KeyboardInput {
-                        state: ElementState::Pressed,
-                        virtual_keycode: Some(VirtualKeyCode::Right),
-                        ..
-                    },
-                ..
-            } => {
-                self.camera_controller.delta_x_translate_origin(
+                ),
+                Some(VirtualKeyCode::Right) => self.camera_controller.translate(
                     &self.device,
                     &self.queue,
                     camera_controller::Direction::Right,
-                );
-            }
+                ),
+
+                Some(VirtualKeyCode::Up) => self.camera_controller.translate(
+                    &self.device,
+                    &self.queue,
+                    camera_controller::Direction::Forward,
+                ),
+                Some(VirtualKeyCode::Down) => self.camera_controller.translate(
+                    &self.device,
+                    &self.queue,
+                    camera_controller::Direction::Backward,
+                ),
+                _ => {}
+            },
             _ => {}
         }
         true

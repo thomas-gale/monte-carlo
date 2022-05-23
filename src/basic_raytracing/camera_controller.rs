@@ -5,6 +5,8 @@ use super::{buffer_bindings, camera::Camera};
 pub enum Direction {
     Left,
     Right,
+    Forward,
+    Backward,
 }
 
 pub struct CameraController {
@@ -27,25 +29,30 @@ impl CameraController {
 
         CameraController {
             camera,
-            movement_speed: 0.1,
+            movement_speed: 0.02,
             bind_group_layout,
             bind_group,
             buffer,
         }
     }
 
-    pub fn delta_x_translate_origin(
-        &mut self,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        direction: Direction,
-    ) {
+    pub fn translate(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, direction: Direction) {
         match direction {
             Direction::Left => {
                 self.camera.origin[0] -= self.movement_speed;
+                self.camera.lower_left_corner[0] -= self.movement_speed;
             }
             Direction::Right => {
                 self.camera.origin[0] += self.movement_speed;
+                self.camera.lower_left_corner[0] += self.movement_speed;
+            }
+            Direction::Forward => {
+                self.camera.origin[2] -= self.movement_speed;
+                self.camera.lower_left_corner[2] -= self.movement_speed;
+            }
+            Direction::Backward => {
+                self.camera.origin[2] += self.movement_speed;
+                self.camera.lower_left_corner[2] += self.movement_speed;
             }
         }
         let new_camera_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
