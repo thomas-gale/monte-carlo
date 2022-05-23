@@ -28,6 +28,7 @@ fn vs_main(
 // Constants
 struct Constants {
     infinity: f32;
+    epsilon: f32;
     pi: f32;
     samples_per_pixel: i32;
     max_depth: i32;
@@ -39,6 +40,14 @@ var<uniform> constants: Constants;
 // Utilities
 fn degrees_to_radians(degrees: f32) -> f32 {
     return degrees * constants.pi / 180.0;
+}
+
+fn vec3_near_zero(v: vec3<f32>) -> bool {
+    return abs(v.x) < constants.epsilon && abs(v.y) < constants.epsilon && abs(v.z) < constants.epsilon;
+}
+
+fn vec3_reflect(v: vec3<f32>, n: vec3<f32>) -> vec3<f32> {
+    return v - 2.0 * dot(v, n) * n;
 }
 
 // Window
@@ -85,7 +94,7 @@ fn random_vec3_range(entropy: u32, min: f32, max: f32) -> vec3<f32> {
 
 fn random_in_unit_sphere(entropy: u32) -> vec3<f32> {
     var p: vec3<f32>;
-    var i = u32(0);
+    var i = 0u;
     loop {
         p = random_vec3_range(hash(entropy + i), -1.0, 1.0);
         i = i + 1u;
@@ -123,6 +132,8 @@ var<uniform> camera: Camera;
 struct Sphere {
     center: vec3<f32>;
     radius: f32;
+    albedo: vec3<f32>;
+    material_type: u32; // 0 = lambertian, 1 = metal, 2 = dielectric
 };
 
 struct Scene {
@@ -148,6 +159,9 @@ struct HitRecord {
     normal: vec3<f32>;
     t: f32;
     front_face: bool;
+
+    material_type: u32; // 0 = lambertian, 1 = metal, 2 = dielectric
+    albedo: vec3<f32>;
 };
 
 fn new_hit_record() -> HitRecord {
@@ -156,6 +170,8 @@ fn new_hit_record() -> HitRecord {
         vec3<f32>(0.0, 0.0, 0.0),
         0.0,
         false,
+        0u,
+        vec3<f32>(0.0, 0.0, 0.0),
     );
 }
 
@@ -196,6 +212,8 @@ fn sphere_hit(sphere_worlds_index: i32, ray: ptr<function, Ray>, t_min: f32, t_m
     (*hit_record).p = ray_at(ray, (*hit_record).t);
     var outward_normal = ((*hit_record).p - sphere.center) / sphere.radius;
     set_face_normal(hit_record, ray, outward_normal);
+    (*hit_record).material_type = sphere.material_type;
+    (*hit_record).albedo = sphere.albedo;
 
     return true;
 } 
@@ -231,12 +249,16 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
     for (var i = 0; i < depth; i = i + 1) {
         // Check if we hit anything
         if (sphere_hits(&current_ray, 0.001, constants.infinity, &hit_record)) {
-            // Basic diffuse lambertian sphere hack
-            var target = hit_record.p + random_in_hemisphere(hit_record.normal, (entropy * u32(i + 1)));
-            current_ray = Ray(hit_record.p, target - hit_record.p);
+            if (hit_record.material_type == 0u) {
+                    var target = hit_record.p + random_in_hemisphere(hit_record.normal, (entropy * u32(i + 1)));
 
-            // Simple 50% attenuation,
-            current_ray_color = current_ray_color * 0.5;
+                    if (vec3_near_zero(target)) {
+                        target = hit_record.normal;
+                    }
+
+                    current_ray = Ray(hit_record.p, target - hit_record.p);
+                    current_ray_color = current_ray_color * hit_record.albedo;
+            }
         } else {
             // No hit, return background / sky color
             var unit_direction = normalize(current_ray.direction);
@@ -253,7 +275,6 @@ fn color_gamma_correction(color: ptr<function, vec3<f32>>) {
     (*color).g = pow((*color).g, 1.0 / 2.2);
     (*color).b = pow((*color).b, 1.0 / 2.2);
 }
-
 
 [[stage(fragment)]]
 fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
