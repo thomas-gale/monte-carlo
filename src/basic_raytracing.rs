@@ -24,7 +24,6 @@ pub struct BasicRaytracing {
     render_pipeline: wgpu::RenderPipeline,
     constants_bind_group: wgpu::BindGroup,
     window_bind_group: wgpu::BindGroup,
-    // camera_bind_group: wgpu::BindGroup,
     camera_controller: camera_controller::CameraController,
     scene_bind_group: wgpu::BindGroup,
 }
@@ -90,15 +89,6 @@ impl BasicRaytracing {
             );
 
         // Camera
-        // let camera = camera::Camera::new();
-        // let (camera_bind_group_layout, camera_bind_group, _) =
-        //     buffer_bindings::create_device_buffer_binding(
-        //         &[camera],
-        //         &device,
-        //         wgpu::BufferUsages::UNIFORM,
-        //         wgpu::BufferBindingType::Uniform,
-        //     );
-
         let camera_controller = camera_controller::CameraController::new(&device);
 
         // Scene
@@ -175,7 +165,6 @@ impl BasicRaytracing {
             render_pipeline,
             constants_bind_group,
             window_bind_group,
-            // camera_bind_group,
             camera_controller,
             scene_bind_group,
         }
