@@ -41,6 +41,16 @@ fn degrees_to_radians(degrees: f32) -> f32 {
     return degrees * constants.pi / 180.0;
 }
 
+// Window
+struct Window {
+    width_pixels: u32;
+    height_pixels: u32;
+};
+
+[[group(1), binding(0)]]
+var<uniform> window: Window;
+
+// Random
 // Attribution: https://github.com/bevyengine/bevy/blob/main/assets/shaders/game_of_life.wgsl
 fn hash(value: u32) -> u32 {
     var state = value;
@@ -53,6 +63,10 @@ fn hash(value: u32) -> u32 {
     return state;
 }
 
+fn entropy_window_space(tex_coords: vec2<f32>) -> u32 {
+    return hash(u32(u32(tex_coords.x * f32(window.width_pixels)) + u32(tex_coords.y * f32(window.height_pixels)) * window.width_pixels));
+}
+
 fn random_float(entropy: u32) -> f32 {
     return f32(hash(entropy)) / 4294967295.0;
 }
@@ -62,19 +76,19 @@ fn random_float_range(entropy: u32, min: f32, max: f32) -> f32 {
 }
 
 fn random_vec3(entropy: u32) -> vec3<f32> {
-    return vec3<f32>(random_float(entropy), random_float(entropy + u32(1)), random_float(entropy + u32(2)));
+    return vec3<f32>(random_float(entropy), random_float(hash(entropy + 1u)), random_float(hash(entropy + 2u)));
 }
 
 fn random_vec3_range(entropy: u32, min: f32, max: f32) -> vec3<f32> {
-    return vec3<f32>(random_float_range(entropy, min, max), random_float_range(entropy + u32(1), min, max), random_float_range(entropy + u32(2), min, max));
+    return vec3<f32>(random_float_range(entropy, min, max), random_float_range(hash(entropy + 1u), min, max), random_float_range(hash(entropy + 2u), min, max));
 }
 
 fn random_in_unit_sphere(entropy: u32) -> vec3<f32> {
     var p: vec3<f32>;
     var i = u32(0);
     loop {
-        p = random_vec3(entropy + i);
-        i = i + u32(1);
+        p = random_vec3(hash(entropy + i));
+        i = i + 1u;
         if (length(p) < 1.0) {
             break;
         }
@@ -82,14 +96,8 @@ fn random_in_unit_sphere(entropy: u32) -> vec3<f32> {
     return p;
 }
 
-// Window
-struct Window {
-    width_pixels: u32;
-    height_pixels: u32;
-};
 
-[[group(1), binding(0)]]
-var<uniform> window: Window;
+
 
 // Camera
 struct Camera {
@@ -222,9 +230,11 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
         if (sphere_hits(&current_ray, 0.0, constants.infinity, &hit_record)) {
 
             // Basic diffuse lambertian sphere hack
-            var target = hit_record.p + hit_record.normal + random_in_unit_sphere(entropy * (u32(i) / u32(depth)));
+            // var target = hit_record.p + hit_record.normal + random_in_unit_sphere(hash(entropy + u32(i)));
+
             // var target = hit_record.p + (1.0 * hit_record.normal);
-            current_ray = Ray(hit_record.p, target - hit_record.p);
+            // current_ray = Ray(hit_record.p, target - hit_record.p);
+
             // var new_ray = Ray(hit_record.p, target - hit_record.p);
             // current_ray.origin = new_ray.origin;
             // current_ray.direction = new_ray.direction;
@@ -234,8 +244,13 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
             // break;
 
             // TEST
-            current_ray_color = 0.5 * (hit_record.normal + vec3<f32>(1.0, 1.0, 1.0));
-            break;
+            // current_ray_color = normalize(0.5 * (hit_record.p + vec3<f32>(1.0, 1.0, 1.0)));
+            // var test = entropy;
+            // test = test ^ test >> u32(i + 1);
+            // current_ray_color = normalize(random_in_unit_sphere(hash(test)));
+            current_ray_color = random_in_unit_sphere(hash(entropy + u32(i)));
+            // current_ray_color = vec3<f32>((random_float(entropy + u32(i))));
+            // break;
 
             // Bounce ray
             // var bounch_ray: Ray = Ray(hit_record.p, target - hit_record.p);
@@ -276,12 +291,13 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
         // TODO - decide how to use the screen size/aspect ratio to stop output image in window from being stretched
 
         // Multisampled pixels
-        var u = in.tex_coords.x + (random_float(u32(f32(s) / f32(num_samples) * in.tex_coords.x * 4294967295.0)) / f32(window.width_pixels));
-        var v = in.tex_coords.y + (random_float(u32(f32(s) / f32(num_samples) * in.tex_coords.y * 4294967295.0)) / f32(window.height_pixels));
+        var u = in.tex_coords.x + (random_float(u32(f32(s + 1) / f32(num_samples + 1) * in.tex_coords.x * 4294967295.0)) / f32(window.width_pixels));
+        var v = in.tex_coords.y + (random_float(u32(f32(s + 1) / f32(num_samples + 1) * in.tex_coords.y * 4294967295.0)) / f32(window.height_pixels));
         var ray = camera_get_ray(u, v);
-        pixel_color = pixel_color + ray_color(&ray, constants.max_depth, u32((f32(s) / f32(num_samples)) * in.tex_coords.x * in.tex_coords.y * 4294967295.0));
+        // pixel_color = pixel_color + ray_color(&ray, constants.max_depth, u32((f32(s + 1) / f32(num_samples + 1)) * in.tex_coords.x * in.tex_coords.y * 4294967295.0));
+        pixel_color = pixel_color + ray_color(&ray, constants.max_depth, hash(entropy_window_space(in.tex_coords) + u32(s)));
     }
     pixel_color = pixel_color / f32(num_samples);
-    color_gamma_correction(&pixel_color);
+    // color_gamma_correction(&pixel_color);
     return vec4<f32>(pixel_color, 1.0);
 }

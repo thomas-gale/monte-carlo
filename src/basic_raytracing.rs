@@ -84,6 +84,8 @@ impl BasicRaytracing {
                 wgpu::BufferBindingType::Uniform,
             );
 
+        println!("{:?}", window);
+
         // Camera
         let camera = camera::Camera::new();
         let (camera_bind_group_layout, camera_bind_group) =
@@ -179,6 +181,15 @@ impl BasicRaytracing {
             self.config.height = new_size.height;
 
             self.surface.configure(&self.device, &self.config);
+
+            let window = window::Window::new(&self.size);
+            let (_, window_bind_group) = buffer_bindings::create_device_buffer_binding(
+                &[window],
+                &self.device,
+                wgpu::BufferUsages::UNIFORM,
+                wgpu::BufferBindingType::Uniform,
+            );
+            self.window_bind_group = window_bind_group;
         }
     }
 
