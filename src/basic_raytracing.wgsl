@@ -131,10 +131,10 @@ var<uniform> camera: Camera;
 // Scene
 struct Sphere {
     center: vec3<f32>;
-    albedo: vec3<f32>;
-    material_type: u32; // 0 = lambertian, 1 = metal, 2 = dielectric
     radius: f32;
+    material_type: u32; // 0 = lambertian, 1 = metal, 2 = dielectric
     fuzz: f32; // Roughness for metals
+    albedo: vec3<f32>; // Ray bounce color
 };
 
 struct Scene {
