@@ -5,7 +5,7 @@ pub fn create_device_buffer_binding<T: bytemuck::Pod>(
     device: &wgpu::Device,
     usage: wgpu::BufferUsages,
     binding_type: wgpu::BufferBindingType,
-) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
+) -> (wgpu::BindGroupLayout, wgpu::BindGroup, wgpu::Buffer) {
     let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: None,
         contents: bytemuck::cast_slice(entity_slice),
@@ -33,5 +33,5 @@ pub fn create_device_buffer_binding<T: bytemuck::Pod>(
         }],
         label: None,
     });
-    (bind_group_layout, bind_group)
+    (bind_group_layout, bind_group, buffer)
 }

@@ -1,5 +1,6 @@
 mod buffer_bindings;
 mod camera;
+mod camera_controller;
 mod constants;
 mod quad;
 mod scene;
@@ -7,7 +8,10 @@ mod sphere;
 mod vertex;
 mod window;
 
-use winit::window::Window;
+use winit::{
+    event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent},
+    window::Window,
+};
 
 // I don't like this massive blob.
 pub struct BasicRaytracing {
@@ -20,7 +24,8 @@ pub struct BasicRaytracing {
     render_pipeline: wgpu::RenderPipeline,
     constants_bind_group: wgpu::BindGroup,
     window_bind_group: wgpu::BindGroup,
-    camera_bind_group: wgpu::BindGroup,
+    // camera_bind_group: wgpu::BindGroup,
+    camera_controller: camera_controller::CameraController,
     scene_bind_group: wgpu::BindGroup,
 }
 
@@ -66,7 +71,7 @@ impl BasicRaytracing {
 
         // Constants
         let constants = constants::Constants::new();
-        let (constants_bind_group_layout, constants_bind_group) =
+        let (constants_bind_group_layout, constants_bind_group, _) =
             buffer_bindings::create_device_buffer_binding(
                 &[constants],
                 &device,
@@ -76,7 +81,7 @@ impl BasicRaytracing {
 
         // Window
         let window = window::Window::new(&size);
-        let (window_bind_group_layout, window_bind_group) =
+        let (window_bind_group_layout, window_bind_group, _) =
             buffer_bindings::create_device_buffer_binding(
                 &[window],
                 &device,
@@ -85,18 +90,20 @@ impl BasicRaytracing {
             );
 
         // Camera
-        let camera = camera::Camera::new();
-        let (camera_bind_group_layout, camera_bind_group) =
-            buffer_bindings::create_device_buffer_binding(
-                &[camera],
-                &device,
-                wgpu::BufferUsages::UNIFORM,
-                wgpu::BufferBindingType::Uniform,
-            );
+        // let camera = camera::Camera::new();
+        // let (camera_bind_group_layout, camera_bind_group, _) =
+        //     buffer_bindings::create_device_buffer_binding(
+        //         &[camera],
+        //         &device,
+        //         wgpu::BufferUsages::UNIFORM,
+        //         wgpu::BufferBindingType::Uniform,
+        //     );
+
+        let camera_controller = camera_controller::CameraController::new(&device);
 
         // Scene
         let scene = scene::Scene::new();
-        let (scene_bind_group_layout, scene_bind_group) =
+        let (scene_bind_group_layout, scene_bind_group, _) =
             buffer_bindings::create_device_buffer_binding(
                 &scene.spheres[..],
                 &device,
@@ -117,7 +124,8 @@ impl BasicRaytracing {
                 bind_group_layouts: &[
                     &constants_bind_group_layout,
                     &window_bind_group_layout,
-                    &camera_bind_group_layout,
+                    &camera_controller.bind_group_layout,
+                    // &camera_bind_group_layout,
                     &scene_bind_group_layout,
                 ],
                 push_constant_ranges: &[],
@@ -167,7 +175,8 @@ impl BasicRaytracing {
             render_pipeline,
             constants_bind_group,
             window_bind_group,
-            camera_bind_group,
+            // camera_bind_group,
+            camera_controller,
             scene_bind_group,
         }
     }
@@ -181,7 +190,7 @@ impl BasicRaytracing {
             self.surface.configure(&self.device, &self.config);
 
             let window = window::Window::new(&self.size);
-            let (_, window_bind_group) = buffer_bindings::create_device_buffer_binding(
+            let (_, window_bind_group, _) = buffer_bindings::create_device_buffer_binding(
                 &[window],
                 &self.device,
                 wgpu::BufferUsages::UNIFORM,
@@ -193,6 +202,22 @@ impl BasicRaytracing {
 
     pub fn get_size(&self) -> winit::dpi::PhysicalSize<u32> {
         self.size
+    }
+
+    pub fn input(&mut self, event: &WindowEvent) -> bool {
+        match event {
+            WindowEvent::KeyboardInput {
+                input:
+                    KeyboardInput {
+                        state: ElementState::Pressed,
+                        virtual_keycode: Some(VirtualKeyCode::Left),
+                        ..
+                    },
+                ..
+            } => {}
+            _ => {}
+        }
+        true
     }
 
     pub fn update(&mut self) {
@@ -234,7 +259,7 @@ impl BasicRaytracing {
             render_pass.set_index_buffer(self.quad.indices.slice(..), wgpu::IndexFormat::Uint16);
             render_pass.set_bind_group(0, &self.constants_bind_group, &[]);
             render_pass.set_bind_group(1, &self.window_bind_group, &[]);
-            render_pass.set_bind_group(2, &self.camera_bind_group, &[]);
+            render_pass.set_bind_group(2, &self.camera_controller.bind_group, &[]);
             render_pass.set_bind_group(3, &self.scene_bind_group, &[]);
             render_pass.draw_indexed(0..self.quad.num_indices, 0, 0..1);
         }
