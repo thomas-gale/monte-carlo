@@ -99,9 +99,6 @@ fn random_in_unit_sphere(entropy: u32) -> vec3<f32> {
     return p;
 }
 
-
-
-
 // Camera
 struct Camera {
     origin: vec3<f32>;
@@ -233,12 +230,12 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
         if (sphere_hits(&current_ray, 0.0, constants.infinity, &hit_record)) {
 
             // Basic diffuse lambertian sphere hack
-            // var target = hit_record.p + hit_record.normal + random_in_unit_sphere(hash(entropy + u32(i)));
+            var target = hit_record.p + hit_record.normal + random_in_unit_sphere(hash(entropy * u32(i+1)));
             // current_ray_color = normalize(target);
 
             // var target = hit_record.p + (1.0 * hit_record.normal);
             // var new_ray = Ray(hit_record.p, target - hit_record.p);
-            // current_ray = Ray(hit_record.p, target - hit_record.p);
+            current_ray = Ray(hit_record.p, target - hit_record.p);
 
             // current_ray_color = normalize(new_ray.origin);
 
@@ -247,7 +244,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
             // current_ray.direction = new_ray.direction;
 
             // Simple 50% attenuation,
-            // current_ray_color = current_ray_color * 0.5;
+            current_ray_color = current_ray_color * 0.5;
             // break;
 
             // TEST
@@ -255,7 +252,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
             // var test = entropy;
             // test = test ^ test >> u32(i + 1);
             // current_ray_color = normalize(random_in_unit_sphere(hash(test)));
-            current_ray_color = random_in_unit_sphere(hash(entropy + u32(i)));
+            // current_ray_color = random_in_unit_sphere(hash(entropy + u32(i)));
             // current_ray_color = vec3<f32>((random_float(entropy + u32(i))));
             // break;
 
@@ -299,7 +296,7 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
 
         // Multisampled pixels
         var pixel_entropy = hash(entropy_window_space(in.tex_coords));
-        var pixel_sample_entropy = hash(pixel_entropy + u32(s));
+        var pixel_sample_entropy = hash(pixel_entropy * u32(s + 1));
         // var u = in.tex_coords.x + (random_float(pixel_sample_entropy) / f32(window.width_pixels));
         var u = in.tex_coords.x + random_float(hash(pixel_sample_entropy + 1u)) / f32(window.width_pixels);
         var v = in.tex_coords.y + random_float(hash(pixel_sample_entropy + 2u)) / f32(window.height_pixels);
