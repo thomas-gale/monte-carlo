@@ -131,9 +131,10 @@ var<uniform> camera: Camera;
 // Scene
 struct Sphere {
     center: vec3<f32>;
-    radius: f32;
     albedo: vec3<f32>;
     material_type: u32; // 0 = lambertian, 1 = metal, 2 = dielectric
+    radius: f32;
+    fuzz: f32; // Roughness for metals
 };
 
 struct Scene {
@@ -161,7 +162,8 @@ struct HitRecord {
     front_face: bool;
 
     material_type: u32; // 0 = lambertian, 1 = metal, 2 = dielectric
-    albedo: vec3<f32>;
+    albedo: vec3<f32>; // Ray bounce coloring
+    fuzz: f32; // Roughness for metals
 };
 
 fn new_hit_record() -> HitRecord {
@@ -172,6 +174,7 @@ fn new_hit_record() -> HitRecord {
         false,
         0u,
         vec3<f32>(0.0, 0.0, 0.0),
+        0.0,
     );
 }
 
@@ -214,6 +217,7 @@ fn sphere_hit(sphere_worlds_index: i32, ray: ptr<function, Ray>, t_min: f32, t_m
     set_face_normal(hit_record, ray, outward_normal);
     (*hit_record).material_type = sphere.material_type;
     (*hit_record).albedo = sphere.albedo;
+    (*hit_record).fuzz = sphere.fuzz;
 
     return true;
 } 
@@ -264,6 +268,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
                 // Metallic material
                 var reflected = vec3_reflect(normalize(current_ray.direction), hit_record.normal);
                 var scattered = Ray(hit_record.p, reflected);
+                // var scattered = Ray(hit_record.p, reflected + hit_record.fuzz * random_in_unit_sphere(entropy * u32(i + 2)));
 
                 if (dot(scattered.direction, hit_record.normal) > 0.0) {
                     current_ray = scattered;
