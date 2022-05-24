@@ -1,3 +1,5 @@
+use cgmath::Vector3;
+
 use super::sphere::Sphere;
 
 pub struct Scene {
@@ -8,56 +10,46 @@ impl Scene {
     pub fn new() -> Scene {
         Scene {
             spheres: vec![
-                Sphere {
-                    center: [0.0, -100.25, -1.0],
-                    radius: 100.0,
-                    material_type: 0,
-                    fuzz: 0.0,
-                    refraction_index: 0.0,
-                    _pad1: 0.0,
-                    albedo: [0.8, 0.8, 0.0],
-                    _pad2: 0.0,
-                },
-                Sphere {
-                    center: [0.0, 0.0, -1.0],
-                    radius: 0.25,
-                    material_type: 0,
-                    fuzz: 0.0,
-                    refraction_index: 0.0,
-                    _pad1: 0.0,
-                    albedo: [0.1, 0.2, 0.5],
-                    _pad2: 0.0,
-                },
-                Sphere {
-                    center: [-0.5, 0.0, -1.0],
-                    radius: 0.25,
-                    material_type: 2,
-                    fuzz: 0.0,
-                    refraction_index: 1.5,
-                    _pad1: 0.0,
-                    albedo: [0.0, 0.0, 0.0],
-                    _pad2: 0.0,
-                },
-                Sphere {
-                    center: [-0.5, 0.0, -1.0],
-                    radius: -0.125,
-                    material_type: 2,
-                    fuzz: 0.0,
-                    refraction_index: 1.5,
-                    _pad1: 0.0,
-                    albedo: [0.0, 0.0, 0.0],
-                    _pad2: 0.0,
-                },
-                Sphere {
-                    center: [0.5, 0.0, -1.0],
-                    radius: 0.25,
-                    material_type: 1,
-                    fuzz: 0.0,
-                    refraction_index: 0.0,
-                    _pad1: 0.0,
-                    albedo: [0.8, 0.6, 0.2],
-                    _pad2: 0.0,
-                },
+                Sphere::new(
+                    Vector3::<f32>::new(0.0, -100.5, -1.0),
+                    100.0,
+                    0,
+                    0.0,
+                    0.0,
+                    Vector3::<f32>::new(0.8, 0.8, 0.0),
+                ),
+                Sphere::new(
+                    Vector3::<f32>::new(0.0, 0.0, -1.0),
+                    0.5,
+                    0,
+                    0.0,
+                    0.0,
+                    Vector3::<f32>::new(0.1, 0.2, 0.5),
+                ),
+                Sphere::new(
+                    Vector3::<f32>::new(-1.0, 0.0, -1.0),
+                    0.5,
+                    2,
+                    0.0,
+                    1.5,
+                    Vector3::<f32>::new(0.0, 0.0, 0.0),
+                ),
+                Sphere::new(
+                    Vector3::<f32>::new(-1.0, 0.0, -1.0),
+                    -0.45,
+                    2,
+                    0.0,
+                    1.5,
+                    Vector3::<f32>::new(0.0, 0.0, 0.0),
+                ),
+                Sphere::new(
+                    Vector3::<f32>::new(1.0, 0.0, -1.0),
+                    0.5,
+                    1,
+                    0.0,
+                    0.0,
+                    Vector3::<f32>::new(0.8, 0.6, 0.2),
+                ),
             ],
         }
     }

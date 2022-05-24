@@ -97,7 +97,7 @@ impl BasicRaytracing {
             Vector3::<f32>::new(-2.0, 2.0, 1.0),
             Vector3::<f32>::new(0.0, 0.0, -1.0),
             Vector3::<f32>::new(0.0, 1.0, 0.0),
-            90.0,
+            45.0,
             window,
         );
         let camera_controller = camera_controller::CameraController::new();
