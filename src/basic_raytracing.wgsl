@@ -25,6 +25,8 @@ fn vs_main(
 // Implementing https://raytracing.github.io/books/RayTracingInOneWeekend.html
 // Attribution of assitance from https://www.shadertoy.com/view/lssBD7
 
+
+
 // Constants
 struct Constants {
     infinity: f32;
@@ -344,9 +346,15 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
     return current_ray_color;
 }
 
+// Storage texture  
+[[group(4), binding(0)]]
+var texture: texture_storage_2d<rgba8unorm, read_write>;
+
 [[stage(fragment)]]
 fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
-    var pixel_color = vec3<f32>(0.0, 0.0, 0.0);
+    // var pixel_color = vec3<f32>(0.0, 0.0, 0.0);
+    var texture_coords = vec2<i32>(i32(in.tex_coords.x * f32(window.width_pixels)), i32(in.tex_coords.y * f32(window.height_pixels)));
+    var pixel_color = textureLoad(texture, texture_coords).xyz;
     var num_samples = constants.samples_per_pixel;
     for (var s = 0; s < num_samples; s = s + 1) {
         var pixel_entropy = hash(entropy_window_space(in.tex_coords));
@@ -357,5 +365,7 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
         pixel_color = pixel_color + ray_color(&ray, constants.max_depth, hash(pixel_sample_entropy + 4u));
     }
     pixel_color = pixel_color / f32(num_samples);
-    return vec4<f32>(pixel_color, 1.0);
+    var pixel_color_with_alpha = vec4<f32>(pixel_color, 1.0);
+    textureStore(texture, texture_coords, pixel_color_with_alpha);
+    return pixel_color_with_alpha;
 }

@@ -79,7 +79,7 @@ impl Camera {
         focus_dist: f32,
     ) -> Self {
         let raw = Self::generate_raw(
-            &look_from, &look_at, &v_up, v_fov, &window, aperture, focus_dist,
+            &look_from, &look_at, &v_up, v_fov, window, aperture, focus_dist,
         );
 
         let (bind_group_layout, bind_group, buffer) = buffer_bindings::create_device_buffer_binding(
@@ -110,7 +110,7 @@ impl Camera {
         look_at: &Vector3<f32>,
         v_up: &Vector3<f32>,
         v_fov: f32,
-        window: &window::Window,
+        window: window::Window,
         aperture: f32,
         focus_dist: f32,
     ) -> CameraRaw {
@@ -152,7 +152,7 @@ impl Camera {
             &self.look_at,
             &self.v_up,
             self.v_fov,
-            &self.window,
+            self.window,
             self.aperture,
             self.focus_dist,
         );

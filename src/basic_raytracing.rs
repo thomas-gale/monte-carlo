@@ -1,8 +1,9 @@
 mod buffer_bindings;
 mod camera;
 mod camera_controller;
-mod constants;
+mod uniforms;
 mod quad;
+mod result_texture;
 mod scene;
 mod sphere;
 mod util;
@@ -29,6 +30,7 @@ pub struct BasicRaytracing {
     camera: camera::Camera,
     camera_controller: camera_controller::CameraController,
     scene_bind_group: wgpu::BindGroup,
+    result_texture: result_texture::ResultTexture,
 }
 
 impl BasicRaytracing {
@@ -53,7 +55,7 @@ impl BasicRaytracing {
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
-                    features: wgpu::Features::empty(),
+                    features: wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES,
                     limits: wgpu::Limits::default(),
                     label: None,
                 },
@@ -72,7 +74,7 @@ impl BasicRaytracing {
         surface.configure(&device, &config);
 
         // Constants
-        let constants = constants::Constants::new();
+        let constants = uniforms::Constants::new();
         let (constants_bind_group_layout, constants_bind_group, _) =
             buffer_bindings::create_device_buffer_binding(
                 &[constants],
@@ -119,6 +121,9 @@ impl BasicRaytracing {
         // Create basic quad to render fragments onto.
         let quad = quad::Quad::new(&device);
 
+        // Create the result texture to store current calculation status
+        let result_texture = result_texture::ResultTexture::new(&device, &queue, window);
+
         // Load shader
         let shader = device.create_shader_module(&wgpu::include_wgsl!("basic_raytracing.wgsl"));
 
@@ -131,6 +136,7 @@ impl BasicRaytracing {
                     &window_bind_group_layout,
                     &camera.get_bind_group_layout(),
                     &scene_bind_group_layout,
+                    &result_texture.get_bind_group_layout(),
                 ],
                 push_constant_ranges: &[],
             });
@@ -182,6 +188,7 @@ impl BasicRaytracing {
             camera,
             camera_controller,
             scene_bind_group,
+            result_texture,
         }
     }
 
@@ -287,6 +294,7 @@ impl BasicRaytracing {
             render_pass.set_bind_group(1, &self.window_bind_group, &[]);
             render_pass.set_bind_group(2, &self.camera.get_bind_group(), &[]);
             render_pass.set_bind_group(3, &self.scene_bind_group, &[]);
+            render_pass.set_bind_group(4, &self.result_texture.get_bind_group(), &[]);
             render_pass.draw_indexed(0..self.quad.num_indices, 0, 0..1);
         }
 
