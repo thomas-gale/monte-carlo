@@ -126,6 +126,19 @@ fn random_in_hemisphere(normal: vec3<f32>, entropy: u32) -> vec3<f32> {
     return -in_unit_sphere;
 }
 
+fn random_in_unit_disk(entropy: u32) -> vec3<f32> {
+    var p: vec3<f32>;
+    var i = 0u;
+    loop {
+        p = vec3<f32>(random_float_range(hash(entropy + 2u * i), -1.0, 1.0), random_float_range(hash(entropy + 2u * i + 1u), -1.0, 1.0), 0.0);
+        i = i + 1u;
+        if (dot(p, p) < 1.0) {
+            break;
+        }
+    }
+    return p;
+}
+
 fn random_unit_vector(entropy: u32) -> vec3<f32> {
     return normalize(random_in_unit_sphere(entropy));
 }
@@ -136,6 +149,10 @@ struct Camera {
     lower_left_corner: vec3<f32>;
     horizontal: vec3<f32>;
     vertical: vec3<f32>;
+    u: vec3<f32>;
+    v: vec3<f32>;
+    w: vec3<f32>;
+    lens_radius: f32;
 };
 
 [[group(2), binding(0)]]
@@ -255,8 +272,10 @@ fn sphere_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<functio
 }
 
 // Ray trace
-fn camera_get_ray(u: f32, v: f32) -> Ray {
-    return Ray(camera.origin, camera.lower_left_corner + u * camera.horizontal + v * camera.vertical - camera.origin);
+fn camera_get_ray(s: f32, t: f32, entropy: u32) -> Ray {
+    var rd = camera.lens_radius * random_in_unit_disk(entropy);
+    var offset = camera.u * rd.x + camera.v * rd.y;
+    return Ray(camera.origin + offset, camera.lower_left_corner + s * camera.horizontal + t * camera.vertical - camera.origin - offset);
 }
 
 // This is a loop version of the recursive reference implmentation.
@@ -334,8 +353,8 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
         var pixel_sample_entropy = hash(pixel_entropy * u32(s + 1));
         var u = in.tex_coords.x + random_float(hash(pixel_sample_entropy + 1u)) / f32(window.width_pixels);
         var v = in.tex_coords.y + random_float(hash(pixel_sample_entropy + 2u)) / f32(window.height_pixels);
-        var ray = camera_get_ray(u, v);
-        pixel_color = pixel_color + ray_color(&ray, constants.max_depth, hash(pixel_sample_entropy + 3u));
+        var ray = camera_get_ray(u, v, hash(pixel_sample_entropy + 3u));
+        pixel_color = pixel_color + ray_color(&ray, constants.max_depth, hash(pixel_sample_entropy + 4u));
     }
     pixel_color = pixel_color / f32(num_samples);
     return vec4<f32>(pixel_color, 1.0);
