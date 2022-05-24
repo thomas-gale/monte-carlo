@@ -24,6 +24,7 @@ pub struct BasicRaytracing {
     render_pipeline: wgpu::RenderPipeline,
     constants_bind_group: wgpu::BindGroup,
     window_bind_group: wgpu::BindGroup,
+    camera: camera::Camera,
     camera_controller: camera_controller::CameraController,
     scene_bind_group: wgpu::BindGroup,
 }
@@ -89,7 +90,8 @@ impl BasicRaytracing {
             );
 
         // Camera
-        let camera_controller = camera_controller::CameraController::new(&device);
+        let camera = camera::Camera::new(&device);
+        let camera_controller = camera_controller::CameraController::new();
 
         // Scene
         let scene = scene::Scene::new();
@@ -114,8 +116,7 @@ impl BasicRaytracing {
                 bind_group_layouts: &[
                     &constants_bind_group_layout,
                     &window_bind_group_layout,
-                    &camera_controller.bind_group_layout,
-                    // &camera_bind_group_layout,
+                    &camera.get_bind_group_layout(),
                     &scene_bind_group_layout,
                 ],
                 push_constant_ranges: &[],
@@ -165,6 +166,7 @@ impl BasicRaytracing {
             render_pipeline,
             constants_bind_group,
             window_bind_group,
+            camera,
             camera_controller,
             scene_bind_group,
         }
@@ -204,19 +206,27 @@ impl BasicRaytracing {
                     },
                 ..
             } => match key {
-                Some(VirtualKeyCode::Left) => self
-                    .camera_controller
-                    .translate(&self.queue, camera_controller::Direction::Left),
-                Some(VirtualKeyCode::Right) => self
-                    .camera_controller
-                    .translate(&self.queue, camera_controller::Direction::Right),
+                Some(VirtualKeyCode::Left) => self.camera_controller.translate(
+                    &self.queue,
+                    &mut self.camera,
+                    camera_controller::Direction::Left,
+                ),
+                Some(VirtualKeyCode::Right) => self.camera_controller.translate(
+                    &self.queue,
+                    &mut self.camera,
+                    camera_controller::Direction::Right,
+                ),
 
-                Some(VirtualKeyCode::Up) => self
-                    .camera_controller
-                    .translate(&self.queue, camera_controller::Direction::Forward),
-                Some(VirtualKeyCode::Down) => self
-                    .camera_controller
-                    .translate(&self.queue, camera_controller::Direction::Backward),
+                Some(VirtualKeyCode::Up) => self.camera_controller.translate(
+                    &self.queue,
+                    &mut self.camera,
+                    camera_controller::Direction::Forward,
+                ),
+                Some(VirtualKeyCode::Down) => self.camera_controller.translate(
+                    &self.queue,
+                    &mut self.camera,
+                    camera_controller::Direction::Backward,
+                ),
                 _ => {}
             },
             _ => {}
@@ -263,7 +273,7 @@ impl BasicRaytracing {
             render_pass.set_index_buffer(self.quad.indices.slice(..), wgpu::IndexFormat::Uint16);
             render_pass.set_bind_group(0, &self.constants_bind_group, &[]);
             render_pass.set_bind_group(1, &self.window_bind_group, &[]);
-            render_pass.set_bind_group(2, &self.camera_controller.bind_group, &[]);
+            render_pass.set_bind_group(2, &self.camera.get_bind_group(), &[]);
             render_pass.set_bind_group(3, &self.scene_bind_group, &[]);
             render_pass.draw_indexed(0..self.quad.num_indices, 0, 0..1);
         }
