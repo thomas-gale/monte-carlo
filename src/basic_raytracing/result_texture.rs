@@ -18,33 +18,66 @@ impl ResultTexture {
             depth_or_array_layers: 1,
         };
 
+        println!("{:?}", size);
+        println!("{:?}", window);
+
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             size,
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8Uint,
+            format: wgpu::TextureFormat::Rgba8Unorm,
             usage: wgpu::TextureUsages::COPY_DST
+                | wgpu::TextureUsages::COPY_SRC
                 | wgpu::TextureUsages::STORAGE_BINDING
                 | wgpu::TextureUsages::TEXTURE_BINDING,
             label: None,
         });
 
-        queue.write_texture(
+        // queue.write_texture(
+        //     wgpu::ImageCopyTexture {
+        //         texture: &texture,
+        //         mip_level: 0,
+        //         origin: wgpu::Origin3d::ZERO,
+        //         aspect: wgpu::TextureAspect::All,
+        //     },
+        //     &inital_data[..],
+        //     wgpu::ImageDataLayout {
+        //         offset: 0,
+        //         bytes_per_row: std::num::NonZeroU32::new(window.width_pixels * 4),
+        //         rows_per_image: std::num::NonZeroU32::new(window.height_pixels),
+        //     },
+        //     size,
+        // );
+
+        let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: None,
+            contents: &inital_data[..],
+            usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::COPY_DST,
+        });
+
+        let mut encoder =
+            device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
+        encoder.copy_buffer_to_texture(
+            wgpu::ImageCopyBuffer {
+                buffer: &buffer,
+                layout: wgpu::ImageDataLayout { offset: 0, bytes_per_row: std::num::NonZeroU32::new(window.width_pixels * 4), rows_per_image: std::num::NonZeroU32::new(window.height_pixels) }
+                // offset: 0,
+                // bytes_per_row: 4 * window.width_pixels,
+                // rows_per_image: window.height_pixels,
+            },
             wgpu::ImageCopyTexture {
                 texture: &texture,
                 mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
+                // array_layer: 0,
                 aspect: wgpu::TextureAspect::All,
-            },
-            &inital_data[..],
-            wgpu::ImageDataLayout {
-                offset: 0,
-                bytes_per_row: std::num::NonZeroU32::new(window.width_pixels * 4),
-                rows_per_image: std::num::NonZeroU32::new(window.height_pixels),
+                origin: wgpu::Origin3d::ZERO,
             },
             size,
         );
+
+        queue.submit(std::iter::once(encoder.finish()));
 
         // let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         // 	label: None,
@@ -70,7 +103,7 @@ impl ResultTexture {
                     visibility: wgpu::ShaderStages::FRAGMENT,
                     ty: wgpu::BindingType::StorageTexture {
                         access: wgpu::StorageTextureAccess::ReadWrite,
-                        format: wgpu::TextureFormat::Rgba8Uint,
+                        format: wgpu::TextureFormat::Rgba8Unorm,
                         view_dimension: wgpu::TextureViewDimension::D2,
                         // sample_type: wgpu::TextureSampleType::Float { filterable: true },
                     },
