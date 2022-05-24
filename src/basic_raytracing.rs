@@ -250,10 +250,6 @@ impl BasicRaytracing {
         true
     }
 
-    pub fn update(&mut self) {
-        // TODO
-    }
-
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
         let view = output
