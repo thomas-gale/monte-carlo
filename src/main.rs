@@ -35,28 +35,6 @@ async fn run() {
                     },
                 ..
             } => *control_flow = ControlFlow::Exit,
-            WindowEvent::KeyboardInput {
-                input:
-                    KeyboardInput {
-                        state: ElementState::Pressed,
-                        virtual_keycode: Some(VirtualKeyCode::Return),
-                        ..
-                    },
-                ..
-            } => {
-                println!("Rendering...");
-                match basic_renderer.render() {
-                    Ok(_) => {}
-                    // Reconfigure the surface if lost
-                    Err(wgpu::SurfaceError::Lost) => {
-                        basic_renderer.resize(basic_renderer.get_size())
-                    }
-                    // The system is out of memory, we should probably quit
-                    Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
-                    // All other errors (Outdated, Timeout) should be resolved by the next frame
-                    Err(e) => eprintln!("{:?}", e),
-                }
-            }
             WindowEvent::Resized(physical_size) => {
                 basic_renderer.resize(*physical_size);
             }
@@ -69,6 +47,17 @@ async fn run() {
                 basic_renderer.input(event);
             }
         },
+        Event::RedrawRequested(window_id) if window_id == window.id() => {
+            match basic_renderer.render() {
+                Ok(_) => {}
+                // Reconfigure the surface if lost
+                Err(wgpu::SurfaceError::Lost) => basic_renderer.resize(basic_renderer.get_size()),
+                // The system is out of memory, we should probably quit
+                Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
+                // All other errors (Outdated, Timeout) should be resolved by the next frame
+                Err(e) => eprintln!("{:?}", e),
+            }
+        }
         Event::MainEventsCleared => {
             window.request_redraw();
         }
