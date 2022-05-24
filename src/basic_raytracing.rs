@@ -9,7 +9,7 @@ mod util;
 mod vertex;
 mod window;
 
-use cgmath::{prelude::*, Vector3};
+use cgmath::Vector3;
 use winit::{
     event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent},
     window::Window,
@@ -92,22 +92,22 @@ impl BasicRaytracing {
             );
 
         // Camera
-        let look_from = Vector3::<f32>::new(3.0, 3.0, 2.0);
-        let look_at = Vector3::<f32>::new(0.0, 0.0, -1.0);
+        let look_from = Vector3::<f32>::new(13.0, 2.0, 3.0);
+        let look_at = Vector3::<f32>::new(0.0, 0.0, 0.0);
         let camera = camera::Camera::new(
             &device,
             look_from,
             look_at,
             Vector3::<f32>::new(0.0, 1.0, 0.0),
-            45.0,
+            20.0,
             window,
-            2.0,
-            (look_from - look_at).magnitude(),
+            0.1,
+            10.0,
         );
         let camera_controller = camera_controller::CameraController::new();
 
         // Scene
-        let scene = scene::Scene::new();
+        let scene = scene::Scene::final_scene();
         let (scene_bind_group_layout, scene_bind_group, _) =
             buffer_bindings::create_device_buffer_binding(
                 &scene.spheres[..],

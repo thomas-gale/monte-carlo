@@ -15,7 +15,7 @@ impl Constants {
             epsilon: 1.0e-4,
             pi: std::f32::consts::PI,
             samples_per_pixel: 100,
-            max_depth: 10,
+            max_depth: 50,
         }
     }
 }
