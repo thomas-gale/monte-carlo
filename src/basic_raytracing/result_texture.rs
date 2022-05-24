@@ -59,6 +59,15 @@ impl ResultTexture {
         let mut encoder =
             device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
+        // NOTES:
+        // 1. try setting winit image dimensions to multiple of 256 to test
+        // 2. inflate the texture size to nearest multiple of 256 above
+        // 2a. pass the actual texture size as part of this binding group to the shader
+        // 2b. related side note: investigate invocation number / passing in increasing index to the buffer on each redraw.
+        // 2c. update the shader code to address the part of the texture that actually contains data - should have a 1:1 correspondance from the fragment position the texture data.
+        // 2d. in terms of pixel averaging - use the index * number of samples each invocation to track the average (using a mean average)
+        //   e.g. av_col = sample_col / N + (av_col * (N - 1)) / N
+
         encoder.copy_buffer_to_texture(
             wgpu::ImageCopyBuffer {
                 buffer: &buffer,
