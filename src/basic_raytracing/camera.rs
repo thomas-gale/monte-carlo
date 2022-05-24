@@ -1,6 +1,6 @@
-use cgmath::Vector3;
+use cgmath::{prelude::*, Vector3};
 
-use super::buffer_bindings;
+use super::{buffer_bindings, util, window};
 
 // Note: Due to wgsl uniforms requiring 16 byte (4 float) spacing, we need to use a padding fields here.
 #[repr(C)]
@@ -17,22 +17,32 @@ struct CameraRaw {
 }
 
 impl CameraRaw {
-    // TODO - take viewport information.
-    pub fn new() -> CameraRaw {
+    pub fn new(
+        origin: Vector3<f32>,
+        lower_left_corner: Vector3<f32>,
+        horizontal: Vector3<f32>,
+        vertical: Vector3<f32>,
+    ) -> CameraRaw {
         CameraRaw {
-            origin: [0.0, 0.0, 0.0],
+            origin: origin.into(),
             _padding1: 0.0,
-            lower_left_corner: [-1.0, -1.0, -1.0],
+            lower_left_corner: lower_left_corner.into(),
             _padding2: 0.0,
-            horizontal: [2.0, 0.0, 0.0],
+            horizontal: horizontal.into(),
             _padding3: 0.0,
-            vertical: [0.0, 2.0, 0.0],
+            vertical: vertical.into(),
             _padding4: 0.0,
         }
     }
 }
 
 pub struct Camera {
+    look_from: Vector3<f32>,
+    look_at: Vector3<f32>,
+    v_up: Vector3<f32>,
+    v_fov: f32,
+    window: window::Window,
+
     raw: CameraRaw,
     bind_group_layout: wgpu::BindGroupLayout,
     bind_group: wgpu::BindGroup,
@@ -40,8 +50,16 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(device: &wgpu::Device) -> Self {
-        let raw = CameraRaw::new();
+    pub fn new(
+        device: &wgpu::Device,
+        look_from: Vector3<f32>,
+        look_at: Vector3<f32>,
+        v_up: Vector3<f32>,
+        v_fov: f32,
+        window: window::Window,
+    ) -> Self {
+        let raw = Self::generate_raw(&look_from, &look_at, &v_up, &v_fov, &window);
+
         let (bind_group_layout, bind_group, buffer) = buffer_bindings::create_device_buffer_binding(
             &[raw],
             &device,
@@ -50,11 +68,62 @@ impl Camera {
         );
 
         Camera {
-            raw: CameraRaw::new(),
+            look_from,
+            look_at,
+            v_up,
+            v_fov,
+            window,
+
+            raw,
             bind_group_layout,
             bind_group,
             buffer,
         }
+    }
+
+    fn generate_raw(
+        look_from: &Vector3<f32>,
+        look_at: &Vector3<f32>,
+        v_up: &Vector3<f32>,
+        v_fov: &f32,
+        window: &window::Window,
+    ) -> CameraRaw {
+        let aspect_ratio = window.width_pixels as f32 / window.height_pixels as f32;
+        let theta = util::degrees_to_radians(*v_fov);
+        let h = std::primitive::f32::tan(theta / 2.0);
+        let viewport_height = 2.0 * h;
+        let viewport_width = aspect_ratio * viewport_height;
+
+        let w = (look_from - look_at).normalize();
+        let u = v_up.cross(w).normalize();
+        let v = w.cross(u);
+
+        let origin = look_from.clone();
+        let horizontal = u * viewport_width;
+        let vertical = v * viewport_height;
+
+        CameraRaw::new(
+            origin,
+            origin - horizontal / 2.0 - vertical / 2.0 - w,
+            horizontal,
+            vertical,
+        )
+    }
+
+    pub fn set_window(&mut self, window: window::Window) {
+        self.window = window;
+    }
+
+    pub fn update(&mut self, queue: &wgpu::Queue) {
+        let raw = Self::generate_raw(
+            &self.look_from,
+            &self.look_at,
+            &self.v_up,
+            &self.v_fov,
+            &self.window,
+        );
+        self.raw = raw;
+        queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.raw]));
     }
 
     pub fn translate(&mut self, queue: &wgpu::Queue, delta: Vector3<f32>) {

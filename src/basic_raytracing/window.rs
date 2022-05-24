@@ -1,8 +1,8 @@
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Window {
-    width_pixels: u32,
-    height_pixels: u32,
+    pub width_pixels: u32,
+    pub height_pixels: u32,
 }
 
 impl Window {

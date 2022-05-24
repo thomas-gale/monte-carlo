@@ -5,15 +5,17 @@ mod constants;
 mod quad;
 mod scene;
 mod sphere;
+mod util;
 mod vertex;
 mod window;
 
+use cgmath::Vector3;
 use winit::{
     event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent},
     window::Window,
 };
 
-// I don't like this massive blob.
+// I don't like this massive state blob.
 pub struct BasicRaytracing {
     surface: wgpu::Surface,
     device: wgpu::Device,
@@ -90,7 +92,14 @@ impl BasicRaytracing {
             );
 
         // Camera
-        let camera = camera::Camera::new(&device);
+        let camera = camera::Camera::new(
+            &device,
+            Vector3::<f32>::new(-2.0, 2.0, 1.0),
+            Vector3::<f32>::new(0.0, 0.0, -1.0),
+            Vector3::<f32>::new(0.0, 1.0, 0.0),
+            90.0,
+            window,
+        );
         let camera_controller = camera_controller::CameraController::new();
 
         // Scene
@@ -188,6 +197,9 @@ impl BasicRaytracing {
                 wgpu::BufferBindingType::Uniform,
             );
             self.window_bind_group = window_bind_group;
+
+            self.camera.set_window(window);
+            self.camera.update(&self.queue);
         }
     }
 

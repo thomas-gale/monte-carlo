@@ -23,7 +23,7 @@ fn vs_main(
 // Fragment shader
 
 // Implementing https://raytracing.github.io/books/RayTracingInOneWeekend.html
-// Attribution to assitance from https://www.shadertoy.com/view/lssBD7
+// Attribution of assitance from https://www.shadertoy.com/view/lssBD7
 
 // Constants
 struct Constants {
@@ -240,9 +240,6 @@ fn sphere_hit(sphere_worlds_index: i32, ray: ptr<function, Ray>, t_min: f32, t_m
 } 
 
 fn sphere_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function, HitRecord>) -> bool {
-
-    // Reset hitrecord
-
     var hit_anything = false;
     var closest_so_far = t_max;
 
@@ -328,30 +325,11 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
     return current_ray_color;
 }
 
-fn color_gamma_correction(color: ptr<function, vec3<f32>>) {
-    (*color).r = pow((*color).r, 1.0 / 2.2);
-    (*color).g = pow((*color).g, 1.0 / 2.2);
-    (*color).b = pow((*color).b, 1.0 / 2.2);
-}
-
 [[stage(fragment)]]
 fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     var pixel_color = vec3<f32>(0.0, 0.0, 0.0);
     var num_samples = constants.samples_per_pixel;
     for (var s = 0; s < num_samples; s = s + 1) {
-        // Notes
-
-        // tex_coords x and y are in range [0, 1] (f32)
-        // tex_coords bottom left is (0, 0)
-        // focal_length is 1.0
-
-        // window.width_pixels and window.height_pixels are in range [0, n] (u32)
-
-        // Camera is currently defined in screen/tex_coords space
-        // TODO - decide if to move camera / scene to a world space and how to store that transformation
-        // TODO - decide how to use the screen size/aspect ratio to stop output image in window from being stretched
-
-        // Multisampled pixels
         var pixel_entropy = hash(entropy_window_space(in.tex_coords));
         var pixel_sample_entropy = hash(pixel_entropy * u32(s + 1));
         var u = in.tex_coords.x + random_float(hash(pixel_sample_entropy + 1u)) / f32(window.width_pixels);
@@ -360,6 +338,5 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
         pixel_color = pixel_color + ray_color(&ray, constants.max_depth, hash(pixel_sample_entropy + 3u));
     }
     pixel_color = pixel_color / f32(num_samples);
-    // color_gamma_correction(&pixel_color);
     return vec4<f32>(pixel_color, 1.0);
 }
