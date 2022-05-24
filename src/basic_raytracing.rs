@@ -1,11 +1,12 @@
 mod buffer_bindings;
 mod camera;
 mod camera_controller;
-mod uniforms;
+mod constants;
 mod quad;
 mod result_texture;
 mod scene;
 mod sphere;
+mod uniforms_bindings;
 mod util;
 mod vertex;
 mod window;
@@ -25,8 +26,9 @@ pub struct BasicRaytracing {
     size: winit::dpi::PhysicalSize<u32>,
     quad: quad::Quad,
     render_pipeline: wgpu::RenderPipeline,
-    constants_bind_group: wgpu::BindGroup,
-    window_bind_group: wgpu::BindGroup,
+    // constants_bind_group: wgpu::BindGroup,
+    // window_bind_group: wgpu::BindGroup,
+    uniforms_bindings: uniforms_bindings::UniformsBindings,
     camera: camera::Camera,
     camera_controller: camera_controller::CameraController,
     scene_bind_group: wgpu::BindGroup,
@@ -74,24 +76,27 @@ impl BasicRaytracing {
         surface.configure(&device, &config);
 
         // Constants
-        let constants = uniforms::Constants::new();
-        let (constants_bind_group_layout, constants_bind_group, _) =
-            buffer_bindings::create_device_buffer_binding(
-                &[constants],
-                &device,
-                wgpu::BufferUsages::UNIFORM,
-                wgpu::BufferBindingType::Uniform,
-            );
+        let constants = constants::Constants::new();
+        // let (constants_bind_group_layout, constants_bind_group, _) =
+        //     buffer_bindings::create_device_buffer_binding(
+        //         &[constants],
+        //         &device,
+        //         wgpu::BufferUsages::UNIFORM,
+        //         wgpu::BufferBindingType::Uniform,
+        //     );
 
         // Window
         let window = window::Window::new(&size);
-        let (window_bind_group_layout, window_bind_group, _) =
-            buffer_bindings::create_device_buffer_binding(
-                &[window],
-                &device,
-                wgpu::BufferUsages::UNIFORM,
-                wgpu::BufferBindingType::Uniform,
-            );
+        // let (window_bind_group_layout, window_bind_group, _) =
+        //     buffer_bindings::create_device_buffer_binding(
+        //         &[window],
+        //         &device,
+        //         wgpu::BufferUsages::UNIFORM,
+        //         wgpu::BufferBindingType::Uniform,
+        //     );
+
+        let uniforms_bindings =
+            uniforms_bindings::UniformsBindings::new(&device, &[constants], &[window]);
 
         // Camera
         let look_from = Vector3::<f32>::new(13.0, 2.0, 3.0);
@@ -132,8 +137,9 @@ impl BasicRaytracing {
             device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
                 bind_group_layouts: &[
-                    &constants_bind_group_layout,
-                    &window_bind_group_layout,
+                    &uniforms_bindings.get_bind_group_layout(),
+                    // &constants_bind_group_layout,
+                    // &window_bind_group_layout,
                     &camera.get_bind_group_layout(),
                     &scene_bind_group_layout,
                     &result_texture.get_bind_group_layout(),
@@ -183,8 +189,9 @@ impl BasicRaytracing {
             size,
             quad,
             render_pipeline,
-            constants_bind_group,
-            window_bind_group,
+            // constants_bind_group,
+            // window_bind_group,
+            uniforms_bindings,
             camera,
             camera_controller,
             scene_bind_group,
@@ -201,13 +208,15 @@ impl BasicRaytracing {
             self.surface.configure(&self.device, &self.config);
 
             let window = window::Window::new(&self.size);
-            let (_, window_bind_group, _) = buffer_bindings::create_device_buffer_binding(
-                &[window],
-                &self.device,
-                wgpu::BufferUsages::UNIFORM,
-                wgpu::BufferBindingType::Uniform,
-            );
-            self.window_bind_group = window_bind_group;
+            // let (_, window_bind_group, _) = buffer_bindings::create_device_buffer_binding(
+            //     &[window],
+            //     &self.device,
+            //     wgpu::BufferUsages::UNIFORM,
+            //     wgpu::BufferBindingType::Uniform,
+            // );
+            // self.window_bind_group = window_bind_group;
+            self.uniforms_bindings
+                .update_window_buffer(&self.queue, &[window]);
 
             self.camera.set_window(window);
             self.camera.update(&self.queue);
@@ -290,11 +299,12 @@ impl BasicRaytracing {
             render_pass.set_pipeline(&self.render_pipeline);
             render_pass.set_vertex_buffer(0, self.quad.vertices.slice(..));
             render_pass.set_index_buffer(self.quad.indices.slice(..), wgpu::IndexFormat::Uint16);
-            render_pass.set_bind_group(0, &self.constants_bind_group, &[]);
-            render_pass.set_bind_group(1, &self.window_bind_group, &[]);
-            render_pass.set_bind_group(2, &self.camera.get_bind_group(), &[]);
-            render_pass.set_bind_group(3, &self.scene_bind_group, &[]);
-            render_pass.set_bind_group(4, &self.result_texture.get_bind_group(), &[]);
+            render_pass.set_bind_group(0, &self.uniforms_bindings.get_bind_group(), &[]);
+            // render_pass.set_bind_group(0, &self.constants_bind_group, &[]);
+            // render_pass.set_bind_group(1, &self.window_bind_group, &[]);
+            render_pass.set_bind_group(1, &self.camera.get_bind_group(), &[]);
+            render_pass.set_bind_group(2, &self.scene_bind_group, &[]);
+            render_pass.set_bind_group(3, &self.result_texture.get_bind_group(), &[]);
             render_pass.draw_indexed(0..self.quad.num_indices, 0, 0..1);
         }
 

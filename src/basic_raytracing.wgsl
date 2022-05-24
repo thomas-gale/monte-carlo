@@ -71,7 +71,7 @@ struct Window {
     height_pixels: u32;
 };
 
-[[group(1), binding(0)]]
+[[group(0), binding(1)]]
 var<uniform> window: Window;
 
 // Random
@@ -157,7 +157,7 @@ struct Camera {
     lens_radius: f32;
 };
 
-[[group(2), binding(0)]]
+[[group(1), binding(0)]]
 var<uniform> camera: Camera;
 
 // Scene
@@ -174,7 +174,7 @@ struct Scene {
     spheres: array<Sphere>;
 };
 
-[[group(3), binding(0)]]
+[[group(2), binding(0)]]
 var<storage, read> scene: Scene;
 
 // Ray
@@ -347,7 +347,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
 }
 
 // Storage texture  
-[[group(4), binding(0)]]
+[[group(3), binding(0)]]
 var texture: texture_storage_2d<rgba8unorm, read_write>;
 
 [[stage(fragment)]]
