@@ -7,7 +7,14 @@ Learning about Monte Carlo methods.
 - `wgsl` shader language
 
 ## plan
-- [ ] Follow (again) https://raytracing.github.io/books/RayTracingInOneWeekend.html implementing as much code as wgsl fragment/compute shaders
+- [x] Follow (again) [_Ray Tracing in One Weekend_](https://raytracing.github.io/books/RayTracingInOneWeekend.html) implementing as much code as wgsl fragment/compute shaders
 - [ ] Extend to https://raytracing.github.io/books/RayTracingTheNextWeek.html
 - [ ] Explore https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html
 - [ ] Move to the fascinating monte carlo/wos papers and try to generalise the wgsl compute shaders to do other (non ray tracing) monte carlo based simulations sampling e.g. https://www.cs.cmu.edu/~kmcrane/Projects/MonteCarloGeometryProcessing/index.html & https://cs.dartmouth.edu/wjarosz/publications/sawhneyseyb22gridfree.html
+
+## samples
+### [_Ray Tracing in One Weekend_](https://raytracing.github.io/books/RayTracingInOneWeekend.html) output (takes ~5 seconds to generate)
+See `./basic_raytracing.wgsl`, `./basic_raytracing.rs` and `./basic_raytracing` directory for implementation.
+
+![ray_tracing_in_one_weekend](https://user-images.githubusercontent.com/11990706/170103953-7e279469-3915-47b4-b8fa-0b748689ce7f.png)
+
