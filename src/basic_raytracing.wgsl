@@ -346,9 +346,17 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
     return current_ray_color;
 }
 
-// Storage texture  
+// Result storage texture  
 [[group(3), binding(0)]]
 var texture: texture_storage_2d<rgba8unorm, read_write>;
+
+// Result uniforms  
+struct ResultUniforms {
+    pass_index: u32;
+};
+
+[[group(3), binding(1)]]
+var<uniform> result_uniforms: ResultUniforms;
 
 [[stage(fragment)]]
 fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {

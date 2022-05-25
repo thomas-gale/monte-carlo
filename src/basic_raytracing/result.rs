@@ -2,12 +2,20 @@ use wgpu::util::DeviceExt;
 
 use super::window;
 
-pub struct ResultTexture {
-    bind_group_layout: wgpu::BindGroupLayout,
-    bind_group: wgpu::BindGroup,
+#[repr(C)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+struct ResultUniforms {
+    pub pass_index: u32,
 }
 
-impl ResultTexture {
+pub struct Result {
+    bind_group_layout: wgpu::BindGroupLayout,
+    bind_group: wgpu::BindGroup,
+    uniforms: ResultUniforms,
+    uniforms_buffer: wgpu::Buffer,
+}
+
+impl Result {
     pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, window: window::Window) -> Self {
         let inital_data: Vec<u8> =
             vec![0; window.width_pixels as usize * window.height_pixels as usize * 4];
@@ -105,6 +113,14 @@ impl ResultTexture {
         //     ..Default::default()
         // });
 
+        let uniforms = ResultUniforms { pass_index: 0 };
+
+        let uniforms_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: None,
+            contents: bytemuck::cast_slice(&[uniforms]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[
                 wgpu::BindGroupLayoutEntry {
@@ -117,6 +133,16 @@ impl ResultTexture {
                         // sample_type: wgpu::TextureSampleType::Float { filterable: true },
                     },
                     count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    count: None,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
                 },
                 // wgpu::BindGroupLayoutEntry {
                 //     binding: 1,
@@ -135,6 +161,10 @@ impl ResultTexture {
                     binding: 0,
                     resource: wgpu::BindingResource::TextureView(&texture_view),
                 },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: uniforms_buffer.as_entire_binding(),
+                },
                 // wgpu::BindGroupEntry {
                 //     binding: 1,
                 //     resource: wgpu::BindingResource::Sampler(&sampler),
@@ -143,9 +173,11 @@ impl ResultTexture {
             label: None,
         });
 
-        ResultTexture {
+        Result {
             bind_group_layout,
             bind_group,
+            uniforms,
+            uniforms_buffer,
         }
     }
 
@@ -155,5 +187,14 @@ impl ResultTexture {
 
     pub fn get_bind_group(&self) -> &wgpu::BindGroup {
         &self.bind_group
+    }
+
+    pub fn increment_result_index(&mut self, queue: &wgpu::Queue) {
+        self.uniforms.pass_index += 1;
+        queue.write_buffer(
+            &self.uniforms_buffer,
+            0,
+            bytemuck::cast_slice(&[self.uniforms]),
+        );
     }
 }

@@ -3,7 +3,7 @@ mod camera;
 mod camera_controller;
 mod constants;
 mod quad;
-mod result_texture;
+mod result;
 mod scene;
 mod sphere;
 mod uniforms_bindings;
@@ -32,7 +32,7 @@ pub struct BasicRaytracing {
     camera: camera::Camera,
     camera_controller: camera_controller::CameraController,
     scene_bind_group: wgpu::BindGroup,
-    result_texture: result_texture::ResultTexture,
+    result: result::Result,
 }
 
 impl BasicRaytracing {
@@ -127,7 +127,7 @@ impl BasicRaytracing {
         let quad = quad::Quad::new(&device);
 
         // Create the result texture to store current calculation status
-        let result_texture = result_texture::ResultTexture::new(&device, &queue, window);
+        let result = result::Result::new(&device, &queue, window);
 
         // Load shader
         let shader = device.create_shader_module(&wgpu::include_wgsl!("basic_raytracing.wgsl"));
@@ -142,7 +142,7 @@ impl BasicRaytracing {
                     // &window_bind_group_layout,
                     &camera.get_bind_group_layout(),
                     &scene_bind_group_layout,
-                    &result_texture.get_bind_group_layout(),
+                    &result.get_bind_group_layout(),
                 ],
                 push_constant_ranges: &[],
             });
@@ -195,7 +195,7 @@ impl BasicRaytracing {
             camera,
             camera_controller,
             scene_bind_group,
-            result_texture,
+            result,
         }
     }
 
@@ -304,13 +304,16 @@ impl BasicRaytracing {
             // render_pass.set_bind_group(1, &self.window_bind_group, &[]);
             render_pass.set_bind_group(1, &self.camera.get_bind_group(), &[]);
             render_pass.set_bind_group(2, &self.scene_bind_group, &[]);
-            render_pass.set_bind_group(3, &self.result_texture.get_bind_group(), &[]);
+            render_pass.set_bind_group(3, &self.result.get_bind_group(), &[]);
             render_pass.draw_indexed(0..self.quad.num_indices, 0, 0..1);
         }
 
         // submit will accept anything that implements IntoIter
         self.queue.submit(std::iter::once(encoder.finish()));
         output.present();
+
+        // Update the result index (as the fragment shader has just been executed)
+        self.result.increment_result_index(&mut self.queue);
 
         Ok(())
     }
