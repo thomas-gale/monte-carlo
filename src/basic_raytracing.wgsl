@@ -366,6 +366,6 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     }
     pixel_color = pixel_color / f32(num_samples);
     var pixel_color_with_alpha = vec4<f32>(pixel_color, 1.0);
-    textureStore(texture, texture_coords, pixel_color_with_alpha);
+    // textureStore(texture, texture_coords, pixel_color_with_alpha);
     return pixel_color_with_alpha;
 }
