@@ -15,10 +15,7 @@ async fn run() {
     let window = WindowBuilder::new()
         .with_title("monte carlo")
         .with_resizable(false)
-        .with_inner_size(PhysicalSize::new(512, 512))
-        // .set_min_dimensions(256, 256)
-        // .set_max_dimensions(256, 256)
-        // .with_fullscreen(Some(winit::window::Fullscreen::Borderless(None)))
+        .with_inner_size(PhysicalSize::new(1280, 1024))
         .build(&event_loop)
         .unwrap();
 
@@ -61,7 +58,8 @@ async fn run() {
                 // The system is out of memory, we should probably quit
                 Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
                 // All other errors (Outdated, Timeout) should be resolved by the next frame
-                Err(e) => eprintln!("{:?}", e), }
+                Err(e) => eprintln!("{:?}", e),
+            }
         }
         Event::MainEventsCleared => {
             window.request_redraw();
