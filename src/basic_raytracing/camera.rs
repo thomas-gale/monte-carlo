@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use cgmath::{prelude::*, Matrix4, Point3, Rad, Vector2, Vector3};
+use cgmath::{prelude::*, Matrix4, Point3, Rad, Vector2, Vector3, Vector4};
 
 use super::{buffer_bindings, result, util, window};
 
@@ -55,7 +55,7 @@ impl CameraRaw {
 }
 
 pub struct Camera {
-    starting_look_from: Point3<f32>,
+    // starting_look_from: Point3<f32>,
     look_from: Point3<f32>, // eye
     look_at: Point3<f32>,   // target
     v_up: Vector3<f32>,     // orientation of the camera
@@ -64,7 +64,7 @@ pub struct Camera {
     aperture: f32,
     focus_dist: f32,
 
-    arcball_camera: arcball::ArcballCamera<f32>,
+    // arcball_camera: arcball::ArcballCamera<f32>,
     view_matrix: Matrix4<f32>,
 
     raw: CameraRaw,
@@ -84,34 +84,29 @@ impl Camera {
         aperture: f32,
         focus_dist: f32,
     ) -> Self {
-        let mut arcball_camera = arcball::ArcballCamera::new(
-            look_at.to_vec(),
-            0.1,
-            [window.width_pixels as f32, window.height_pixels as f32],
-        );
-        arcball_camera.zoom(-13.0, -13.0);
-        arcball_camera.rotate(
-            Vector2::<f32>::new(
-                window.width_pixels as f32 / 2.0,
-                window.height_pixels as f32 / 2.0,
-            ),
-            Vector2::<f32>::new(
-                window.width_pixels as f32 / 2.0,
-                (window.height_pixels as f32 / 2.0) - 50.0,
-            ),
-        );
-        let initial_look_from = Point3::<f32>::from_vec(
-            (arcball_camera.get_inv_camera() * look_from.to_vec().extend(1.0)).truncate(),
-        );
+        // let mut arcball_camera = arcball::ArcballCamera::new(
+        //     look_at.to_vec(),
+        //     0.1,
+        //     [window.width_pixels as f32, window.height_pixels as f32],
+        // );
+        // arcball_camera.zoom(-13.0, -13.0);
+        // arcball_camera.rotate(
+        //     Vector2::<f32>::new(
+        //         window.width_pixels as f32 / 2.0,
+        //         window.height_pixels as f32 / 2.0,
+        //     ),
+        //     Vector2::<f32>::new(
+        //         window.width_pixels as f32 / 2.0,
+        //         (window.height_pixels as f32 / 2.0) - 50.0,
+        //     ),
+        // );
+        // let initial_look_from = Point3::<f32>::from_vec(
+        //     (arcball_camera.get_inv_camera() * look_from.to_vec().extend(1.0)).truncate(),
+        // );
 
         let raw = Self::generate_raw(
-            &initial_look_from,
-            &look_at,
-            &v_up,
-            v_fov,
-            window,
-            aperture,
-            focus_dist,
+            // &initial_look_from,
+            &look_from, &look_at, &v_up, v_fov, window, aperture, focus_dist,
         );
 
         let (bind_group_layout, bind_group, buffer) = buffer_bindings::create_device_buffer_binding(
@@ -121,9 +116,10 @@ impl Camera {
             wgpu::BufferBindingType::Uniform,
         );
 
-        let new_cam = Camera {
-            starting_look_from: look_from,
-            look_from: initial_look_from,
+        let mut new_cam = Camera {
+            // starting_look_from: look_from,
+            // look_from: initial_look_from,
+            look_from,
             look_at,
             v_up,
             v_fov,
@@ -131,7 +127,7 @@ impl Camera {
             aperture,
             focus_dist,
 
-            arcball_camera,
+            // arcball_camera,
             view_matrix: Matrix4::identity(),
             // view
             raw,
@@ -227,9 +223,7 @@ impl Camera {
 
         // Calculate amount of rotation in mouse movement
         let delta_angle_x: f32 = 2.0 * PI / size.width as f32; // a movement from left to right = 2*PI = 360 deg
-        let delta_angle_y: f32 = PI / size.height as f32; // a movement from top to bottom = PI = 180 deg
-        let x_angle: f32 = (mouse_prev.x - mouse_cur.x) * delta_angle_x;
-        let y_angle: f32 = (mouse_prev.y - mouse_cur.y) * delta_angle_y;
+        let mut delta_angle_y: f32 = PI / size.height as f32; // a movement from top to bottom = PI = 180 deg
 
         // Extra step to handle the problem when the camera direction is the same as the up vector
         let cos_angle: f32 = self.get_view_dir().dot(self.v_up);
@@ -237,12 +231,24 @@ impl Camera {
             delta_angle_y = 0.0;
         }
 
-        // step 2: Rotate the camera around the pivot point on the first axis.
+        // Covert mouse movement to arcball coordinates
+        let x_angle: f32 = (mouse_prev.x - mouse_cur.x) * delta_angle_x;
+        let y_angle: f32 = (mouse_prev.y - mouse_cur.y) * delta_angle_y;
+
+        // Rotate the camera around the pivot point on the first axis.
         let rotation_matrix_x = Matrix4::from_axis_angle(self.v_up, Rad(x_angle));
         position = rotation_matrix_x * (position - pivot) + pivot;
 
-        // step 3: Rotate the camera around the pivot point on the second axis.
+        // Rotate the camera around the pivot point on the second axis.
         let rotation_matrix_y = Matrix4::from_axis_angle(self.get_right_vector(), Rad(y_angle));
+        position = rotation_matrix_y * (position - pivot) + pivot;
+
+        self.set_camera_view(
+            Point3::new(position.x, position.y, position.z),
+            self.look_at,
+            self.v_up,
+        );
+
         // let rotation_matrix_y = Matrix4::<f32>::from_axis_angle(self.v_up, x_angle);
         // glm::mat4x4 rotationMatrixY(1.0f);
         // rotationMatrixY = glm::rotate(rotationMatrixY, yAngle, app->m_camera.GetRightVector());
@@ -282,10 +288,10 @@ impl Camera {
 
     // Camera forward is -z
     fn get_view_dir(&self) -> Vector3<f32> {
-        -self.view_matrix.transpose()[2]
+        -self.view_matrix.transpose()[2].truncate()
     }
 
     fn get_right_vector(&self) -> Vector3<f32> {
-        self.view_matrix.transpose()[0]
+        self.view_matrix.transpose()[0].truncate()
     }
 }
