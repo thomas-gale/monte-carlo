@@ -18,7 +18,7 @@ pub struct Result {
 impl Result {
     pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, window: window::Window) -> Self {
         let inital_data: Vec<u8> =
-            vec![0; window.width_pixels as usize * window.height_pixels as usize * 4];
+            vec![0; window.width_pixels as usize * window.height_pixels as usize * 4* 4];
 
         let size = wgpu::Extent3d {
             width: window.width_pixels,
@@ -34,7 +34,7 @@ impl Result {
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8Unorm,
+            format: wgpu::TextureFormat::Rgba32Float,
             usage: wgpu::TextureUsages::COPY_DST
                 | wgpu::TextureUsages::COPY_SRC
                 | wgpu::TextureUsages::STORAGE_BINDING
@@ -79,7 +79,7 @@ impl Result {
         encoder.copy_buffer_to_texture(
             wgpu::ImageCopyBuffer {
                 buffer: &buffer,
-                layout: wgpu::ImageDataLayout { offset: 0, bytes_per_row: std::num::NonZeroU32::new(window.width_pixels * 4), rows_per_image: std::num::NonZeroU32::new(window.height_pixels) }
+                layout: wgpu::ImageDataLayout { offset: 0, bytes_per_row: std::num::NonZeroU32::new(window.width_pixels * 4 * 4), rows_per_image: std::num::NonZeroU32::new(window.height_pixels) }
                 // offset: 0,
                 // bytes_per_row: 4 * window.width_pixels,
                 // rows_per_image: window.height_pixels,
@@ -128,7 +128,7 @@ impl Result {
                     visibility: wgpu::ShaderStages::FRAGMENT,
                     ty: wgpu::BindingType::StorageTexture {
                         access: wgpu::StorageTextureAccess::ReadWrite,
-                        format: wgpu::TextureFormat::Rgba8Unorm,
+                        format: wgpu::TextureFormat::Rgba32Float,
                         view_dimension: wgpu::TextureViewDimension::D2,
                         // sample_type: wgpu::TextureSampleType::Float { filterable: true },
                     },
@@ -144,12 +144,6 @@ impl Result {
                         min_binding_size: None,
                     },
                 },
-                // wgpu::BindGroupLayoutEntry {
-                //     binding: 1,
-                //     visibility: wgpu::ShaderStages::FRAGMENT,
-                //     ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                //     count: None,
-                // },
             ],
             label: None,
         });

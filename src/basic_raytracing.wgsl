@@ -32,7 +32,7 @@ struct Constants {
     infinity: f32;
     epsilon: f32;
     pi: f32;
-    samples_per_pixel: i32;
+    pass_samples_per_pixel: i32;
     max_depth: i32;
 };
 
@@ -348,7 +348,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
 
 // Result storage texture  
 [[group(3), binding(0)]]
-var texture: texture_storage_2d<rgba8unorm, read_write>;
+var texture: texture_storage_2d<rgba32float, read_write>;
 
 // Result uniforms  
 struct ResultUniforms {
@@ -362,7 +362,7 @@ var<uniform> result_uniforms: ResultUniforms;
 fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     // Compute a new sampled color
     var new_sampled_pixel_color = vec3<f32>(0.0, 0.0, 0.0);
-    var num_samples = constants.samples_per_pixel;
+    var num_samples = constants.pass_samples_per_pixel;
     for (var s = 0; s < num_samples; s = s + 1) {
         var pixel_entropy = hash(entropy_window_space(in.tex_coords) + result_uniforms.pass_index);
         var pixel_sample_entropy = hash(pixel_entropy * u32(s + 1));
@@ -374,16 +374,10 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     new_sampled_pixel_color = new_sampled_pixel_color / f32(num_samples);
     var new_pixel_color_with_alpha = vec4<f32>(new_sampled_pixel_color, 1.0);
 
-    // return new_pixel_color_with_alpha;
-
     // Weighted average with existing pixel color in result storage texture.
     var texture_coords = vec2<i32>(i32(in.tex_coords.x * f32(window.width_pixels)), i32(in.tex_coords.y * f32(window.height_pixels)));
-
     var existing_pixel_color_with_alpha = textureLoad(texture, texture_coords);
-
-    // // Full running average
     var averaged_pixel_color_with_alpha = (1.0 / (1.0 + f32(result_uniforms.pass_index))) * new_pixel_color_with_alpha + (f32(result_uniforms.pass_index) / (1.0 + f32(result_uniforms.pass_index)) * existing_pixel_color_with_alpha);
-
     textureStore(texture, texture_coords, averaged_pixel_color_with_alpha);
     return averaged_pixel_color_with_alpha;
 }
