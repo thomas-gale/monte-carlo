@@ -14,8 +14,8 @@ impl Constants {
             infinity: f32::INFINITY,
             epsilon: 1.0e-4,
             pi: std::f32::consts::PI,
-            samples_per_pixel: 2,
-            max_depth: 10,
+            samples_per_pixel: 1,
+            max_depth: 50,
         }
     }
 }

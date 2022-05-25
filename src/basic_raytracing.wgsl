@@ -374,13 +374,15 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     new_sampled_pixel_color = new_sampled_pixel_color / f32(num_samples);
     var new_pixel_color_with_alpha = vec4<f32>(new_sampled_pixel_color, 1.0);
 
+    // return new_pixel_color_with_alpha;
+
     // Weighted average with existing pixel color in result storage texture.
     var texture_coords = vec2<i32>(i32(in.tex_coords.x * f32(window.width_pixels)), i32(in.tex_coords.y * f32(window.height_pixels)));
 
     var existing_pixel_color_with_alpha = textureLoad(texture, texture_coords);
 
-    // Full running average
-    var averaged_pixel_color_with_alpha = new_pixel_color_with_alpha / (1.0 + f32(result_uniforms.pass_index)) + (f32(result_uniforms.pass_index) / (1.0 + f32(result_uniforms.pass_index)) * existing_pixel_color_with_alpha);
+    // // Full running average
+    var averaged_pixel_color_with_alpha = (1.0 / (1.0 + f32(result_uniforms.pass_index))) * new_pixel_color_with_alpha + (f32(result_uniforms.pass_index) / (1.0 + f32(result_uniforms.pass_index)) * existing_pixel_color_with_alpha);
 
     textureStore(texture, texture_coords, averaged_pixel_color_with_alpha);
     return averaged_pixel_color_with_alpha;
