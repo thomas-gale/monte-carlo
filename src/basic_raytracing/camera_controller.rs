@@ -1,6 +1,7 @@
 use cgmath::Vector3;
 
-use super::camera::Camera;
+use super::camera;
+use super::result;
 
 pub enum Direction {
     Left,
@@ -20,7 +21,15 @@ impl CameraController {
         }
     }
 
-    pub fn translate(&mut self, queue: &wgpu::Queue, camera: &mut Camera, direction: Direction) {
+    pub fn translate(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        result: &mut result::Result,
+        size: winit::dpi::PhysicalSize<u32>,
+        camera: &mut camera::Camera,
+        direction: Direction,
+    ) {
         match direction {
             Direction::Left => {
                 camera.translate(queue, Vector3::new(-self.movement_speed, 0.0, 0.0));
@@ -35,5 +44,7 @@ impl CameraController {
                 camera.translate(queue, Vector3::new(0.0, 0.0, self.movement_speed));
             }
         }
+        // Always reset the texture on movement inputs
+        result.reset_texture(device, queue, size);
     }
 }

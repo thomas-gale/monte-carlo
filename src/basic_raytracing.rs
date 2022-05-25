@@ -208,23 +208,35 @@ impl BasicRaytracing {
                 ..
             } => match key {
                 Some(VirtualKeyCode::Left) => self.camera_controller.translate(
+                    &self.device,
                     &self.queue,
+                    &mut self.result,
+                    self.size,
                     &mut self.camera,
                     camera_controller::Direction::Left,
                 ),
                 Some(VirtualKeyCode::Right) => self.camera_controller.translate(
+                    &self.device,
                     &self.queue,
+                    &mut self.result,
+                    self.size,
                     &mut self.camera,
                     camera_controller::Direction::Right,
                 ),
 
                 Some(VirtualKeyCode::Up) => self.camera_controller.translate(
+                    &self.device,
                     &self.queue,
+                    &mut self.result,
+                    self.size,
                     &mut self.camera,
                     camera_controller::Direction::Forward,
                 ),
                 Some(VirtualKeyCode::Down) => self.camera_controller.translate(
+                    &self.device,
                     &self.queue,
+                    &mut self.result,
+                    self.size,
                     &mut self.camera,
                     camera_controller::Direction::Backward,
                 ),
@@ -280,8 +292,8 @@ impl BasicRaytracing {
         output.present();
 
         // Update the result index (as the fragment shader has just been executed)
-        self.result.increment_result_index(&mut self.queue);
-        println!("Pass index: {}", self.result.get_pass_index());
+        self.result.increment_pass_index(&mut self.queue);
+        // println!("Pass index: {}", self.result.get_pass_index());
 
         Ok(())
     }

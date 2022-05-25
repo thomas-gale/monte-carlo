@@ -1,4 +1,4 @@
-use cgmath::{prelude::*, Vector3};
+use cgmath::{prelude::*, Vector2, Vector3};
 
 use super::{buffer_bindings, util, window};
 
@@ -78,6 +78,22 @@ impl Camera {
         aperture: f32,
         focus_dist: f32,
     ) -> Self {
+        let mut arcball_camera = arcball::ArcballCamera::new(
+            look_at,
+            0.1,
+            [window.width_pixels as f32, window.height_pixels as f32],
+        );
+        arcball_camera.zoom(-10.0, -10.0);
+        arcball_camera.rotate(
+            Vector2::<f32>::new(0.0, 0.0),
+            Vector2::<f32>::new(0.0, 50.0),
+        );
+
+        println!("camera: {:?}", arcball_camera.get_mat4());
+        println!("camera up: {:?}", arcball_camera.up_dir());
+        println!("camera eye pos: {:?}", arcball_camera.eye_pos());
+        println!("camera eye dir: {:?}", arcball_camera.eye_dir());
+
         let raw = Self::generate_raw(
             &look_from, &look_at, &v_up, v_fov, window, aperture, focus_dist,
         );

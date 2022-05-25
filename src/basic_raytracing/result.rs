@@ -1,4 +1,5 @@
 use wgpu::util::DeviceExt;
+use winit::platform::unix::x11::ffi::PMaxSize;
 
 use super::window;
 
@@ -9,6 +10,8 @@ struct ResultUniforms {
 }
 
 pub struct Result {
+    texture_size: wgpu::Extent3d,
+    texture: wgpu::Texture,
     uniforms: ResultUniforms,
     uniforms_buffer: wgpu::Buffer,
     bind_group_layout: wgpu::BindGroupLayout,
@@ -18,23 +21,15 @@ pub struct Result {
 impl Result {
     pub fn new(device: &wgpu::Device, queue: &wgpu::Queue, window: window::Window) -> Self {
         // Initialize the result texture (where the accumulated (average) sampled pixel colors will be stored frame to frame)
-        let inital_data: Vec<u8> =
-            vec![0; window.width_pixels as usize * window.height_pixels as usize * 4 * 4];
 
-        let size = wgpu::Extent3d {
+        let texture_size = wgpu::Extent3d {
             width: window.width_pixels,
             height: window.height_pixels,
             depth_or_array_layers: 1,
         };
 
-        let source_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: None,
-            contents: &inital_data[..],
-            usage: wgpu::BufferUsages::COPY_SRC,
-        });
-
         let texture = device.create_texture(&wgpu::TextureDescriptor {
-            size,
+            size: texture_size,
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
@@ -45,28 +40,39 @@ impl Result {
             label: None,
         });
 
-        let mut encoder =
-            device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+        let inital_data: Vec<u8> =
+            vec![0; texture_size.width as usize * texture_size.height as usize * 4 * 4];
 
-        encoder.copy_buffer_to_texture(
-            wgpu::ImageCopyBuffer {
-                buffer: &source_buffer,
-                layout: wgpu::ImageDataLayout {
-                    offset: 0,
-                    bytes_per_row: std::num::NonZeroU32::new(window.width_pixels * 4 * 4),
-                    rows_per_image: std::num::NonZeroU32::new(window.height_pixels),
-                },
-            },
-            wgpu::ImageCopyTexture {
-                texture: &texture,
-                mip_level: 0,
-                aspect: wgpu::TextureAspect::All,
-                origin: wgpu::Origin3d::ZERO,
-            },
-            size,
-        );
+        Self::update_texture(device, queue, &texture, &inital_data[..], texture_size);
 
-        queue.submit(std::iter::once(encoder.finish()));
+        // let source_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        //     label: None,
+        //     contents: &inital_data[..],
+        //     usage: wgpu::BufferUsages::COPY_SRC,
+        // });
+
+        // let mut encoder =
+        //     device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
+        // encoder.copy_buffer_to_texture(
+        //     wgpu::ImageCopyBuffer {
+        //         buffer: &source_buffer,
+        //         layout: wgpu::ImageDataLayout {
+        //             offset: 0,
+        //             bytes_per_row: std::num::NonZeroU32::new(window.width_pixels * 4 * 4),
+        //             rows_per_image: std::num::NonZeroU32::new(window.height_pixels),
+        //         },
+        //     },
+        //     wgpu::ImageCopyTexture {
+        //         texture: &texture,
+        //         mip_level: 0,
+        //         aspect: wgpu::TextureAspect::All,
+        //         origin: wgpu::Origin3d::ZERO,
+        //     },
+        //     size,
+        // );
+
+        // queue.submit(std::iter::once(encoder.finish()));
 
         let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
@@ -122,6 +128,8 @@ impl Result {
         });
 
         Result {
+            texture_size,
+            texture,
             bind_group_layout,
             bind_group,
             uniforms,
@@ -141,12 +149,77 @@ impl Result {
         self.uniforms.pass_index
     }
 
-    pub fn increment_result_index(&mut self, queue: &wgpu::Queue) {
-        self.uniforms.pass_index += 1;
+    pub fn increment_pass_index(&mut self, queue: &wgpu::Queue) {
+        self.set_pass_index(queue, self.uniforms.pass_index + 1);
+        // queue.write_buffer(
+        //     &self.uniforms_buffer,
+        //     0,
+        //     bytemuck::cast_slice(&[self.uniforms]),
+        // );
+    }
+
+    pub fn reset_texture(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        size: winit::dpi::PhysicalSize<u32>,
+    ) {
+        let texture_size = wgpu::Extent3d {
+            width: size.width,
+            height: size.height,
+            depth_or_array_layers: 1,
+        };
+
+        let inital_data: Vec<u8> =
+            vec![0; texture_size.width as usize * texture_size.height as usize * 4 * 4];
+
+        self.set_pass_index(queue, 0);
+        Self::update_texture(device, queue, &self.texture, &inital_data[..], texture_size);
+    }
+
+    fn set_pass_index(&mut self, queue: &wgpu::Queue, index: u32) {
+        self.uniforms.pass_index = index;
         queue.write_buffer(
             &self.uniforms_buffer,
             0,
             bytemuck::cast_slice(&[self.uniforms]),
         );
+    }
+
+    fn update_texture(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        texture: &wgpu::Texture,
+        contents: &[u8],
+        size: wgpu::Extent3d,
+    ) {
+        let source_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: None,
+            contents,
+            usage: wgpu::BufferUsages::COPY_SRC,
+        });
+
+        let mut encoder =
+            device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
+        encoder.copy_buffer_to_texture(
+            wgpu::ImageCopyBuffer {
+                buffer: &source_buffer,
+                layout: wgpu::ImageDataLayout {
+                    offset: 0,
+                    bytes_per_row: std::num::NonZeroU32::new(size.width * 4 * 4),
+                    rows_per_image: std::num::NonZeroU32::new(size.height),
+                },
+            },
+            wgpu::ImageCopyTexture {
+                texture: &texture,
+                mip_level: 0,
+                aspect: wgpu::TextureAspect::All,
+                origin: wgpu::Origin3d::ZERO,
+            },
+            size,
+        );
+
+        queue.submit(std::iter::once(encoder.finish()));
     }
 }
