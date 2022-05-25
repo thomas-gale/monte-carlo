@@ -1,6 +1,6 @@
 use cgmath::{prelude::*, Vector2, Vector3};
 
-use super::{buffer_bindings, util, window};
+use super::{buffer_bindings, result, util, window};
 
 // Note: Due to wgsl uniforms requiring 16 byte (4 float) spacing, we need to use a padding fields here.
 #[repr(C)]
@@ -53,6 +53,7 @@ impl CameraRaw {
 }
 
 pub struct Camera {
+    starting_look_from: Vector3<f32>,
     look_from: Vector3<f32>,
     look_at: Vector3<f32>,
     v_up: Vector3<f32>,
@@ -60,6 +61,8 @@ pub struct Camera {
     window: window::Window,
     aperture: f32,
     focus_dist: f32,
+
+    arcball_camera: arcball::ArcballCamera<f32>,
 
     raw: CameraRaw,
     bind_group_layout: wgpu::BindGroupLayout,
@@ -83,19 +86,38 @@ impl Camera {
             0.1,
             [window.width_pixels as f32, window.height_pixels as f32],
         );
-        arcball_camera.zoom(-10.0, -10.0);
+        arcball_camera.zoom(-13.0, -13.0);
         arcball_camera.rotate(
-            Vector2::<f32>::new(0.0, 0.0),
-            Vector2::<f32>::new(0.0, 50.0),
+            Vector2::<f32>::new(
+                window.width_pixels as f32 / 2.0,
+                window.height_pixels as f32 / 2.0,
+            ),
+            Vector2::<f32>::new(
+                window.width_pixels as f32 / 2.0,
+                (window.height_pixels as f32 / 2.0) - 50.0,
+            ),
         );
+        let initial_look_from =
+            (arcball_camera.get_inv_camera() * look_from.extend(1.0)).truncate();
 
-        println!("camera: {:?}", arcball_camera.get_mat4());
-        println!("camera up: {:?}", arcball_camera.up_dir());
-        println!("camera eye pos: {:?}", arcball_camera.eye_pos());
-        println!("camera eye dir: {:?}", arcball_camera.eye_dir());
+        // println!("camera mat: {:?}", arcball_camera.get_mat4());
+        // println!("camera inv mat: {:?}", arcball_camera.get_inv_camera());
+        // println!("camera up: {:?}", arcball_camera.up_dir());
+        // println!("camera eye pos: {:?}", arcball_camera.eye_pos());
+        // println!("camera eye dir: {:?}", arcball_camera.eye_dir());
+
+        // println!("look from: {:?}", look_from);
+        // let updated_look_from = (arcball_camera.get_mat4() * look_from.extend(1.0)).truncate();
+        // println!("updated look from: {:?}", updated_look_from);
 
         let raw = Self::generate_raw(
-            &look_from, &look_at, &v_up, v_fov, window, aperture, focus_dist,
+            &initial_look_from,
+            &look_at,
+            &v_up,
+            v_fov,
+            window,
+            aperture,
+            focus_dist,
         );
 
         let (bind_group_layout, bind_group, buffer) = buffer_bindings::create_device_buffer_binding(
@@ -106,13 +128,16 @@ impl Camera {
         );
 
         Camera {
-            look_from,
+            starting_look_from: look_from,
+            look_from: initial_look_from,
             look_at,
             v_up,
             v_fov,
             window,
             aperture,
             focus_dist,
+
+            arcball_camera,
 
             raw,
             bind_group_layout,
@@ -185,6 +210,39 @@ impl Camera {
         self.raw.lower_left_corner[2] += delta.z;
         queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.raw]));
     }
+
+    pub fn rotate(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        result: &mut result::Result,
+        size: winit::dpi::PhysicalSize<u32>,
+        mouse_prev: Vector2<f32>,
+        mouse_cur: Vector2<f32>,
+    ) {
+        // println!(
+        //     "Rotating, mouse prev: {:?}, mouse cur: {:?}",
+        //     mouse_prev, mouse_cur,
+        // );
+
+        // self.arcball_camera.rotate(mouse_prev, mouse_cur);
+
+        self.arcball_camera.rotate(
+            Vector2::new(mouse_prev.x, mouse_cur.y),
+            Vector2::new(mouse_cur.x, mouse_prev.y),
+            // mouse_prev.mul_element_wise(Vector2::<f32>::new(0.0, -1.0)),
+            // mouse_cur.mul_element_wise(Vector2::<f32>::new(0.0, -1.0)),
+        );
+
+        self.look_from =
+            (self.arcball_camera.get_inv_camera() * self.starting_look_from.extend(1.0)).truncate();
+        self.update(queue);
+        result.reset_texture(device, queue, size);
+    }
+
+    // pub fn zoom(&mut self) {
+    //     self.arcball_camera.zoom(amount, elapsed)
+    // }
 
     pub fn get_bind_group_layout(&self) -> &wgpu::BindGroupLayout {
         &self.bind_group_layout

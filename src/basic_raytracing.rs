@@ -11,13 +11,15 @@ mod util;
 mod vertex;
 mod window;
 
-use cgmath::Vector3;
+use cgmath::{Vector2, Vector3};
 use winit::{
     event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent},
     window::Window,
 };
 
 pub struct BasicRaytracing {
+    mouse_down: bool,
+    current_mouse_pos: winit::dpi::PhysicalPosition<f64>,
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -79,7 +81,9 @@ impl BasicRaytracing {
             uniforms_bindings::UniformsBindings::new(&device, &[constants], &[window]);
 
         // Camera
-        let look_from = Vector3::<f32>::new(13.0, 2.0, 3.0);
+        // let look_from = Vector3::<f32>::new(13.0, 2.0, 3.0);
+        // let look_from = Vector3::<f32>::new(0.0, 0.0, 1.0);
+        let look_from = Vector3::<f32>::new(0.0, 1.0, 0.0);
         let look_at = Vector3::<f32>::new(0.0, 0.0, 0.0);
         let camera = camera::Camera::new(
             &device,
@@ -160,6 +164,8 @@ impl BasicRaytracing {
         });
 
         Self {
+            mouse_down: false,
+            current_mouse_pos: winit::dpi::PhysicalPosition::new(0.0, 0.0),
             surface,
             device,
             queue,
@@ -198,50 +204,82 @@ impl BasicRaytracing {
 
     pub fn input(&mut self, event: &WindowEvent) -> bool {
         match event {
-            WindowEvent::KeyboardInput {
-                input:
-                    KeyboardInput {
-                        state: ElementState::Pressed,
-                        virtual_keycode: key,
-                        ..
-                    },
+            WindowEvent::MouseInput {
+                state: winit::event::ElementState::Pressed,
                 ..
-            } => match key {
-                Some(VirtualKeyCode::Left) => self.camera_controller.translate(
-                    &self.device,
-                    &self.queue,
-                    &mut self.result,
-                    self.size,
-                    &mut self.camera,
-                    camera_controller::Direction::Left,
-                ),
-                Some(VirtualKeyCode::Right) => self.camera_controller.translate(
-                    &self.device,
-                    &self.queue,
-                    &mut self.result,
-                    self.size,
-                    &mut self.camera,
-                    camera_controller::Direction::Right,
-                ),
+            } => {
+                self.mouse_down = true;
+            }
+            WindowEvent::MouseInput {
+                state: winit::event::ElementState::Released,
+                ..
+            } => {
+                self.mouse_down = false;
+                self.current_mouse_pos = winit::dpi::PhysicalPosition::new(0.0, 0.0);
+            }
+            WindowEvent::CursorMoved { position: pos, .. } => {
+                if self.mouse_down {
+                    if self.current_mouse_pos.x > 0.001 && self.current_mouse_pos.y > 0.001 {
+                        self.camera.rotate(
+                            &self.device,
+                            &self.queue,
+                            &mut self.result,
+                            self.size,
+                            Vector2::<f32>::new(
+                                self.current_mouse_pos.x as f32,
+                                self.current_mouse_pos.y as f32,
+                            ),
+                            Vector2::<f32>::new(pos.x as f32, pos.y as f32),
+                        );
+                    }
+                    self.current_mouse_pos = *pos;
+                }
+            }
 
-                Some(VirtualKeyCode::Up) => self.camera_controller.translate(
-                    &self.device,
-                    &self.queue,
-                    &mut self.result,
-                    self.size,
-                    &mut self.camera,
-                    camera_controller::Direction::Forward,
-                ),
-                Some(VirtualKeyCode::Down) => self.camera_controller.translate(
-                    &self.device,
-                    &self.queue,
-                    &mut self.result,
-                    self.size,
-                    &mut self.camera,
-                    camera_controller::Direction::Backward,
-                ),
-                _ => {}
-            },
+            // WindowEvent::KeyboardInput {
+            //     input:
+            //         KeyboardInput {
+            //             state: ElementState::Pressed,
+            //             virtual_keycode: key,
+            //             ..
+            //         },
+            //     ..
+            // } => match key {
+            //     Some(VirtualKeyCode::Left) => self.camera_controller.translate(
+            //         &self.device,
+            //         &self.queue,
+            //         &mut self.result,
+            //         self.size,
+            //         &mut self.camera,
+            //         camera_controller::Direction::Left,
+            //     ),
+            //     Some(VirtualKeyCode::Right) => self.camera_controller.translate(
+            //         &self.device,
+            //         &self.queue,
+            //         &mut self.result,
+            //         self.size,
+            //         &mut self.camera,
+            //         camera_controller::Direction::Right,
+            //     ),
+
+            //     Some(VirtualKeyCode::Up) => self.camera_controller.translate(
+            //         &self.device,
+            //         &self.queue,
+            //         &mut self.result,
+            //         self.size,
+            //         &mut self.camera,
+            //         camera_controller::Direction::Forward,
+            //     ),
+            //     Some(VirtualKeyCode::Down) => self.camera_controller.translate(
+            //         &self.device,
+            //         &self.queue,
+            //         &mut self.result,
+            //         self.size,
+            //         &mut self.camera,
+            //         camera_controller::Direction::Backward,
+            //     ),
+            //     _ => {}
+            // },
             _ => {}
         }
         true
