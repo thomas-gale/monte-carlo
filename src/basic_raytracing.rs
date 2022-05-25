@@ -17,7 +17,6 @@ use winit::{
     window::Window,
 };
 
-// I don't like this massive state blob.
 pub struct BasicRaytracing {
     surface: wgpu::Surface,
     device: wgpu::Device,
@@ -26,8 +25,6 @@ pub struct BasicRaytracing {
     size: winit::dpi::PhysicalSize<u32>,
     quad: quad::Quad,
     render_pipeline: wgpu::RenderPipeline,
-    // constants_bind_group: wgpu::BindGroup,
-    // window_bind_group: wgpu::BindGroup,
     uniforms_bindings: uniforms_bindings::UniformsBindings,
     camera: camera::Camera,
     camera_controller: camera_controller::CameraController,
@@ -75,26 +72,9 @@ impl BasicRaytracing {
         };
         surface.configure(&device, &config);
 
-        // Constants
+        // Constants & window uniforms bindings
         let constants = constants::Constants::new();
-        // let (constants_bind_group_layout, constants_bind_group, _) =
-        //     buffer_bindings::create_device_buffer_binding(
-        //         &[constants],
-        //         &device,
-        //         wgpu::BufferUsages::UNIFORM,
-        //         wgpu::BufferBindingType::Uniform,
-        //     );
-
-        // Window
         let window = window::Window::new(&size);
-        // let (window_bind_group_layout, window_bind_group, _) =
-        //     buffer_bindings::create_device_buffer_binding(
-        //         &[window],
-        //         &device,
-        //         wgpu::BufferUsages::UNIFORM,
-        //         wgpu::BufferBindingType::Uniform,
-        //     );
-
         let uniforms_bindings =
             uniforms_bindings::UniformsBindings::new(&device, &[constants], &[window]);
 
@@ -138,8 +118,6 @@ impl BasicRaytracing {
                 label: Some("Render Pipeline Layout"),
                 bind_group_layouts: &[
                     &uniforms_bindings.get_bind_group_layout(),
-                    // &constants_bind_group_layout,
-                    // &window_bind_group_layout,
                     &camera.get_bind_group_layout(),
                     &scene_bind_group_layout,
                     &result.get_bind_group_layout(),
@@ -189,8 +167,6 @@ impl BasicRaytracing {
             size,
             quad,
             render_pipeline,
-            // constants_bind_group,
-            // window_bind_group,
             uniforms_bindings,
             camera,
             camera_controller,
@@ -208,13 +184,6 @@ impl BasicRaytracing {
             self.surface.configure(&self.device, &self.config);
 
             let window = window::Window::new(&self.size);
-            // let (_, window_bind_group, _) = buffer_bindings::create_device_buffer_binding(
-            //     &[window],
-            //     &self.device,
-            //     wgpu::BufferUsages::UNIFORM,
-            //     wgpu::BufferBindingType::Uniform,
-            // );
-            // self.window_bind_group = window_bind_group;
             self.uniforms_bindings
                 .update_window_buffer(&self.queue, &[window]);
 
@@ -300,8 +269,6 @@ impl BasicRaytracing {
             render_pass.set_vertex_buffer(0, self.quad.vertices.slice(..));
             render_pass.set_index_buffer(self.quad.indices.slice(..), wgpu::IndexFormat::Uint16);
             render_pass.set_bind_group(0, &self.uniforms_bindings.get_bind_group(), &[]);
-            // render_pass.set_bind_group(0, &self.constants_bind_group, &[]);
-            // render_pass.set_bind_group(1, &self.window_bind_group, &[]);
             render_pass.set_bind_group(1, &self.camera.get_bind_group(), &[]);
             render_pass.set_bind_group(2, &self.scene_bind_group, &[]);
             render_pass.set_bind_group(3, &self.result.get_bind_group(), &[]);

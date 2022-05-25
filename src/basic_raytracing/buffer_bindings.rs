@@ -1,19 +1,5 @@
 use wgpu::util::DeviceExt;
 
-// pub fn create_device_buffer<T: bytemuck::Pod>(
-//     entity_slice: &[T],
-//     device: &wgpu::Device,
-//     usage: wgpu::BufferUsages,
-// ) -> wgpu::Buffer {
-//     device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-//         label: None,
-//         contents: bytemuck::cast_slice(entity_slice),
-//         usage,
-//     })
-// }
-
-// pub fn create_device_bind_group() -> (wgpu::BindGroupLayout, wgpu::BindGroup) {}
-
 pub fn create_device_buffer_binding<T: bytemuck::Pod>(
     entity_slice: &[T],
     device: &wgpu::Device,

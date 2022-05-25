@@ -57,12 +57,11 @@ async fn run() {
             match basic_renderer.render() {
                 Ok(_) => {}
                 // Reconfigure the surface if lost
-                Err(wgpu::SurfaceError::Lost) => basic_renderer.resize(basic_renderer.get_size()),
+                // Err(wgpu::SurfaceError::Lost) => basic_renderer.resize(basic_renderer.get_size()),
                 // The system is out of memory, we should probably quit
                 Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
                 // All other errors (Outdated, Timeout) should be resolved by the next frame
-                Err(e) => eprintln!("{:?}", e),
-            }
+                Err(e) => eprintln!("{:?}", e), }
         }
         Event::MainEventsCleared => {
             window.request_redraw();

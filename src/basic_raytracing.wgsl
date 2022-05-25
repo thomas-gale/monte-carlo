@@ -1,4 +1,4 @@
-// Vertex shader
+// ** Vertex shader **
 
 struct VertexInput {
     [[location(0)]] position: vec3<f32>;
@@ -20,12 +20,10 @@ fn vs_main(
     return out;
 }
 
-// Fragment shader
+// ** Fragment shader **
 
 // Implementing https://raytracing.github.io/books/RayTracingInOneWeekend.html
 // Attribution of assitance from https://www.shadertoy.com/view/lssBD7
-
-
 
 // Constants
 struct Constants {
