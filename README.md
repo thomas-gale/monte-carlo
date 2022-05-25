@@ -1,5 +1,5 @@
 # monte-carlo
-Learning about Monte Carlo methods.
+Learn about Monte Carlo methods via making stuff.
 
 ## stack
 - `rust` language
