@@ -6,7 +6,7 @@ pub struct UniformsBindings {
     bind_group_layout: wgpu::BindGroupLayout,
     bind_group: wgpu::BindGroup,
     // constants_buffer: wgpu::Buffer,
-    window_buffer: wgpu::Buffer,
+    // window_buffer: wgpu::Buffer,
 }
 
 impl UniformsBindings {
@@ -79,7 +79,7 @@ impl UniformsBindings {
             bind_group_layout,
             bind_group,
             // constants_buffer,
-            window_buffer,
+            // window_buffer,
         }
     }
 
@@ -103,8 +103,7 @@ impl UniformsBindings {
     //     );
     // }
 
-    pub fn update_window_buffer(&mut self, queue: &wgpu::Queue, window_slice: &[window::Window]) {
-        queue.write_buffer(&self.window_buffer, 0, bytemuck::cast_slice(window_slice));
-    }
-
+    // pub fn update_window_buffer(&mut self, queue: &wgpu::Queue, window_slice: &[window::Window]) {
+    //     queue.write_buffer(&self.window_buffer, 0, bytemuck::cast_slice(window_slice));
+    // }
 }

@@ -100,16 +100,6 @@ impl Camera {
         let initial_look_from =
             (arcball_camera.get_inv_camera() * look_from.extend(1.0)).truncate();
 
-        // println!("camera mat: {:?}", arcball_camera.get_mat4());
-        // println!("camera inv mat: {:?}", arcball_camera.get_inv_camera());
-        // println!("camera up: {:?}", arcball_camera.up_dir());
-        // println!("camera eye pos: {:?}", arcball_camera.eye_pos());
-        // println!("camera eye dir: {:?}", arcball_camera.eye_dir());
-
-        // println!("look from: {:?}", look_from);
-        // let updated_look_from = (arcball_camera.get_mat4() * look_from.extend(1.0)).truncate();
-        // println!("updated look from: {:?}", updated_look_from);
-
         let raw = Self::generate_raw(
             &initial_look_from,
             &look_at,
@@ -183,9 +173,9 @@ impl Camera {
         )
     }
 
-    pub fn set_window(&mut self, window: window::Window) {
-        self.window = window;
-    }
+    // pub fn set_window(&mut self, window: window::Window) {
+    //     self.window = window;
+    // }
 
     pub fn update(&mut self, queue: &wgpu::Queue) {
         let raw = Self::generate_raw(
@@ -201,16 +191,6 @@ impl Camera {
         queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.raw]));
     }
 
-    pub fn translate(&mut self, queue: &wgpu::Queue, delta: Vector3<f32>) {
-        self.raw.origin[0] += delta.x;
-        self.raw.origin[1] += delta.y;
-        self.raw.origin[2] += delta.z;
-        self.raw.lower_left_corner[0] += delta.x;
-        self.raw.lower_left_corner[1] += delta.y;
-        self.raw.lower_left_corner[2] += delta.z;
-        queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.raw]));
-    }
-
     pub fn rotate(
         &mut self,
         device: &wgpu::Device,
@@ -220,29 +200,22 @@ impl Camera {
         mouse_prev: Vector2<f32>,
         mouse_cur: Vector2<f32>,
     ) {
-        // println!(
-        //     "Rotating, mouse prev: {:?}, mouse cur: {:?}",
-        //     mouse_prev, mouse_cur,
-        // );
-
-        // self.arcball_camera.rotate(mouse_prev, mouse_cur);
-
+        // Arcball implementation expects y up to be +ve (which in screen space is down)
+        // Hence, the y values are swapped
         self.arcball_camera.rotate(
             Vector2::new(mouse_prev.x, mouse_cur.y),
             Vector2::new(mouse_cur.x, mouse_prev.y),
-            // mouse_prev.mul_element_wise(Vector2::<f32>::new(0.0, -1.0)),
-            // mouse_cur.mul_element_wise(Vector2::<f32>::new(0.0, -1.0)),
         );
 
+        // Multiple the initial look from position vector by the inverse camera matrix to get the current look from vector.
         self.look_from =
             (self.arcball_camera.get_inv_camera() * self.starting_look_from.extend(1.0)).truncate();
+
+        // Push the changes to the GPU
         self.update(queue);
+        // Reset the accumulation ray color result texture
         result.reset_texture(device, queue, size);
     }
-
-    // pub fn zoom(&mut self) {
-    //     self.arcball_camera.zoom(amount, elapsed)
-    // }
 
     pub fn get_bind_group_layout(&self) -> &wgpu::BindGroupLayout {
         &self.bind_group_layout

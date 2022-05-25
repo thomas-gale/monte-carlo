@@ -1,6 +1,5 @@
 mod buffer_bindings;
 mod camera;
-mod camera_controller;
 mod constants;
 mod quad;
 mod result;
@@ -12,24 +11,21 @@ mod vertex;
 mod window;
 
 use cgmath::{Vector2, Vector3};
-use winit::{
-    event::{ElementState, KeyboardInput, VirtualKeyCode, WindowEvent},
-    window::Window,
-};
+use winit::{event::WindowEvent, window::Window};
 
+// Some bits need to be tidied into more granular structs.
 pub struct BasicRaytracing {
-    mouse_down: bool,
-    current_mouse_pos: winit::dpi::PhysicalPosition<f64>,
+    mouse_down: bool,                                     // TODO: tidy
+    current_mouse_pos: winit::dpi::PhysicalPosition<f64>, // TODO: tidy
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
-    config: wgpu::SurfaceConfiguration,
+    // config: wgpu::SurfaceConfiguration,
     size: winit::dpi::PhysicalSize<u32>,
     quad: quad::Quad,
     render_pipeline: wgpu::RenderPipeline,
     uniforms_bindings: uniforms_bindings::UniformsBindings,
     camera: camera::Camera,
-    camera_controller: camera_controller::CameraController,
     scene_bind_group: wgpu::BindGroup,
     result: result::Result,
 }
@@ -81,21 +77,16 @@ impl BasicRaytracing {
             uniforms_bindings::UniformsBindings::new(&device, &[constants], &[window]);
 
         // Camera
-        // let look_from = Vector3::<f32>::new(13.0, 2.0, 3.0);
-        // let look_from = Vector3::<f32>::new(0.0, 0.0, 1.0);
-        let look_from = Vector3::<f32>::new(0.0, 1.0, 0.0);
-        let look_at = Vector3::<f32>::new(0.0, 0.0, 0.0);
         let camera = camera::Camera::new(
             &device,
-            look_from,
-            look_at,
+            Vector3::<f32>::new(0.0, 1.0, 0.0),
+            Vector3::<f32>::new(0.0, 0.0, 0.0),
             Vector3::<f32>::new(0.0, 1.0, 0.0),
             20.0,
             window,
             0.1,
-            10.0,
+            14.0,
         );
-        let camera_controller = camera_controller::CameraController::new();
 
         // Scene
         let scene = scene::Scene::final_scene();
@@ -169,41 +160,41 @@ impl BasicRaytracing {
             surface,
             device,
             queue,
-            config,
+            // config,
             size,
             quad,
             render_pipeline,
             uniforms_bindings,
             camera,
-            camera_controller,
             scene_bind_group,
             result,
         }
     }
 
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        if new_size.width > 0 && new_size.height > 0 {
-            self.size = new_size;
-            self.config.width = new_size.width;
-            self.config.height = new_size.height;
+    // pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
+    //     if new_size.width > 0 && new_size.height > 0 {
+    //         self.size = new_size;
+    //         self.config.width = new_size.width;
+    //         self.config.height = new_size.height;
 
-            self.surface.configure(&self.device, &self.config);
+    //         self.surface.configure(&self.device, &self.config);
 
-            let window = window::Window::new(&self.size);
-            self.uniforms_bindings
-                .update_window_buffer(&self.queue, &[window]);
+    //         let window = window::Window::new(&self.size);
+    //         self.uniforms_bindings
+    //             .update_window_buffer(&self.queue, &[window]);
 
-            self.camera.set_window(window);
-            self.camera.update(&self.queue);
-        }
-    }
+    //         self.camera.set_window(window);
+    //         self.camera.update(&self.queue);
+    //     }
+    // }
 
-    pub fn get_size(&self) -> winit::dpi::PhysicalSize<u32> {
-        self.size
-    }
+    // pub fn get_size(&self) -> winit::dpi::PhysicalSize<u32> {
+    //     self.size
+    // }
 
     pub fn input(&mut self, event: &WindowEvent) -> bool {
         match event {
+            // Movement events for arcball camera
             WindowEvent::MouseInput {
                 state: winit::event::ElementState::Pressed,
                 ..
@@ -235,51 +226,6 @@ impl BasicRaytracing {
                     self.current_mouse_pos = *pos;
                 }
             }
-
-            // WindowEvent::KeyboardInput {
-            //     input:
-            //         KeyboardInput {
-            //             state: ElementState::Pressed,
-            //             virtual_keycode: key,
-            //             ..
-            //         },
-            //     ..
-            // } => match key {
-            //     Some(VirtualKeyCode::Left) => self.camera_controller.translate(
-            //         &self.device,
-            //         &self.queue,
-            //         &mut self.result,
-            //         self.size,
-            //         &mut self.camera,
-            //         camera_controller::Direction::Left,
-            //     ),
-            //     Some(VirtualKeyCode::Right) => self.camera_controller.translate(
-            //         &self.device,
-            //         &self.queue,
-            //         &mut self.result,
-            //         self.size,
-            //         &mut self.camera,
-            //         camera_controller::Direction::Right,
-            //     ),
-
-            //     Some(VirtualKeyCode::Up) => self.camera_controller.translate(
-            //         &self.device,
-            //         &self.queue,
-            //         &mut self.result,
-            //         self.size,
-            //         &mut self.camera,
-            //         camera_controller::Direction::Forward,
-            //     ),
-            //     Some(VirtualKeyCode::Down) => self.camera_controller.translate(
-            //         &self.device,
-            //         &self.queue,
-            //         &mut self.result,
-            //         self.size,
-            //         &mut self.camera,
-            //         camera_controller::Direction::Backward,
-            //     ),
-            //     _ => {}
-            // },
             _ => {}
         }
         true
