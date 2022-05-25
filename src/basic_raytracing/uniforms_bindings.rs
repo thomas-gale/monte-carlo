@@ -106,4 +106,5 @@ impl UniformsBindings {
     pub fn update_window_buffer(&mut self, queue: &wgpu::Queue, window_slice: &[window::Window]) {
         queue.write_buffer(&self.window_buffer, 0, bytemuck::cast_slice(window_slice));
     }
+
 }

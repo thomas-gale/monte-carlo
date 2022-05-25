@@ -360,20 +360,28 @@ var<uniform> result_uniforms: ResultUniforms;
 
 [[stage(fragment)]]
 fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
-    // var pixel_color = vec3<f32>(0.0, 0.0, 0.0);
-    var texture_coords = vec2<i32>(i32(in.tex_coords.x * f32(window.width_pixels)), i32(in.tex_coords.y * f32(window.height_pixels)));
-    var pixel_color = textureLoad(texture, texture_coords).xyz;
+    // Compute a new sampled color
+    var new_sampled_pixel_color = vec3<f32>(0.0, 0.0, 0.0);
     var num_samples = constants.samples_per_pixel;
     for (var s = 0; s < num_samples; s = s + 1) {
-        var pixel_entropy = hash(entropy_window_space(in.tex_coords));
+        var pixel_entropy = hash(entropy_window_space(in.tex_coords) + result_uniforms.pass_index);
         var pixel_sample_entropy = hash(pixel_entropy * u32(s + 1));
         var u = in.tex_coords.x + random_float(hash(pixel_sample_entropy + 1u)) / f32(window.width_pixels);
         var v = in.tex_coords.y + random_float(hash(pixel_sample_entropy + 2u)) / f32(window.height_pixels);
         var ray = camera_get_ray(u, v, hash(pixel_sample_entropy + 3u));
-        pixel_color = pixel_color + ray_color(&ray, constants.max_depth, hash(pixel_sample_entropy + 4u));
+        new_sampled_pixel_color = new_sampled_pixel_color + ray_color(&ray, constants.max_depth, hash(pixel_sample_entropy + 4u));
     }
-    pixel_color = pixel_color / f32(num_samples);
-    var pixel_color_with_alpha = vec4<f32>(pixel_color, 1.0);
-    // textureStore(texture, texture_coords, pixel_color_with_alpha);
-    return pixel_color_with_alpha;
+    new_sampled_pixel_color = new_sampled_pixel_color / f32(num_samples);
+    var new_pixel_color_with_alpha = vec4<f32>(new_sampled_pixel_color, 1.0);
+
+    // Weighted average with existing pixel color in result storage texture.
+    var texture_coords = vec2<i32>(i32(in.tex_coords.x * f32(window.width_pixels)), i32(in.tex_coords.y * f32(window.height_pixels)));
+
+    var existing_pixel_color_with_alpha = textureLoad(texture, texture_coords);
+
+    // Full running average
+    var averaged_pixel_color_with_alpha = new_pixel_color_with_alpha / (1.0 + f32(result_uniforms.pass_index)) + (f32(result_uniforms.pass_index) / (1.0 + f32(result_uniforms.pass_index)) * existing_pixel_color_with_alpha);
+
+    textureStore(texture, texture_coords, averaged_pixel_color_with_alpha);
+    return averaged_pixel_color_with_alpha;
 }

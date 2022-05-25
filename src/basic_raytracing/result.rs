@@ -189,6 +189,10 @@ impl Result {
         &self.bind_group
     }
 
+    pub fn get_pass_index(&self) -> u32 {
+        self.uniforms.pass_index
+    }
+
     pub fn increment_result_index(&mut self, queue: &wgpu::Queue) {
         self.uniforms.pass_index += 1;
         queue.write_buffer(

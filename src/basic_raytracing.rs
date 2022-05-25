@@ -314,6 +314,7 @@ impl BasicRaytracing {
 
         // Update the result index (as the fragment shader has just been executed)
         self.result.increment_result_index(&mut self.queue);
+        println!("Pass index: {}", self.result.get_pass_index());
 
         Ok(())
     }
