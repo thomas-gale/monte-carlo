@@ -10,7 +10,7 @@ mod util;
 mod vertex;
 mod window;
 
-use cgmath::{Vector2, Vector3};
+use cgmath::{Point3, Vector2, Vector3};
 use winit::{event::WindowEvent, window::Window};
 
 // Some bits need to be tidied into more granular structs.
@@ -79,8 +79,8 @@ impl BasicRaytracing {
         // Camera
         let camera = camera::Camera::new(
             &device,
-            Vector3::<f32>::new(0.0, 1.0, 0.0),
-            Vector3::<f32>::new(0.0, 0.0, 0.0),
+            Point3::<f32>::new(0.0, 1.0, 0.0),
+            Point3::<f32>::new(0.0, 0.0, 0.0),
             Vector3::<f32>::new(0.0, 1.0, 0.0),
             20.0,
             window,

@@ -1,4 +1,6 @@
-use cgmath::{prelude::*, Vector2, Vector3};
+use std::f32::consts::PI;
+
+use cgmath::{prelude::*, Matrix4, Point3, Rad, Vector2, Vector3};
 
 use super::{buffer_bindings, result, util, window};
 
@@ -24,8 +26,8 @@ struct CameraRaw {
 
 impl CameraRaw {
     pub fn new(
-        origin: Vector3<f32>,
-        lower_left_corner: Vector3<f32>,
+        origin: Point3<f32>,
+        lower_left_corner: Point3<f32>,
         horizontal: Vector3<f32>,
         vertical: Vector3<f32>,
         u: Vector3<f32>,
@@ -53,16 +55,17 @@ impl CameraRaw {
 }
 
 pub struct Camera {
-    starting_look_from: Vector3<f32>,
-    look_from: Vector3<f32>,
-    look_at: Vector3<f32>,
-    v_up: Vector3<f32>,
+    starting_look_from: Point3<f32>,
+    look_from: Point3<f32>, // eye
+    look_at: Point3<f32>,   // target
+    v_up: Vector3<f32>,     // orientation of the camera
     v_fov: f32,
     window: window::Window,
     aperture: f32,
     focus_dist: f32,
 
     arcball_camera: arcball::ArcballCamera<f32>,
+    view_matrix: Matrix4<f32>,
 
     raw: CameraRaw,
     bind_group_layout: wgpu::BindGroupLayout,
@@ -73,8 +76,8 @@ pub struct Camera {
 impl Camera {
     pub fn new(
         device: &wgpu::Device,
-        look_from: Vector3<f32>,
-        look_at: Vector3<f32>,
+        look_from: Point3<f32>,
+        look_at: Point3<f32>,
         v_up: Vector3<f32>,
         v_fov: f32,
         window: window::Window,
@@ -82,7 +85,7 @@ impl Camera {
         focus_dist: f32,
     ) -> Self {
         let mut arcball_camera = arcball::ArcballCamera::new(
-            look_at,
+            look_at.to_vec(),
             0.1,
             [window.width_pixels as f32, window.height_pixels as f32],
         );
@@ -97,8 +100,9 @@ impl Camera {
                 (window.height_pixels as f32 / 2.0) - 50.0,
             ),
         );
-        let initial_look_from =
-            (arcball_camera.get_inv_camera() * look_from.extend(1.0)).truncate();
+        let initial_look_from = Point3::<f32>::from_vec(
+            (arcball_camera.get_inv_camera() * look_from.to_vec().extend(1.0)).truncate(),
+        );
 
         let raw = Self::generate_raw(
             &initial_look_from,
@@ -117,7 +121,7 @@ impl Camera {
             wgpu::BufferBindingType::Uniform,
         );
 
-        Camera {
+        let new_cam = Camera {
             starting_look_from: look_from,
             look_from: initial_look_from,
             look_at,
@@ -128,17 +132,21 @@ impl Camera {
             focus_dist,
 
             arcball_camera,
-
+            view_matrix: Matrix4::identity(),
+            // view
             raw,
             bind_group_layout,
             bind_group,
             buffer,
-        }
+        };
+        new_cam.update_view_matrix();
+
+        new_cam
     }
 
     fn generate_raw(
-        look_from: &Vector3<f32>,
-        look_at: &Vector3<f32>,
+        look_from: &Point3<f32>,
+        look_at: &Point3<f32>,
         v_up: &Vector3<f32>,
         v_fov: f32,
         window: window::Window,
@@ -202,14 +210,46 @@ impl Camera {
     ) {
         // Arcball implementation expects y up to be +ve (which in screen space is down)
         // Hence, the y values are swapped
-        self.arcball_camera.rotate(
-            Vector2::new(mouse_prev.x, mouse_cur.y),
-            Vector2::new(mouse_cur.x, mouse_prev.y),
-        );
+        // self.arcball_camera.rotate(
+        //     Vector2::new(mouse_prev.x, mouse_cur.y),
+        //     Vector2::new(mouse_cur.x, mouse_prev.y),
+        // );
 
-        // Multiple the initial look from position vector by the inverse camera matrix to get the current look from vector.
-        self.look_from =
-            (self.arcball_camera.get_inv_camera() * self.starting_look_from.extend(1.0)).truncate();
+        // // Multiple the initial look from position vector by the inverse camera matrix to get the current look from vector.
+        // self.look_from =
+        //     (self.arcball_camera.get_inv_camera() * self.starting_look_from.extend(1.0)).truncate();
+
+        // Arcball implementation - attribution: https://asliceofrendering.com/camera/2019/11/30/ArcballCamera/
+
+        // Homogeneous position of camera and pivot point
+        let mut position = self.look_from.to_vec().extend(1.0);
+        let pivot = self.look_at.to_vec().extend(1.0);
+
+        // Calculate amount of rotation in mouse movement
+        let delta_angle_x: f32 = 2.0 * PI / size.width as f32; // a movement from left to right = 2*PI = 360 deg
+        let delta_angle_y: f32 = PI / size.height as f32; // a movement from top to bottom = PI = 180 deg
+        let x_angle: f32 = (mouse_prev.x - mouse_cur.x) * delta_angle_x;
+        let y_angle: f32 = (mouse_prev.y - mouse_cur.y) * delta_angle_y;
+
+        // Extra step to handle the problem when the camera direction is the same as the up vector
+        let cos_angle: f32 = self.get_view_dir().dot(self.v_up);
+        if cos_angle * f32::signum(delta_angle_y) > 0.99 {
+            delta_angle_y = 0.0;
+        }
+
+        // step 2: Rotate the camera around the pivot point on the first axis.
+        let rotation_matrix_x = Matrix4::from_axis_angle(self.v_up, Rad(x_angle));
+        position = rotation_matrix_x * (position - pivot) + pivot;
+
+        // step 3: Rotate the camera around the pivot point on the second axis.
+        let rotation_matrix_y = Matrix4::from_axis_angle(self.get_right_vector(), Rad(y_angle));
+        // let rotation_matrix_y = Matrix4::<f32>::from_axis_angle(self.v_up, x_angle);
+        // glm::mat4x4 rotationMatrixY(1.0f);
+        // rotationMatrixY = glm::rotate(rotationMatrixY, yAngle, app->m_camera.GetRightVector());
+        // glm::vec3 finalPosition = (rotationMatrixY * (position - pivot)) + pivot;
+
+        // rotationMatrixX = glm::rotate(rotationMatrixX, xAngle, app->m_upVector);
+        // position = (rotationMatrixX * (position - pivot)) + pivot;
 
         // Push the changes to the GPU
         self.update(queue);
@@ -223,5 +263,29 @@ impl Camera {
 
     pub fn get_bind_group(&self) -> &wgpu::BindGroup {
         &self.bind_group
+    }
+
+    fn set_camera_view(
+        &mut self,
+        look_from: Point3<f32>,
+        look_at: Point3<f32>,
+        v_up: Vector3<f32>,
+    ) {
+        self.look_from = look_from;
+        self.look_at = look_at;
+        self.v_up = v_up;
+    }
+
+    fn update_view_matrix(&mut self) {
+        self.view_matrix = Matrix4::look_at_rh(self.look_from, self.look_at, self.v_up);
+    }
+
+    // Camera forward is -z
+    fn get_view_dir(&self) -> Vector3<f32> {
+        -self.view_matrix.transpose()[2]
+    }
+
+    fn get_right_vector(&self) -> Vector3<f32> {
+        self.view_matrix.transpose()[0]
     }
 }
