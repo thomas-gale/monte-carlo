@@ -6,6 +6,13 @@ Learn about Monte Carlo methods via making stuff.
 - `wgpu` binding library
 - `wgsl` shader language
 
+## running (you'll need decent GPU - tested on Nvidia RTX 2070 Super)
+- Install rust https://www.rust-lang.org/tools/install
+- `cargo run`
+- A fixed `1280x1024` screen will be opened
+- Esc to quit
+- Mouse click (any button) and drag to orbit (framerate probably will be quite low)
+
 ## plan
 - [x] Follow (again) [_Ray Tracing in One Weekend_](https://raytracing.github.io/books/RayTracingInOneWeekend.html) implementing as much code as wgsl fragment/compute shaders
 - [ ] Extend to https://raytracing.github.io/books/RayTracingTheNextWeek.html (focus on bvh section, rectangles/lights and volumes)
