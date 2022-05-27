@@ -1,20 +1,22 @@
-pub mod buffer_bindings;
-pub mod camera;
-pub mod constants;
-pub mod quad;
-pub mod result;
-pub mod scene;
-pub mod sphere;
-pub mod uniforms_bindings;
-pub mod util;
-pub mod vertex;
-pub mod window;
+// mod buffer_bindings;
+// mod camera;
+// mod constants;
+// mod quad;
+// mod result;
+// mod scene;
+// mod sphere;
+// mod uniforms_bindings;
+// mod util;
+// mod vertex;
+// mod window;
+
+use super::basic_raytracing::*;
 
 use cgmath::{Point3, Vector2, Vector3};
 use winit::{event::WindowEvent, window::Window};
 
 // Some bits need to be tidied into more granular structs.
-pub struct BasicRaytracing {
+pub struct BvhRaytracing {
     mouse_down: bool,                                     // TODO: tidy
     current_mouse_pos: winit::dpi::PhysicalPosition<f64>, // TODO: tidy
     surface: wgpu::Surface,
@@ -30,7 +32,7 @@ pub struct BasicRaytracing {
     result: result::Result,
 }
 
-impl BasicRaytracing {
+impl BvhRaytracing {
     pub async fn new(window: &Window) -> Self {
         let size = window.inner_size();
 
@@ -105,7 +107,7 @@ impl BasicRaytracing {
         let result = result::Result::new(&device, &queue, window);
 
         // Load shader
-        let shader = device.create_shader_module(&wgpu::include_wgsl!("basic_raytracing.wgsl"));
+        let shader = device.create_shader_module(&wgpu::include_wgsl!("bvh_raytracing.wgsl"));
 
         // Create the render pipeline
         let render_pipeline_layout =

@@ -1,4 +1,5 @@
 mod basic_raytracing;
+mod bvh_raytracing;
 
 use winit::{
     dpi::PhysicalSize,
@@ -15,12 +16,13 @@ async fn run() {
     let window = WindowBuilder::new()
         .with_title("monte carlo")
         .with_resizable(false)
-        .with_inner_size(PhysicalSize::new(1280, 1024))
+        .with_inner_size(PhysicalSize::new(1280_i32, 1024_i32))
         .build(&event_loop)
         .unwrap();
 
     // Create the renderers
-    let mut basic_renderer = basic_raytracing::BasicRaytracing::new(&window).await;
+    // let mut renderer = basic_raytracing::BasicRaytracing::new(&window).await;
+    let mut renderer = bvh_raytracing::BvhRaytracing::new(&window).await;
 
     // println!("Press 'return' to render the scene to the window!");
     event_loop.run(move |event, _, control_flow| match event {
@@ -39,19 +41,19 @@ async fn run() {
                 ..
             } => *control_flow = ControlFlow::Exit,
             // WindowEvent::Resized(physical_size) => {
-            //     basic_renderer.resize(*physical_size);
+            //     renderer.resize(*physical_size);
             // }
             // WindowEvent::ScaleFactorChanged { new_inner_size, .. } => {
             //     // new_inner_size is &&mut so we have to dereference it twice
-            //     basic_renderer.resize(**new_inner_size);
+            //     renderer.resize(**new_inner_size);
             // }
             _ => {
                 // Process input events
-                basic_renderer.input(event);
+                renderer.input(event);
             }
         },
         Event::RedrawRequested(window_id) if window_id == window.id() => {
-            match basic_renderer.render() {
+            match renderer.render() {
                 Ok(_) => {}
                 // Reconfigure the surface if lost
                 // Err(wgpu::SurfaceError::Lost) => basic_renderer.resize(basic_renderer.get_size()),
