@@ -185,6 +185,16 @@ fn ray_at(ray: ptr<function,Ray>, t: f32) -> vec3<f32> {
     return (*ray).origin + (*ray).direction * t;
 }
 
+// Bvh
+struct Aabb {
+    min: vec3<f32>;
+    max: vec3<f32>;
+};
+
+fn aabb_hit(aabb: ptr<function, Aabb>, ray: ptr<function, Ray>, t_min: f32, t_max: f32) -> bool {
+    return false;
+}
+
 // Hittable
 struct HitRecord {
     p: vec3<f32>;
