@@ -1,14 +1,14 @@
-pub mod buffer_bindings;
-pub mod camera;
-pub mod constants;
-pub mod quad;
-pub mod result;
-pub mod scene;
-pub mod sphere;
-pub mod uniforms_bindings;
-pub mod util;
-pub mod vertex;
-pub mod window;
+mod buffer_bindings;
+mod camera;
+mod constants;
+mod quad;
+mod result;
+mod scene;
+mod sphere;
+mod uniforms_bindings;
+mod util;
+mod vertex;
+mod window;
 
 use cgmath::{Point3, Vector2, Vector3};
 use winit::{event::WindowEvent, window::Window};

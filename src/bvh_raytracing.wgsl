@@ -191,8 +191,30 @@ struct Aabb {
     max: vec3<f32>;
 };
 
+// Optimised method from Andrew Kensler at Pixar.
 fn aabb_hit(aabb: ptr<function, Aabb>, ray: ptr<function, Ray>, t_min: f32, t_max: f32) -> bool {
-    return false;
+    for (var a = 0; a < 3; a = a + 1) {
+        var inv_d = 1.0 / (*ray).direction[a];
+        var t_0 = ((*aabb).min[a] - (*ray).origin[a]) * inv_d;
+        var t_1 = ((*aabb).max[a] - (*ray).origin[a]) * inv_d;
+        if (inv_d < 0.0) {
+            var tmp = t_0;
+            t_0 = t_1;
+            t_1 = tmp;
+        }
+        var t_min_test = t_min;
+        if (t_0 > t_min) {
+            t_min_test = t_0;
+        }
+        var t_max_test = t_max;
+        if (t_1 < t_max) {
+            t_max_test = t_1;
+        }
+        if (t_max_test <= t_min_test) {
+            return false;
+        }
+    }
+    return true;
 }
 
 // Hittable
