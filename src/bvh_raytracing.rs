@@ -30,7 +30,7 @@ pub struct BvhRaytracing {
     render_pipeline: wgpu::RenderPipeline,
     uniforms_bindings: uniforms_bindings::UniformsBindings,
     camera: camera::Camera,
-    scene_bind_group: wgpu::BindGroup,
+    bvh_bind_group: wgpu::BindGroup,
     result: result::Result,
 }
 
@@ -93,10 +93,10 @@ impl BvhRaytracing {
         );
 
         // Scene
-        let scene = scene::Scene::final_scene();
-        let (scene_bind_group_layout, scene_bind_group, _) =
+        let scene_bvh = scene::final_scene();
+        let (scene_bvh_bind_group_layout, scene_bvh_bind_group, _) =
             buffer_bindings::create_device_buffer_binding(
-                &scene.spheres[..],
+                &scene_bvh.get_hittables()[..],
                 &device,
                 wgpu::BufferUsages::STORAGE,
                 wgpu::BufferBindingType::Storage { read_only: (true) },
@@ -118,7 +118,7 @@ impl BvhRaytracing {
                 bind_group_layouts: &[
                     &uniforms_bindings.get_bind_group_layout(),
                     &camera.get_bind_group_layout(),
-                    &scene_bind_group_layout,
+                    &scene_bvh_bind_group_layout,
                     &result.get_bind_group_layout(),
                 ],
                 push_constant_ranges: &[],
@@ -170,7 +170,7 @@ impl BvhRaytracing {
             render_pipeline,
             uniforms_bindings,
             camera,
-            scene_bind_group,
+            bvh_bind_group: scene_bvh_bind_group,
             result,
         }
     }
@@ -270,7 +270,7 @@ impl BvhRaytracing {
             render_pass.set_index_buffer(self.quad.indices.slice(..), wgpu::IndexFormat::Uint16);
             render_pass.set_bind_group(0, &self.uniforms_bindings.get_bind_group(), &[]);
             render_pass.set_bind_group(1, &self.camera.get_bind_group(), &[]);
-            render_pass.set_bind_group(2, &self.scene_bind_group, &[]);
+            render_pass.set_bind_group(2, &self.bvh_bind_group, &[]);
             render_pass.set_bind_group(3, &self.result.get_bind_group(), &[]);
             render_pass.draw_indexed(0..self.quad.num_indices, 0, 0..1);
         }

@@ -159,6 +159,17 @@ struct Camera {
 var<uniform> camera: Camera;
 
 // Scene
+struct Aabb {
+    min: vec3<f32>;
+    max: vec3<f32>;
+};
+
+struct BvhNode {
+    left_hittable: u32;  // Pointer to left hittable
+    right_hittable: u32; // Pointer to right hittable
+    aabb: Aabb;
+};
+
 struct Sphere {
     center: vec3<f32>;
     radius: f32;
@@ -168,12 +179,19 @@ struct Sphere {
     albedo: vec3<f32>; // Ray bounce color
 };
 
-struct Scene {
-    spheres: array<Sphere>;
+/// Experimental data structure to hold all bvh compatible data for a single hittable geometry to compose into the bvh tree
+struct Hittable {
+    geometry_type: u32;
+    bvh_node: BvhNode;
+    sphere: Sphere;
+};
+
+struct Bvh {
+    hittables: array<Hittable>;
 };
 
 [[group(2), binding(0)]]
-var<storage, read> scene: Scene;
+var<storage, read> bvh: Bvh;
 
 // Ray
 struct Ray {
@@ -185,11 +203,7 @@ fn ray_at(ray: ptr<function,Ray>, t: f32) -> vec3<f32> {
     return (*ray).origin + (*ray).direction * t;
 }
 
-// Bvh
-struct Aabb {
-    min: vec3<f32>;
-    max: vec3<f32>;
-};
+// Bvh helpers
 
 // Optimised method from Andrew Kensler at Pixar.
 fn aabb_hit(aabb: ptr<function, Aabb>, ray: ptr<function, Ray>, t_min: f32, t_max: f32) -> bool {
@@ -254,7 +268,7 @@ fn set_face_normal(hit_record: ptr<function, HitRecord>, r: ptr<function, Ray>, 
 
 // Sphere Helpers
 fn sphere_hit(sphere_worlds_index: i32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
-    var sphere = scene.spheres[sphere_worlds_index];
+    var sphere = bvh.hittables[sphere_worlds_index].sphere; // WIP: Hard coded to only work on spheres
 
     var oc = (*ray).origin - sphere.center;
     var a = dot((*ray).direction, (*ray).direction);
@@ -292,7 +306,7 @@ fn sphere_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<functio
     var hit_anything = false;
     var closest_so_far = t_max;
 
-    var num_spheres_world = i32(arrayLength(&scene.spheres));
+    var num_spheres_world = i32(arrayLength(&bvh.hittables)); // WIP: hard coded to only expect bvh to be flat spheres
     for (var i = 0; i < num_spheres_world; i = i + 1) {
         var hit_sphere = sphere_hit(i, ray, t_min, closest_so_far, rec);
         if (hit_sphere) {

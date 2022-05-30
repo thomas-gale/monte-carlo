@@ -1,6 +1,5 @@
 use super::{bvh_node::BvhNode, sphere::Sphere};
 
-#[derive(Copy, Clone, Debug)]
 pub enum GeometryType {
     BvhNode(BvhNode),
     Sphere(Sphere),

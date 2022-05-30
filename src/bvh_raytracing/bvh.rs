@@ -17,4 +17,8 @@ impl Bvh {
                 .collect(),
         }
     }
+
+    pub fn get_hittables(&self) -> &Vec<Hittable> {
+        &self.hittables
+    }
 }
