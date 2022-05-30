@@ -1,4 +1,6 @@
-use cgmath::Vector3;
+use cgmath::{Vector3, Point3};
+
+use super::aabb::Aabb;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -32,5 +34,33 @@ impl Sphere {
             albedo: albedo.into(),
             _pad2: 0.0,
         }
+    }
+
+    pub fn empty() -> Self {
+        Sphere {
+            center: [0.0; 3],
+            radius: 0.0,
+            material_type: 0,
+            fuzz: 0.0,
+            refraction_index: 0.0,
+            _pad1: 0.0,
+            albedo: [0.0; 3],
+            _pad2: 0.0,
+        }
+    }
+
+    pub fn bounding_box(&self) -> Aabb {
+        Aabb::new(
+            Point3::new(
+                self.center[0] - self.radius,
+                self.center[1] - self.radius,
+                self.center[2] - self.radius,
+            ),
+            Point3::new(
+                self.center[0] + self.radius,
+                self.center[1] + self.radius,
+                self.center[2] + self.radius,
+            ),
+        )
     }
 }

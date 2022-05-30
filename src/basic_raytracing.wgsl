@@ -168,6 +168,7 @@ struct Sphere {
     albedo: vec3<f32>; // Ray bounce color
 };
 
+// This is a wrapper struct about the spheres (with no data footprint)
 struct Scene {
     spheres: array<Sphere>;
 };

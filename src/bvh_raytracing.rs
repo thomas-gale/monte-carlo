@@ -1,7 +1,10 @@
 mod aabb;
 mod buffer_bindings;
+mod bvh;
+mod bvh_node;
 mod camera;
 mod constants;
+mod hittable;
 mod quad;
 mod result;
 mod scene;
