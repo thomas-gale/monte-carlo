@@ -191,7 +191,7 @@ struct Bvh {
 };
 
 [[group(2), binding(0)]]
-var<storage, read> bvh: Bvh;
+var<storage, read> scene_bvh: Bvh;
 
 // Ray
 struct Ray {
@@ -268,7 +268,7 @@ fn set_face_normal(hit_record: ptr<function, HitRecord>, r: ptr<function, Ray>, 
 
 // Sphere Helpers
 fn sphere_hit(sphere_worlds_index: i32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
-    var sphere = bvh.hittables[sphere_worlds_index].sphere; // WIP: Hard coded to only work on spheres
+    var sphere = scene_bvh.hittables[sphere_worlds_index].sphere; // WIP: Hard coded to only work on spheres
 
     var oc = (*ray).origin - sphere.center;
     var a = dot((*ray).direction, (*ray).direction);
@@ -306,7 +306,7 @@ fn sphere_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<functio
     var hit_anything = false;
     var closest_so_far = t_max;
 
-    var num_spheres_world = i32(arrayLength(&bvh.hittables)); // WIP: hard coded to only expect bvh to be flat spheres
+    var num_spheres_world = i32(arrayLength(&scene_bvh.hittables)); // WIP: hard coded to only expect bvh to be flat spheres
     for (var i = 0; i < num_spheres_world; i = i + 1) {
         var hit_sphere = sphere_hit(i, ray, t_min, closest_so_far, rec);
         if (hit_sphere) {
