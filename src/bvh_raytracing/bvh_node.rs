@@ -3,8 +3,10 @@ use super::aabb::Aabb;
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct BvhNode {
-    left_hittable: u32,  // Pointer to left hittable
-    right_hittable: u32, // Pointer to right hittable
+    left_hittable: u32,
+    /// Pointer to left hittable (u32 max == null)
+    right_hittable: u32,
+    /// Pointer to right hittable (u32 max == null)
     _pad_1: u32,
     _pad_2: u32,
     aabb: Aabb,

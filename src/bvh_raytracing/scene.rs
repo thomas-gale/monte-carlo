@@ -148,3 +148,21 @@ pub fn final_scene() -> Bvh {
     Bvh::build_from_spheres(&spheres)
 }
 // }
+
+#[cfg(test)]
+mod tests {
+    // Note this useful idiom: importing names from outer (for mod tests) scope.
+    use super::*;
+
+    #[test]
+    fn test_test_scene() {
+        let scene = test_scene();
+        assert!(scene.get_hittables().len() == 5);
+    }
+
+    #[test]
+    fn test_final_scene() {
+        let scene = final_scene();
+        assert!(scene.get_hittables().len() > 5);
+    }
+}
