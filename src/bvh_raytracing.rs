@@ -1,6 +1,7 @@
 mod aabb;
 mod buffer_bindings;
 mod bvh;
+mod bvh_construction_node;
 mod bvh_node;
 mod camera;
 mod constants;
