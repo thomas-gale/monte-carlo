@@ -10,8 +10,6 @@ pub struct BvhNode {
     aabb: Aabb,
 }
 
-
-
 impl BvhNode {
     ///
     /// Create a new BvhNode
@@ -35,5 +33,9 @@ impl BvhNode {
             _pad_2: 0,
             aabb: Aabb::empty(),
         }
+    }
+
+    pub fn bounding_box(&self) -> Aabb {
+        self.aabb
     }
 }

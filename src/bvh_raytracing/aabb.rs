@@ -33,6 +33,14 @@ impl Aabb {
             _padding2: 0.0,
         }
     }
+
+    pub fn min(&self) -> &[f32; 3] {
+        &self.min
+    }
+
+    pub fn max(&self) -> &[f32; 3] {
+        &self.max
+    }
 }
 
 ///

@@ -1,4 +1,4 @@
-use super::{bvh_node::BvhNode, sphere::Sphere};
+use super::{aabb::Aabb, bvh_node::BvhNode, sphere::Sphere};
 
 pub enum GeometryType {
     BvhNode(BvhNode),
@@ -55,6 +55,14 @@ impl Hittable {
             _pad_3: 0,
             bvh_node: BvhNode::empty(),
             sphere: Sphere::empty(),
+        }
+    }
+
+    pub fn bounding_box(&self) -> Aabb {
+        match self.geometry_type {
+            0 => self.bvh_node.bounding_box(),
+            1 => self.sphere.bounding_box(),
+            _ => Aabb::empty(),
         }
     }
 }
