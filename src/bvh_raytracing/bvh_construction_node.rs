@@ -84,7 +84,7 @@ impl BvhConstructionNode {
     ///  
     pub fn flatten(&self) -> Bvh {
         // Bvh construction flattened.
-        // let mut flat_bvh_construction: Vec<BvhConstructionNode> = vec![];
+        let mut flat_bvh_hittables: Vec<Hittable> = vec![];
 
         // BFS traversal
         let mut queue: VecDeque<Box<BvhConstructionNode>> = VecDeque::new();
@@ -94,18 +94,37 @@ impl BvhConstructionNode {
             let current = queue.pop_front();
             let current_ref = current.as_ref().unwrap();
 
-            println!("\n TEST Current: {:?}", current_ref);
+            // println!("\n TEST Current: {:?}", current_ref);
             // hittables.push(current_ref.hittable);
 
+            // Create a flattened hittable
+            let mut flat_hittable = current_ref.hittable.clone();
+
             if current_ref.left.is_some() {
+                // Add the left child to the bfs queue to process later
                 queue.push_back(current_ref.left.clone().unwrap());
+                // Add the computed index of left child (which will be added later)
+                flat_hittable
+                    .bvh_node
+                    .set_left((flat_bvh_hittables.len() + queue.len()) as u32)
             }
             if current_ref.right.is_some() {
+                // Add the right child to the bfs queue to process later
                 queue.push_back(current_ref.right.clone().unwrap());
+                // Add the computed index of right child (which will be added later)
+                flat_hittable
+                    .bvh_node
+                    .set_right((flat_bvh_hittables.len() + queue.len()) as u32)
             }
+
+            // Add the flattened hittable to the collection
+            flat_bvh_hittables.push(flat_hittable);
         }
 
-        Bvh::build_from_hittables(vec![])
+        // TEST
+        println!("\n TEST Flat BVH Hittables: {:?}", flat_bvh_hittables);
+
+        Bvh::build_from_hittables(flat_bvh_hittables)
     }
 }
 
