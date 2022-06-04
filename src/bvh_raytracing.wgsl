@@ -302,11 +302,15 @@ fn sphere_hit(sphere_worlds_index: i32, ray: ptr<function, Ray>, t_min: f32, t_m
     return true;
 } 
 
-fn sphere_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function, HitRecord>) -> bool {
+fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function, HitRecord>) -> bool {
     var hit_anything = false;
     var closest_so_far = t_max;
 
-    var num_spheres_world = i32(arrayLength(&scene_bvh.hittables)); // WIP: hard coded to only expect bvh to be flat spheres
+    // WIP Now refactor to bvh
+
+
+    // OLD - flat loop over all entities in scene and assume are all spheres
+    var num_spheres_world = i32(arrayLength(&scene_bvh.hittables));
     for (var i = 0; i < num_spheres_world; i = i + 1) {
         var hit_sphere = sphere_hit(i, ray, t_min, closest_so_far, rec);
         if (hit_sphere) {
@@ -331,7 +335,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
     var current_ray_color = vec3<f32>(1.0, 1.0, 1.0);
     for (var i = 0; i < depth; i = i + 1) {
         // Check if we hit anything
-        if (sphere_hits(&current_ray, 0.001, constants.infinity, &hit_record)) {
+        if (scene_hits(&current_ray, 0.001, constants.infinity, &hit_record)) {
             if (hit_record.material_type == 0u) {
                 // Lambertian material
                 var scattered = hit_record.p + random_in_hemisphere(hit_record.normal, (entropy * u32(i + 1)));

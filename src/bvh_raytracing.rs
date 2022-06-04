@@ -94,7 +94,8 @@ impl BvhRaytracing {
         );
 
         // Scene
-        let scene_bvh = scene::final_scene();
+        // let scene_bvh = scene::final_scene();
+        let scene_bvh = scene::test_scene();
         let (scene_bvh_bind_group_layout, scene_bvh_bind_group, _) =
             buffer_bindings::create_device_buffer_binding(
                 &scene_bvh.get_hittables()[..],

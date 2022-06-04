@@ -24,12 +24,13 @@ impl Bvh {
 
         // WIP
         let bvh_construction = BvhConstructionNode::new(&hittables[..]);
+        bvh_construction.flatten()
         // println!("{:?}", bvh_construction);
 
-        let flat_bvh = bvh_construction.flatten();
+        // let flat_bvh = bvh_construction.flatten();
         // println!("Flat! {:?}", flat_bvh);
 
-        Bvh { hittables }
+        // Bvh { hittables }
     }
 
     pub fn build_from_hittables(hittables: Vec<Hittable>) -> Self {
