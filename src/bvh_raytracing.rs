@@ -85,7 +85,7 @@ impl BvhRaytracing {
         let camera = camera::Camera::new(
             &device,
             Point3::<f32>::new(13.0, 3.0, 3.0),
-            Point3::<f32>::new(0.0, 1.0, 0.0),
+            Point3::<f32>::new(0.0, 0.25, 0.0),
             Vector3::<f32>::new(0.0, 1.0, 0.0),
             20.0,
             window,
