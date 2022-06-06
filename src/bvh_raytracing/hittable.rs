@@ -11,6 +11,7 @@ pub enum GeometryType {
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Hittable {
+    /// 0 = BvhNode, 1 = Sphere
     pub geometry_type: u32,
     pub _pad_1: u32,
     pub _pad_2: u32,

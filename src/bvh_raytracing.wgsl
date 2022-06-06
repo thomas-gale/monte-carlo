@@ -181,17 +181,21 @@ struct Sphere {
 
 /// Experimental data structure to hold all bvh compatible data for a single hittable geometry to compose into the bvh tree
 struct Hittable {
+    /// 0 = BvhNode, 1 = Sphere
     geometry_type: u32;
     bvh_node: BvhNode;
     sphere: Sphere;
 };
 
-struct Bvh {
+// Releated to Hittable
+let bvh_node_null_ptr: u32 = 4294967295u;
+
+struct SceneBvh {
     hittables: array<Hittable>;
 };
 
 [[group(2), binding(0)]]
-var<storage, read> scene_bvh: Bvh;
+var<storage, read> scene_bvh: SceneBvh;
 
 // Ray
 struct Ray {
@@ -306,8 +310,39 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
     var hit_anything = false;
     var closest_so_far = t_max;
 
+    // Precondition, return early if scene is empty
+    if (arrayLength(&scene_bvh.hittables) == 0u) {
+        return hit_anything;
+    }
+
     // WIP Now refactor to bvh
 
+    // Use a basic stack data structure from a fixed array (the stack value is the index of the scene hittable)
+    // Max depth is 64 (TODO - add error if exceeded)
+    var stack: array<i32, 64>;
+    var stack_top = 0;
+
+    // Push the root node index onto the stack (which is the first value in the scene_bvh array)
+    stack[stack_top] = 0;
+    // stack_top = stack_top + 1;
+
+    // for (;stack_top >= 0;) {
+    //     // Check the type of this entity
+    //     switch scene_bvh.hittables[stack[stack_top]].geometry_type {
+    //         case 0: {
+    //             // Bvh
+    //             // DFS into the left and right children, if they exist
+    //             if (scene_bh)
+
+    //         }
+    //         case 1: {
+    //             // Sphere
+    //         }
+    //         default {
+    //             // Error
+    //         }
+    //     } 
+    // }
 
     // OLD - flat loop over all entities in scene and assume are all spheres
     var num_spheres_world = i32(arrayLength(&scene_bvh.hittables));
