@@ -48,14 +48,14 @@ impl Aabb {
 ///
 pub fn surrounding_box(box0: &Aabb, box1: &Aabb) -> Aabb {
     let small = Point3::new(
-        f32::min(box0.min[0], box1.min[0]),
-        f32::min(box0.min[1], box1.min[1]),
-        f32::min(box0.min[2], box1.min[2]),
+        box0.min[0].min(box1.min[0]),
+        box0.min[1].min(box1.min[1]),
+        box0.min[2].min(box1.min[2]),
     );
     let big = Point3::new(
-        f32::max(box0.max[0], box1.max[0]),
-        f32::max(box0.max[1], box1.max[1]),
-        f32::max(box0.max[2], box1.max[2]),
+        box0.max[0].max(box1.max[0]),
+        box0.max[1].max(box1.max[1]),
+        box0.max[2].max(box1.max[2]),
     );
     Aabb::new(small, big)
 }
