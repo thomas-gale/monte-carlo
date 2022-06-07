@@ -343,6 +343,20 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
     // DEBUG - track number bvh hits (for rendering)
     // var number_bvh_hits = 0;
 
+
+    // Sanity Check - test that first and second bvhNode data points are valid
+    var root_hittable = scene_bvh.hittables[0];
+    var second_hittable = scene_bvh.hittables[1];
+    if (root_hittable.bvh_node.aabb.min[0] > -1.6 && root_hittable.bvh_node.aabb.min[0] < -1.4) {
+        if (root_hittable.bvh_node.aabb.min[1] > -0.6 && root_hittable.bvh_node.aabb.min[1] < -0.4) {
+            if (second_hittable.bvh_node.aabb.min[0] > -0.56 && second_hittable.bvh_node.aabb.min[0] < -0.54) {
+                if (second_hittable.bvh_node.aabb.min[1] > -0.51 && second_hittable.bvh_node.aabb.min[1] < -0.49) {
+                    (*rec).number_bvh_hits = 2u;
+                }
+            }
+        }
+    }
+
     // While the stack is not empty
     for (;stack_top >= 0;) {
         // Check for stack depth exceeded
@@ -366,7 +380,7 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
                 if (hit) {
                     // DEBUG - count number bvh hits (for rendering)
                     // number_bvh_hits = number_bvh_hits + 1;
-                    (*rec).number_bvh_hits = (*rec).number_bvh_hits + 1u;
+                    // (*rec).number_bvh_hits = (*rec).number_bvh_hits + 1u;
                     // (*rec).number_bvh_hits = u32(stack_top + 1);
 
                     // Push the left and right children onto the stack (if they exist)
