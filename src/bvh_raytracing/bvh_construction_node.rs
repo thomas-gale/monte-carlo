@@ -36,8 +36,8 @@ impl BvhConstructionNode {
         let mut objects = source_objects.to_vec();
 
         // Compute random sorting axis
-        // let axis = util::random_int(0, 2) as usize;
-        let axis = 0 as usize;
+        let axis = util::random_int(0, 2) as usize;
+        // let axis = 0 as usize;
         // let comparator = |a, b| -> Ordering { box_compare(a, b, axis) };
 
         // The nodes
