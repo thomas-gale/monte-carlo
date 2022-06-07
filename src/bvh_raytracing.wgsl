@@ -344,14 +344,31 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
     // var number_bvh_hits = 0;
 
 
-    // Sanity Check - test that first and second bvhNode data points are valid
+    // Sanity Check - test that first and second bvhNode data points are valid - this is for test scene's first and second aabb.
+    // Showing Green, so we can rule out bit alignment errors passing the aabb from rust to wgsl.
     var root_hittable = scene_bvh.hittables[0];
     var second_hittable = scene_bvh.hittables[1];
-    if (root_hittable.bvh_node.aabb.min[0] > -1.6 && root_hittable.bvh_node.aabb.min[0] < -1.4) {
-        if (root_hittable.bvh_node.aabb.min[1] > -0.6 && root_hittable.bvh_node.aabb.min[1] < -0.4) {
-            if (second_hittable.bvh_node.aabb.min[0] > -0.56 && second_hittable.bvh_node.aabb.min[0] < -0.54) {
-                if (second_hittable.bvh_node.aabb.min[1] > -0.51 && second_hittable.bvh_node.aabb.min[1] < -0.49) {
-                    (*rec).number_bvh_hits = 2u;
+    if (root_hittable.bvh_node.aabb.min[0] > -1.51 && root_hittable.bvh_node.aabb.min[0] < -1.49) {
+        if (root_hittable.bvh_node.aabb.min[1] > -0.51 && root_hittable.bvh_node.aabb.min[1] < -0.49) {
+            if (root_hittable.bvh_node.aabb.min[2] > -0.51 && root_hittable.bvh_node.aabb.min[2] < -0.49) {
+                if (root_hittable.bvh_node.aabb.max[0] > 1.49 && root_hittable.bvh_node.aabb.max[0] < 1.51) {
+                    if (root_hittable.bvh_node.aabb.max[1] > 0.49 && root_hittable.bvh_node.aabb.max[1] < 0.51) {
+                        if (root_hittable.bvh_node.aabb.max[2] > 0.49 && root_hittable.bvh_node.aabb.max[2] < 0.51) {
+                            if (second_hittable.bvh_node.aabb.min[0] > -0.56 && second_hittable.bvh_node.aabb.min[0] < -0.54) {
+                                if (second_hittable.bvh_node.aabb.min[1] > -0.51 && second_hittable.bvh_node.aabb.min[1] < -0.49) {
+                                    if (second_hittable.bvh_node.aabb.min[2] > -0.51 && second_hittable.bvh_node.aabb.min[2] < -0.49) {
+                                        if (second_hittable.bvh_node.aabb.max[0] > 1.49 && second_hittable.bvh_node.aabb.max[0] < 1.51) {
+                                            if (second_hittable.bvh_node.aabb.max[1] > 0.49 && second_hittable.bvh_node.aabb.max[1] < 0.51) {
+                                                if (second_hittable.bvh_node.aabb.max[2] > 0.49 && second_hittable.bvh_node.aabb.max[2] < 0.51) {
+                                                    (*rec).number_bvh_hits = 2u;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -550,3 +567,4 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     textureStore(texture, texture_coords, averaged_pixel_color_with_alpha);
     return averaged_pixel_color_with_alpha;
 }
+
