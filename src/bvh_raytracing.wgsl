@@ -210,11 +210,13 @@ fn ray_at(ray: ptr<function,Ray>, t: f32) -> vec3<f32> {
 // Bvh helpers
 
 // Optimised method from Andrew Kensler at Pixar.
-fn aabb_hit(aabb: ptr<function, Aabb>, ray: ptr<function, Ray>, t_min: f32, t_max: f32) -> bool {
+fn aabb_hit(hittables_aabb_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32) -> bool {
+    var aabb = scene_bvh.hittables[hittables_aabb_index].bvh_node.aabb;
+
     for (var a = 0; a < 3; a = a + 1) {
         var inv_d = 1.0 / (*ray).direction[a];
-        var t_0 = ((*aabb).min[a] - (*ray).origin[a]) * inv_d;
-        var t_1 = ((*aabb).max[a] - (*ray).origin[a]) * inv_d;
+        var t_0 = (aabb.min[a] - (*ray).origin[a]) * inv_d;
+        var t_1 = (aabb.max[a] - (*ray).origin[a]) * inv_d;
         if (inv_d < 0.0) {
             var tmp = t_0;
             t_0 = t_1;
@@ -271,8 +273,8 @@ fn set_face_normal(hit_record: ptr<function, HitRecord>, r: ptr<function, Ray>, 
 }
 
 // Sphere Helpers
-fn sphere_hit(sphere_worlds_index: i32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
-    var sphere = scene_bvh.hittables[sphere_worlds_index].sphere; // WIP: Hard coded to only work on spheres
+fn sphere_hit(hittables_sphere_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
+    var sphere = scene_bvh.hittables[hittables_sphere_index].sphere;
 
     var oc = (*ray).origin - sphere.center;
     var a = dot((*ray).direction, (*ray).direction);
@@ -315,42 +317,62 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
         return hit_anything;
     }
 
-    // WIP Now refactor to bvh
-
     // Use a basic stack data structure from a fixed array (the stack value is the index of the scene hittable)
-    // Max depth is 64 (TODO - add error if exceeded)
-    var stack: array<i32, 64>;
+    // Max depth is 64
+    var stack: array<u32, 64>;
+
+    // Track the top of the stack
     var stack_top = 0;
 
     // Push the root node index onto the stack (which is the first value in the scene_bvh array)
-    stack[stack_top] = 0;
-    // stack_top = stack_top + 1;
+    stack[stack_top] = 0u;
 
-    // for (;stack_top >= 0;) {
-    //     // Check the type of this entity
-    //     switch scene_bvh.hittables[stack[stack_top]].geometry_type {
-    //         case 0: {
-    //             // Bvh
-    //             // DFS into the left and right children, if they exist
-    //             if (scene_bh)
+    for (;stack_top >= 0;) {
+        // Check for stack depth exceeded
+        if (stack_top >= 64) {
+            return false; // TODO - add better error signal
+        }
 
-    //         }
-    //         case 1: {
-    //             // Sphere
-    //         }
-    //         default {
-    //             // Error
-    //         }
-    //     } 
-    // }
+        // Get hittable from top of stack 
+        var current_hittable = scene_bvh.hittables[ stack[stack_top] ];
+        // Check the type of this hittable
+        switch (current_hittable.geometry_type) {
+            case 0u: {
+                // Bvh
+                // Does this BVH node intersect the ray?
+                var hit = aabb_hit(stack[stack_top], ray, t_min, t_max);
 
-    // OLD - flat loop over all entities in scene and assume are all spheres
-    var num_spheres_world = i32(arrayLength(&scene_bvh.hittables));
-    for (var i = 0; i < num_spheres_world; i = i + 1) {
-        var hit_sphere = sphere_hit(i, ray, t_min, closest_so_far, rec);
-        if (hit_sphere) {
-            hit_anything = true;
-            closest_so_far = (*rec).t;
+                // Pop the stack (bvh has been processed for hit)
+                stack_top = stack_top - 1;
+
+                if (hit) {
+                    // Push the left and right children onto the stack (if they exist)
+                    if (current_hittable.bvh_node.left_hittable != bvh_node_null_ptr) {
+                        stack_top = stack_top + 1;
+                        stack[stack_top] = current_hittable.bvh_node.left_hittable;
+                    }
+                    if (current_hittable.bvh_node.right_hittable != bvh_node_null_ptr) {
+                        stack_top = stack_top + 1;
+                        stack[stack_top] = current_hittable.bvh_node.right_hittable;
+                    }
+                }
+            }
+            case 1u: {
+                // Sphere
+                var hit = sphere_hit(stack[stack_top], ray, t_min, closest_so_far, rec);
+
+                // Pop the stack sphere has been processed for hit
+                stack_top = stack_top - 1;
+
+                if (hit) {
+                    hit_anything = true;
+                    closest_so_far = (*rec).t;
+                }
+            }
+            default: {
+                // Error
+                return false;
+            }
         }
     }
     return hit_anything;
