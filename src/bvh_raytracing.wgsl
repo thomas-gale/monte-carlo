@@ -210,8 +210,8 @@ fn ray_at(ray: ptr<function,Ray>, t: f32) -> vec3<f32> {
 // Bvh helpers
 
 // Optimised method from Andrew Kensler at Pixar.
-fn aabb_hit(hittables_aabb_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32) -> bool {
-    var aabb = scene_bvh.hittables[hittables_aabb_index].bvh_node.aabb;
+fn aabb_hit(hittables_bvh_node_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32) -> bool {
+    var aabb = scene_bvh.hittables[hittables_bvh_node_index].bvh_node.aabb;
 
     for (var a = 0; a < 3; a = a + 1) {
         var inv_d = 1.0 / (*ray).direction[a];
@@ -342,7 +342,7 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
                 // Does this BVH node intersect the ray?
                 var hit = aabb_hit(stack[stack_top], ray, t_min, t_max);
 
-                // Pop the stack (bvh has been processed for hit)
+                // Pop the stack (aabb hit check done).
                 stack_top = stack_top - 1;
 
                 if (hit) {
@@ -361,7 +361,7 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
                 // Sphere
                 var hit = sphere_hit(stack[stack_top], ray, t_min, closest_so_far, rec);
 
-                // Pop the stack sphere has been processed for hit
+                // Pop the stack (sphere hit check done).
                 stack_top = stack_top - 1;
 
                 if (hit) {
