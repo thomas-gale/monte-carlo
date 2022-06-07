@@ -2,22 +2,28 @@ use cgmath::{prelude::*, Vector3};
 
 use super::{bvh::Bvh, sphere::Sphere};
 
-// pub struct Scene {
-//     pub spheres: Vec<Sphere>,
-// }
+pub fn simple_scene() -> Bvh {
+    Bvh::build_from_spheres(&vec![Sphere::new(
+        Vector3::<f32>::new(0.0, 0.0, 0.0),
+        0.5,
+        0,
+        0.0,
+        0.0,
+        Vector3::<f32>::new(0.1, 0.2, 0.5),
+    )])
+}
 
-// impl Scene {
 #[allow(dead_code)]
 pub fn test_scene() -> Bvh {
     Bvh::build_from_spheres(&vec![
-        Sphere::new(
-            Vector3::<f32>::new(0.0, -100.5, 0.0),
-            100.0,
-            0,
-            0.0,
-            0.0,
-            Vector3::<f32>::new(0.8, 0.8, 0.0),
-        ),
+        // Sphere::new(
+        //     Vector3::<f32>::new(0.0, -100.5, 0.0),
+        //     100.0,
+        //     0,
+        //     0.0,
+        //     0.0,
+        //     Vector3::<f32>::new(0.8, 0.8, 0.0),
+        // ),
         Sphere::new(
             Vector3::<f32>::new(0.0, 0.0, 0.0),
             0.5,
@@ -147,11 +153,9 @@ pub fn final_scene() -> Bvh {
 
     Bvh::build_from_spheres(&spheres)
 }
-// }
 
 #[cfg(test)]
 mod tests {
-    // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
 
     #[test]

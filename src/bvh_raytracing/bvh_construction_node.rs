@@ -121,8 +121,14 @@ impl BvhConstructionNode {
             flat_bvh_hittables.push(flat_hittable);
         }
 
-        // TEST
-        println!("\n TEST Flat BVH Hittables: {:?}", flat_bvh_hittables);
+        // Debug - pretty print the flattened bvh
+        for hittable in flat_bvh_hittables.iter() {
+            if hittable.geometry_type == 0 {
+                println!("\n BVH Node: {:?}", hittable.bvh_node);
+            } else if hittable.geometry_type == 1 {
+                println!("\n Sphere: {:?}", hittable.sphere);
+            }
+        }
 
         Bvh::build_from_hittables(flat_bvh_hittables)
     }

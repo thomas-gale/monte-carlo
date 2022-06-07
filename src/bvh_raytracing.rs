@@ -84,18 +84,19 @@ impl BvhRaytracing {
         // Camera
         let camera = camera::Camera::new(
             &device,
-            Point3::<f32>::new(13.0, 3.0, 3.0),
-            Point3::<f32>::new(0.0, 0.25, 0.0),
+            Point3::<f32>::new(15.0, 3.0, 3.0),
+            Point3::<f32>::new(0.0, 0.0, 0.0),
             Vector3::<f32>::new(0.0, 1.0, 0.0),
-            20.0,
+            25.0,
             window,
             0.1,
-            14.0,
+            15.0,
         );
 
         // Scene
         // let scene_bvh = scene::final_scene();
-        let scene_bvh = scene::test_scene();
+        // let scene_bvh = scene::test_scene();
+        let scene_bvh = scene::simple_scene();
         let (scene_bvh_bind_group_layout, scene_bvh_bind_group, _) =
             buffer_bindings::create_device_buffer_binding(
                 &scene_bvh.get_hittables()[..],
