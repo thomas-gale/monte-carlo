@@ -248,6 +248,8 @@ struct HitRecord {
     albedo: vec3<f32>; // Ray bounce coloring
     fuzz: f32; // Roughness for metals
     refraction_index: f32; // Refraction index for dielectrics
+
+    number_bvh_hits: u32; // Track the number of bvh hits this ray has made
 };
 
 fn new_hit_record() -> HitRecord {
@@ -260,6 +262,7 @@ fn new_hit_record() -> HitRecord {
         vec3<f32>(0.0, 0.0, 0.0),
         0.0,
         0.0,
+        0u,
     );
 }
 
@@ -327,6 +330,10 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
     // Push the root node index onto the stack (which is the first value in the scene_bvh array)
     stack[stack_top] = 0u;
 
+    // DEBUG - track number bvh hits (for rendering)
+    // var number_bvh_hits = 0;
+
+    // While the stack is not empty
     for (;stack_top >= 0;) {
         // Check for stack depth exceeded
         if (stack_top >= 64) {
@@ -346,6 +353,10 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
                 stack_top = stack_top - 1;
 
                 if (hit) {
+                    // DEBUG - count number bvh hits (for rendering)
+                    // number_bvh_hits = number_bvh_hits + 1;
+                    (*rec).number_bvh_hits = (*rec).number_bvh_hits + 1u;
+
                     // Push the left and right children onto the stack (if they exist)
                     if (current_hittable.bvh_node.left_hittable != bvh_node_null_ptr) {
                         stack_top = stack_top + 1;
@@ -367,6 +378,9 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
                 if (hit) {
                     hit_anything = true;
                     closest_so_far = (*rec).t;
+
+                    // Debug, the depth in bvh
+                    // (*rec).number_bvh_hits = u32(stack_top);
                 }
             }
             default: {
@@ -375,6 +389,10 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
             }
         }
     }
+
+    // Debug - update hit record with information regarding number of bvh hits
+
+
     return hit_anything;
 }
 
@@ -390,9 +408,17 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
     var hit_record = new_hit_record();
     var current_ray = Ray((*ray).origin, (*ray).direction);
     var current_ray_color = vec3<f32>(1.0, 1.0, 1.0);
+    var number_bvh_hits_first_bounce = 0u;
     for (var i = 0; i < depth; i = i + 1) {
         // Check if we hit anything
-        if (scene_hits(&current_ray, 0.001, constants.infinity, &hit_record)) {
+        var hit = scene_hits(&current_ray, 0.001, constants.infinity, &hit_record);
+
+        // Debug - for rendering the bvh
+        if (i == 0) {
+            number_bvh_hits_first_bounce = hit_record.number_bvh_hits;
+        }
+
+        if (hit) {
             if (hit_record.material_type == 0u) {
                 // Lambertian material
                 var scattered = hit_record.p + random_in_hemisphere(hit_record.normal, (entropy * u32(i + 1)));
@@ -448,6 +474,9 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
             break;
         }
     }
+    // Debug, darken the ray by the number of bvh hits
+    current_ray_color = current_ray_color * pow(0.4, f32(number_bvh_hits_first_bounce));
+
     return current_ray_color;
 }
 
