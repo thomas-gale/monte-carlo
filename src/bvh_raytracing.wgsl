@@ -331,8 +331,8 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
     }
 
     // Use a basic stack data structure from a fixed array (the stack value is the index of the scene hittable)
-    // Max depth is 512
-    var stack: array<u32, 512>;
+    // Max depth is 32
+    var stack: array<u32, 32>;
 
     // Track the top of the stack
     var stack_top = 0;
@@ -346,38 +346,38 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
 
     // Sanity Check - test that first and second bvhNode data points are valid - this is for test scene's first and second aabb.
     // Showing Green, so we can rule out bit alignment errors passing the aabb from rust to wgsl.
-    var root_hittable = scene_bvh.hittables[0];
-    var second_hittable = scene_bvh.hittables[1];
-    if (root_hittable.bvh_node.aabb.min[0] > -1.51 && root_hittable.bvh_node.aabb.min[0] < -1.49) {
-        if (root_hittable.bvh_node.aabb.min[1] > -0.51 && root_hittable.bvh_node.aabb.min[1] < -0.49) {
-            if (root_hittable.bvh_node.aabb.min[2] > -0.51 && root_hittable.bvh_node.aabb.min[2] < -0.49) {
-                if (root_hittable.bvh_node.aabb.max[0] > 1.49 && root_hittable.bvh_node.aabb.max[0] < 1.51) {
-                    if (root_hittable.bvh_node.aabb.max[1] > 0.49 && root_hittable.bvh_node.aabb.max[1] < 0.51) {
-                        if (root_hittable.bvh_node.aabb.max[2] > 0.49 && root_hittable.bvh_node.aabb.max[2] < 0.51) {
-                            if (second_hittable.bvh_node.aabb.min[0] > -0.56 && second_hittable.bvh_node.aabb.min[0] < -0.54) {
-                                if (second_hittable.bvh_node.aabb.min[1] > -0.51 && second_hittable.bvh_node.aabb.min[1] < -0.49) {
-                                    if (second_hittable.bvh_node.aabb.min[2] > -0.51 && second_hittable.bvh_node.aabb.min[2] < -0.49) {
-                                        if (second_hittable.bvh_node.aabb.max[0] > 1.49 && second_hittable.bvh_node.aabb.max[0] < 1.51) {
-                                            if (second_hittable.bvh_node.aabb.max[1] > 0.49 && second_hittable.bvh_node.aabb.max[1] < 0.51) {
-                                                if (second_hittable.bvh_node.aabb.max[2] > 0.49 && second_hittable.bvh_node.aabb.max[2] < 0.51) {
-                                                    (*rec).number_bvh_hits = 2u;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // var root_hittable = scene_bvh.hittables[0];
+    // var second_hittable = scene_bvh.hittables[1];
+    // if (root_hittable.bvh_node.aabb.min[0] > -1.51 && root_hittable.bvh_node.aabb.min[0] < -1.49) {
+    //     if (root_hittable.bvh_node.aabb.min[1] > -0.51 && root_hittable.bvh_node.aabb.min[1] < -0.49) {
+    //         if (root_hittable.bvh_node.aabb.min[2] > -0.51 && root_hittable.bvh_node.aabb.min[2] < -0.49) {
+    //             if (root_hittable.bvh_node.aabb.max[0] > 1.49 && root_hittable.bvh_node.aabb.max[0] < 1.51) {
+    //                 if (root_hittable.bvh_node.aabb.max[1] > 0.49 && root_hittable.bvh_node.aabb.max[1] < 0.51) {
+    //                     if (root_hittable.bvh_node.aabb.max[2] > 0.49 && root_hittable.bvh_node.aabb.max[2] < 0.51) {
+    //                         if (second_hittable.bvh_node.aabb.min[0] > -0.56 && second_hittable.bvh_node.aabb.min[0] < -0.54) {
+    //                             if (second_hittable.bvh_node.aabb.min[1] > -0.51 && second_hittable.bvh_node.aabb.min[1] < -0.49) {
+    //                                 if (second_hittable.bvh_node.aabb.min[2] > -0.51 && second_hittable.bvh_node.aabb.min[2] < -0.49) {
+    //                                     if (second_hittable.bvh_node.aabb.max[0] > 1.49 && second_hittable.bvh_node.aabb.max[0] < 1.51) {
+    //                                         if (second_hittable.bvh_node.aabb.max[1] > 0.49 && second_hittable.bvh_node.aabb.max[1] < 0.51) {
+    //                                             if (second_hittable.bvh_node.aabb.max[2] > 0.49 && second_hittable.bvh_node.aabb.max[2] < 0.51) {
+    //                                                 (*rec).number_bvh_hits = 1u;
+    //                                             }
+    //                                         }
+    //                                     }
+    //                                 }
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
     // While the stack is not empty
     for (;stack_top >= 0;) {
         // Check for stack depth exceeded
-        if (stack_top >= 512) {
+        if (stack_top >= 32) {
             return false; // TODO - add better error signal
         }
 
@@ -388,13 +388,27 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
             case 0u: {
                 // Bvh
                 // Does this BVH node intersect the ray?
-                // var hit = aabb_hit(stack[stack_top], ray, t_min, closest_so_far);
-                var hit = aabb_hit(stack[stack_top], ray, t_min, t_max);
+                var hit = aabb_hit(stack[stack_top], ray, t_min, closest_so_far);
+                // var hit = aabb_hit(stack[stack_top], ray, t_min, t_max);
 
                 // Pop the stack (aabb hit check done).
                 stack_top = stack_top - 1;
 
+
+                if ((*ray).direction.y > 0.0) {
+                    (*rec).number_bvh_hits = 1u;
+                }
+
                 if (hit) {
+                    // DEBUG - this is flagging the issue.
+                    // if (stack[stack_top + 1] == 0u) {
+                    //     (*rec).number_bvh_hits = 1u;
+                    // }
+
+                    // if ((*ray).direction.x > 0.0) {
+                    //     (*rec).number_bvh_hits = 1u;
+                    // }
+
                     // DEBUG - count number bvh hits (for rendering)
                     // number_bvh_hits = number_bvh_hits + 1;
                     // (*rec).number_bvh_hits = (*rec).number_bvh_hits + 1u;
@@ -520,15 +534,22 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
     // Debug, darken the ray by the number of bvh hits
     // current_ray_color = current_ray_color * pow(0.9, f32(number_bvh_hits_first_bounce));
     // current_ray_color = vec3<f32>(1.0 - f32(number_bvh_hits_first_bounce) / 10.0);
-    if (number_bvh_hits_first_bounce == 0u) {
-        current_ray_color = vec3<f32>(0.0, 0.0, 0.0);
-    } else if (number_bvh_hits_first_bounce == 1u) {
-        current_ray_color = vec3<f32>(1.0, 0.0, 0.0);
-    } else if (number_bvh_hits_first_bounce == 2u) {
-        current_ray_color = vec3<f32>(0.0, 1.0, 0.0);
-    } else if (number_bvh_hits_first_bounce == 3u) {
-        current_ray_color = vec3<f32>(0.0, 0.0, 1.0);
+    // if (number_bvh_hits_first_bounce == 0u) {
+    //     current_ray_color = vec3<f32>(0.0, 0.0, 0.0);
+    // } else if (number_bvh_hits_first_bounce == 1u) {
+    //     current_ray_color = vec3<f32>(1.0, 0.0, 0.0);
+    // } else if (number_bvh_hits_first_bounce == 2u) {
+    //     current_ray_color = vec3<f32>(0.0, 1.0, 0.0);
+    // } else if (number_bvh_hits_first_bounce == 3u) {
+    //     current_ray_color = vec3<f32>(0.0, 0.0, 1.0);
+    // }
+
+
+    if (number_bvh_hits_first_bounce == 1u) {
+        // current_ray_color = vec3<f32>(1.0, 0.0, 0.0);
+        current_ray_color = vec3<f32>(0.0, 0.4, 0.4) * current_ray_color;
     }
+
     return current_ray_color;
 }
 

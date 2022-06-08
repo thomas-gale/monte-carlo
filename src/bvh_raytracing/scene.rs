@@ -33,6 +33,22 @@ pub fn test_scene() -> Bvh {
             Vector3::<f32>::new(0.1, 0.2, 0.5),
         ),
         Sphere::new(
+            Vector3::<f32>::new(0.0, 0.0, -1.0),
+            0.5,
+            1,
+            0.0,
+            1.5,
+            Vector3::<f32>::new(1.0, 0.0, 0.0),
+        ),
+        Sphere::new(
+            Vector3::<f32>::new(0.0, 0.0, 1.0),
+            0.5,
+            1,
+            0.0,
+            1.5,
+            Vector3::<f32>::new(0.0, 0.0, 1.0),
+        ),
+        Sphere::new(
             Vector3::<f32>::new(-1.0, 0.0, 0.0),
             0.5,
             2,
