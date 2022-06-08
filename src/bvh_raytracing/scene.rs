@@ -78,14 +78,14 @@ pub fn test_scene() -> Bvh {
 pub fn final_scene() -> Bvh {
     let mut spheres = Vec::<Sphere>::new();
 
-    spheres.push(Sphere::new(
-        Vector3::<f32>::new(0.0, -1000.0, -1.0),
-        1000.0,
-        0,
-        0.0,
-        0.0,
-        Vector3::<f32>::new(0.5, 0.5, 0.5),
-    ));
+    // spheres.push(Sphere::new(
+    //     Vector3::<f32>::new(0.0, -1000.0, -1.0),
+    //     1000.0,
+    //     0,
+    //     0.0,
+    //     0.0,
+    //     Vector3::<f32>::new(0.5, 0.5, 0.5),
+    // ));
 
     for a in -11..11 {
         for b in -11..11 {

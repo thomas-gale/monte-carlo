@@ -571,7 +571,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
     // Debug, darken the ray by the number of bvh hits
 
     if (number_bvh_hits_first_bounce > 0u) {
-        current_ray_color = current_ray_color * pow(vec3<f32>(0.0, 0.4, 0.4), vec3<f32>(f32(number_bvh_hits_first_bounce)));
+        current_ray_color = current_ray_color * pow(vec3<f32>(0.9, 0.9, 0.9), vec3<f32>(f32(number_bvh_hits_first_bounce)));
     }
     // current_ray_color = current_ray_color * pow(0.9, f32(number_bvh_hits_first_bounce));
     // current_ray_color = vec3<f32>(1.0 - f32(number_bvh_hits_first_bounce) / 10.0);

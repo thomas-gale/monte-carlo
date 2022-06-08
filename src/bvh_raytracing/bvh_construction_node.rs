@@ -35,8 +35,16 @@ impl BvhConstructionNode {
     pub fn new(source_objects: &[Hittable]) -> Self {
         let mut objects = source_objects.to_vec();
 
-        // Compute random sorting axis
-        let axis = util::random_int(0, 2) as usize;
+        // Compute random sorting axis (for X, Y, Z)
+        // let axis = util::random_int(0, 2) as usize;
+
+        // Hard code to XZ (the horizontal plane)
+        let mut axis = util::random_int(0, 1) as usize;
+        if axis == 1 {
+            axis = 2;
+        }
+
+        // Hard code to X
         // let axis = 0 as usize;
         // let comparator = |a, b| -> Ordering { box_compare(a, b, axis) };
 
