@@ -210,30 +210,61 @@ fn ray_at(ray: ptr<function,Ray>, t: f32) -> vec3<f32> {
 // Bvh helpers
 
 // Optimised method from Andrew Kensler at Pixar.
-fn aabb_hit(hittables_bvh_node_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32) -> bool {
+// t is length of ray until intersection
+fn aabb_hit(hittables_bvh_node_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, t: ptr<function, f32>) -> bool {
     var aabb = scene_bvh.hittables[hittables_bvh_node_index].bvh_node.aabb;
+    // var ray_test = Ray((*ray).origin, (*ray).direction);
 
-    for (var a = 0; a < 3; a = a + 1) {
-        var inv_d = 1.0 / (*ray).direction[a];
-        var t_0 = (aabb.min[a] - (*ray).origin[a]) * inv_d;
-        var t_1 = (aabb.max[a] - (*ray).origin[a]) * inv_d;
-        if (inv_d < 0.0) {
-            var tmp = t_0;
-            t_0 = t_1;
-            t_1 = tmp;
-        }
-        var t_min_test = t_min;
-        if (t_0 > t_min) {
-            t_min_test = t_0;
-        }
-        var t_max_test = t_max;
-        if (t_1 < t_max) {
-            t_max_test = t_1;
-        }
-        if (t_max_test <= t_min_test) {
-            return false;
-        }
+    // Attribution: https://gamedev.stackexchange.com/a/18459
+    var dir_frac = vec3<f32>(1.0 / (*ray).direction.x, 1.0 / (*ray).direction.y, 1.0 / (*ray).direction.z);
+    var t_1 = (aabb.min.x - (*ray).origin.x) * dir_frac.x;
+    var t_2 = (aabb.max.x - (*ray).origin.x) * dir_frac.x;
+    var t_3 = (aabb.min.y - (*ray).origin.y) * dir_frac.y;
+    var t_4 = (aabb.max.y - (*ray).origin.y) * dir_frac.y;
+    var t_5 = (aabb.min.z - (*ray).origin.z) * dir_frac.z;
+    var t_6 = (aabb.max.z - (*ray).origin.z) * dir_frac.z;
+
+    var t_min = max(max((min(t_1, t_2)), (min(t_3, t_4))), (min(t_5, t_6)));
+    var t_max = min(min((max(t_1, t_2)), (max(t_3, t_4))), (max(t_5, t_6)));
+
+    // If tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+    if (t_max < 0.0) {
+        (*t) = t_max;
+        return false;
     }
+
+    // If tmin > tmax, ray doesn't intersect AABB
+    if (t_min > t_max) {
+        (*t) = t_max;
+        return false;
+    }
+
+    (*t) = t_min;
+    return true;
+
+
+    // for (var a = 0; a < 3; a = a + 1) {
+    //     var inv_d = 1.0 / (*ray).direction[a];
+    //     var t_0 = (aabb.min[a] - (*ray).origin[a]) * inv_d;
+    //     var t_1 = (aabb.max[a] - (*ray).origin[a]) * inv_d;
+    //     if (inv_d < 0.0) {
+    //         var tmp = t_0;
+    //         t_0 = t_1;
+    //         t_1 = tmp;
+    //     }
+    //     var t_min_test = t_min;
+    //     if (t_0 > t_min) {
+    //         t_min_test = t_0;
+    //     }
+    //     var t_max_test = t_max;
+    //     if (t_1 < t_max) {
+    //         t_max_test = t_1;
+    //     }
+    //     if (t_max_test <= t_min_test) {
+    //         return false;
+    //     }
+    // }
+    // return true;
 
     // for (var a = 0; a < 3; a = a + 1) {
     //     var t_0 = min((aabb.min[a] - (*ray).origin[a]) / (*ray).direction[a], (aabb.max[a] - (*ray).origin[a]) / (*ray).direction[a]);
@@ -244,7 +275,7 @@ fn aabb_hit(hittables_bvh_node_index: u32, ray: ptr<function, Ray>, t_min: f32, 
     //         return false;
     //     }
     // }
-    return true;
+    // return true;
 }
 
 // Hittable
@@ -388,22 +419,28 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
             case 0u: {
                 // Bvh
                 // Does this BVH node intersect the ray?
-                var hit = aabb_hit(stack[stack_top], ray, t_min, closest_so_far);
+                var t = 0.0;
+                var hit = aabb_hit(stack[stack_top], ray, t_min, closest_so_far, &t);
                 // var hit = aabb_hit(stack[stack_top], ray, t_min, t_max);
 
                 // Pop the stack (aabb hit check done).
                 stack_top = stack_top - 1;
 
 
-                if ((*ray).direction.y > 0.0) {
-                    (*rec).number_bvh_hits = 1u;
-                }
+                // if ((*ray).direction.y > 0.0) {
+                //     (*rec).number_bvh_hits = 1u;
+                // }
 
                 if (hit) {
                     // DEBUG - this is flagging the issue.
-                    // if (stack[stack_top + 1] == 0u) {
-                    //     (*rec).number_bvh_hits = 1u;
-                    // }
+                    if (stack[stack_top + 1] == 0u) {
+                        if (current_hittable.bvh_node.aabb.min[2] < -1.4) {
+                            if (current_hittable.bvh_node.aabb.max[0] > 1.4) {
+                                (*rec).number_bvh_hits = 1u;
+                            }
+                        }
+                    }
+
 
                     // if ((*ray).direction.x > 0.0) {
                     //     (*rec).number_bvh_hits = 1u;
