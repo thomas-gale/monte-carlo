@@ -433,13 +433,13 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
 
                 if (hit) {
                     // DEBUG - this is flagging the issue.
-                    if (stack[stack_top + 1] == 0u) {
-                        if (current_hittable.bvh_node.aabb.min[2] < -1.4) {
-                            if (current_hittable.bvh_node.aabb.max[0] > 1.4) {
-                                (*rec).number_bvh_hits = 1u;
-                            }
-                        }
-                    }
+                    // if (stack[stack_top + 1] == 0u) {
+                    //     if (current_hittable.bvh_node.aabb.min[2] < -1.4) {
+                    //         if (current_hittable.bvh_node.aabb.max[0] > 1.4) {
+                    //             (*rec).number_bvh_hits = 1u;
+                    //         }
+                    //     }
+                    // }
 
 
                     // if ((*ray).direction.x > 0.0) {
@@ -448,8 +448,8 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
 
                     // DEBUG - count number bvh hits (for rendering)
                     // number_bvh_hits = number_bvh_hits + 1;
-                    // (*rec).number_bvh_hits = (*rec).number_bvh_hits + 1u;
-                    // (*rec).number_bvh_hits = u32(stack_top + 1);
+                    (*rec).number_bvh_hits = (*rec).number_bvh_hits + 1u;
+                    // (*rec).number_bvh_hits = max((*rec).number_bvh_hits, u32(stack_top + 1));
 
                     // Push the left and right children onto the stack (if they exist)
                     if (current_hittable.bvh_node.left_hittable != bvh_node_null_ptr) {
@@ -569,6 +569,10 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
         }
     }
     // Debug, darken the ray by the number of bvh hits
+
+    if (number_bvh_hits_first_bounce > 0u) {
+        current_ray_color = current_ray_color * pow(vec3<f32>(0.0, 0.4, 0.4), vec3<f32>(f32(number_bvh_hits_first_bounce)));
+    }
     // current_ray_color = current_ray_color * pow(0.9, f32(number_bvh_hits_first_bounce));
     // current_ray_color = vec3<f32>(1.0 - f32(number_bvh_hits_first_bounce) / 10.0);
     // if (number_bvh_hits_first_bounce == 0u) {
@@ -582,10 +586,10 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
     // }
 
 
-    if (number_bvh_hits_first_bounce == 1u) {
-        // current_ray_color = vec3<f32>(1.0, 0.0, 0.0);
-        current_ray_color = vec3<f32>(0.0, 0.4, 0.4) * current_ray_color;
-    }
+    // if (number_bvh_hits_first_bounce == 1u) {
+    //     // current_ray_color = vec3<f32>(1.0, 0.0, 0.0);
+    //     current_ray_color = vec3<f32>(0.0, 0.4, 0.4) * current_ray_color;
+    // }
 
     return current_ray_color;
 }
