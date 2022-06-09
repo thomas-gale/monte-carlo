@@ -1,13 +1,13 @@
 mod aabb;
 mod buffer_bindings;
-mod linear_scene_bvh;
-mod scene_bvh_construction_node;
 mod bvh_node;
 mod camera;
 mod constants;
 mod hittable;
+mod linear_scene_bvh;
 mod quad;
 mod result;
+mod scene_bvh_construction_node;
 mod scenes;
 mod sphere;
 mod uniforms_bindings;
@@ -84,19 +84,19 @@ impl BvhRaytracing {
         // Camera
         let camera = camera::Camera::new(
             &device,
-            Point3::<f32>::new(0.0, 0.0, 30.0),
+            Point3::<f32>::new(0.0, 0.0, 10.0),
             Point3::<f32>::new(0.0, 0.0, 0.0),
             Vector3::<f32>::new(0.0, 1.0, 0.0),
             25.0,
             window,
             0.1,
-            30.0,
+            10.0,
         );
 
         // Scene
-        let scene_bvh = scenes::final_scene();
-        // let scene_bvh = scene::test_scene();
-        // let scene_bvh = scene::simple_scene();
+        // let scene_bvh = scenes::final_scene();
+        let scene_bvh = scenes::test_scene();
+        // let scene_bvh = scenes::simple_scene();
         let (scene_bvh_bind_group_layout, scene_bvh_bind_group, _) =
             buffer_bindings::create_device_buffer_binding(
                 &scene_bvh.get_hittables()[..],

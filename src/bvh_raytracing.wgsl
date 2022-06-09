@@ -325,7 +325,7 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
     }
 
     // Use a basic stack data structure from a fixed array (the stack value is the index of the scene hittable)
-    // Max depth is 32
+    // Max depth is 32 (which means the scene can contain maximum of approximatly 2^32 hittables)
     var stack: array<u32, 32>;
 
     // Track the top of the stack
@@ -472,9 +472,9 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
 
     // BVH rendering - darken the ray by the number of bvh hits
     if (number_bvh_hits_first_bounce > 0u) {
-        current_ray_color = current_ray_color * pow(vec3<f32>(0.9, 0.9, 0.9), vec3<f32>(f32(number_bvh_hits_first_bounce)));
+           current_ray_color = current_ray_color * pow(vec3<f32>(0.9, 0.9, 0.9), vec3<f32>(f32(number_bvh_hits_first_bounce)));
     }
-
+    
     return current_ray_color;
 }
 
@@ -513,4 +513,5 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     textureStore(texture, texture_coords, averaged_pixel_color_with_alpha);
     return averaged_pixel_color_with_alpha;
 }
+
 
