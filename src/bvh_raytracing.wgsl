@@ -209,13 +209,11 @@ fn ray_at(ray: ptr<function,Ray>, t: f32) -> vec3<f32> {
 
 // Bvh helpers
 
-// Optimised method from Andrew Kensler at Pixar.
+// Attribution: https://gamedev.stackexchange.com/a/18459
 // t is length of ray until intersection
 fn aabb_hit(hittables_bvh_node_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, t: ptr<function, f32>) -> bool {
     var aabb = scene_bvh.hittables[hittables_bvh_node_index].bvh_node.aabb;
-    // var ray_test = Ray((*ray).origin, (*ray).direction);
 
-    // Attribution: https://gamedev.stackexchange.com/a/18459
     var dir_frac = vec3<f32>(1.0 / (*ray).direction.x, 1.0 / (*ray).direction.y, 1.0 / (*ray).direction.z);
     var t_1 = (aabb.min.x - (*ray).origin.x) * dir_frac.x;
     var t_2 = (aabb.max.x - (*ray).origin.x) * dir_frac.x;
@@ -227,13 +225,13 @@ fn aabb_hit(hittables_bvh_node_index: u32, ray: ptr<function, Ray>, t_min: f32, 
     var t_min = max(max((min(t_1, t_2)), (min(t_3, t_4))), (min(t_5, t_6)));
     var t_max = min(min((max(t_1, t_2)), (max(t_3, t_4))), (max(t_5, t_6)));
 
-    // If tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+    // If tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us.
     if (t_max < 0.0) {
         (*t) = t_max;
         return false;
     }
 
-    // If tmin > tmax, ray doesn't intersect AABB
+    // If tmin > tmax, ray doesn't intersect AABB.
     if (t_min > t_max) {
         (*t) = t_max;
         return false;
@@ -241,41 +239,6 @@ fn aabb_hit(hittables_bvh_node_index: u32, ray: ptr<function, Ray>, t_min: f32, 
 
     (*t) = t_min;
     return true;
-
-
-    // for (var a = 0; a < 3; a = a + 1) {
-    //     var inv_d = 1.0 / (*ray).direction[a];
-    //     var t_0 = (aabb.min[a] - (*ray).origin[a]) * inv_d;
-    //     var t_1 = (aabb.max[a] - (*ray).origin[a]) * inv_d;
-    //     if (inv_d < 0.0) {
-    //         var tmp = t_0;
-    //         t_0 = t_1;
-    //         t_1 = tmp;
-    //     }
-    //     var t_min_test = t_min;
-    //     if (t_0 > t_min) {
-    //         t_min_test = t_0;
-    //     }
-    //     var t_max_test = t_max;
-    //     if (t_1 < t_max) {
-    //         t_max_test = t_1;
-    //     }
-    //     if (t_max_test <= t_min_test) {
-    //         return false;
-    //     }
-    // }
-    // return true;
-
-    // for (var a = 0; a < 3; a = a + 1) {
-    //     var t_0 = min((aabb.min[a] - (*ray).origin[a]) / (*ray).direction[a], (aabb.max[a] - (*ray).origin[a]) / (*ray).direction[a]);
-    //     var t_1 = max((aabb.min[a] - (*ray).origin[a]) / (*ray).direction[a], (aabb.max[a] - (*ray).origin[a]) / (*ray).direction[a]);
-    //     var t_min_test = min(t_0, t_min);
-    //     var t_max_test = min(t_1, t_max);
-    //     if (t_max_test <= t_min_test) {
-    //         return false;
-    //     }
-    // }
-    // return true;
 }
 
 // Hittable
@@ -371,40 +334,6 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
     // Push the root node index onto the stack (which is the first value in the scene_bvh array)
     stack[stack_top] = 0u;
 
-    // DEBUG - track number bvh hits (for rendering)
-    // var number_bvh_hits = 0;
-
-
-    // Sanity Check - test that first and second bvhNode data points are valid - this is for test scene's first and second aabb.
-    // Showing Green, so we can rule out bit alignment errors passing the aabb from rust to wgsl.
-    // var root_hittable = scene_bvh.hittables[0];
-    // var second_hittable = scene_bvh.hittables[1];
-    // if (root_hittable.bvh_node.aabb.min[0] > -1.51 && root_hittable.bvh_node.aabb.min[0] < -1.49) {
-    //     if (root_hittable.bvh_node.aabb.min[1] > -0.51 && root_hittable.bvh_node.aabb.min[1] < -0.49) {
-    //         if (root_hittable.bvh_node.aabb.min[2] > -0.51 && root_hittable.bvh_node.aabb.min[2] < -0.49) {
-    //             if (root_hittable.bvh_node.aabb.max[0] > 1.49 && root_hittable.bvh_node.aabb.max[0] < 1.51) {
-    //                 if (root_hittable.bvh_node.aabb.max[1] > 0.49 && root_hittable.bvh_node.aabb.max[1] < 0.51) {
-    //                     if (root_hittable.bvh_node.aabb.max[2] > 0.49 && root_hittable.bvh_node.aabb.max[2] < 0.51) {
-    //                         if (second_hittable.bvh_node.aabb.min[0] > -0.56 && second_hittable.bvh_node.aabb.min[0] < -0.54) {
-    //                             if (second_hittable.bvh_node.aabb.min[1] > -0.51 && second_hittable.bvh_node.aabb.min[1] < -0.49) {
-    //                                 if (second_hittable.bvh_node.aabb.min[2] > -0.51 && second_hittable.bvh_node.aabb.min[2] < -0.49) {
-    //                                     if (second_hittable.bvh_node.aabb.max[0] > 1.49 && second_hittable.bvh_node.aabb.max[0] < 1.51) {
-    //                                         if (second_hittable.bvh_node.aabb.max[1] > 0.49 && second_hittable.bvh_node.aabb.max[1] < 0.51) {
-    //                                             if (second_hittable.bvh_node.aabb.max[2] > 0.49 && second_hittable.bvh_node.aabb.max[2] < 0.51) {
-    //                                                 (*rec).number_bvh_hits = 1u;
-    //                                             }
-    //                                         }
-    //                                     }
-    //                                 }
-    //                             }
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-
     // While the stack is not empty
     for (;stack_top >= 0;) {
         // Check for stack depth exceeded
@@ -421,35 +350,13 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
                 // Does this BVH node intersect the ray?
                 var t = 0.0;
                 var hit = aabb_hit(stack[stack_top], ray, t_min, closest_so_far, &t);
-                // var hit = aabb_hit(stack[stack_top], ray, t_min, t_max);
 
                 // Pop the stack (aabb hit check done).
                 stack_top = stack_top - 1;
 
-
-                // if ((*ray).direction.y > 0.0) {
-                //     (*rec).number_bvh_hits = 1u;
-                // }
-
                 if (hit) {
-                    // DEBUG - this is flagging the issue.
-                    // if (stack[stack_top + 1] == 0u) {
-                    //     if (current_hittable.bvh_node.aabb.min[2] < -1.4) {
-                    //         if (current_hittable.bvh_node.aabb.max[0] > 1.4) {
-                    //             (*rec).number_bvh_hits = 1u;
-                    //         }
-                    //     }
-                    // }
-
-
-                    // if ((*ray).direction.x > 0.0) {
-                    //     (*rec).number_bvh_hits = 1u;
-                    // }
-
-                    // DEBUG - count number bvh hits (for rendering)
-                    // number_bvh_hits = number_bvh_hits + 1;
+                    // Count number bvh hits (for rendering)
                     (*rec).number_bvh_hits = (*rec).number_bvh_hits + 1u;
-                    // (*rec).number_bvh_hits = max((*rec).number_bvh_hits, u32(stack_top + 1));
 
                     // Push the left and right children onto the stack (if they exist)
                     if (current_hittable.bvh_node.left_hittable != bvh_node_null_ptr) {
@@ -472,9 +379,6 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
                 if (hit) {
                     hit_anything = true;
                     closest_so_far = (*rec).t;
-
-                    // Debug, the depth in bvh
-                    // (*rec).number_bvh_hits = u32(stack_top);
                 }
             }
             default: {
@@ -483,9 +387,6 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
             }
         }
     }
-
-    // Debug - update hit record with information regarding number of bvh hits
-
 
     return hit_anything;
 }
@@ -507,7 +408,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
         // Check if we hit anything
         var hit = scene_hits(&current_ray, 0.001, constants.infinity, &hit_record);
 
-        // Debug - for rendering the bvh (only care about number of hits on before first bounce)
+        // For rendering the bvh (only care about number of bvh intersections on before first bounce)
         if (i == 0) {
             number_bvh_hits_first_bounce = hit_record.number_bvh_hits;
         }
@@ -568,28 +469,11 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
             break;
         }
     }
-    // Debug, darken the ray by the number of bvh hits
 
+    // BVH rendering - darken the ray by the number of bvh hits
     if (number_bvh_hits_first_bounce > 0u) {
         current_ray_color = current_ray_color * pow(vec3<f32>(0.9, 0.9, 0.9), vec3<f32>(f32(number_bvh_hits_first_bounce)));
     }
-    // current_ray_color = current_ray_color * pow(0.9, f32(number_bvh_hits_first_bounce));
-    // current_ray_color = vec3<f32>(1.0 - f32(number_bvh_hits_first_bounce) / 10.0);
-    // if (number_bvh_hits_first_bounce == 0u) {
-    //     current_ray_color = vec3<f32>(0.0, 0.0, 0.0);
-    // } else if (number_bvh_hits_first_bounce == 1u) {
-    //     current_ray_color = vec3<f32>(1.0, 0.0, 0.0);
-    // } else if (number_bvh_hits_first_bounce == 2u) {
-    //     current_ray_color = vec3<f32>(0.0, 1.0, 0.0);
-    // } else if (number_bvh_hits_first_bounce == 3u) {
-    //     current_ray_color = vec3<f32>(0.0, 0.0, 1.0);
-    // }
-
-
-    // if (number_bvh_hits_first_bounce == 1u) {
-    //     // current_ray_color = vec3<f32>(1.0, 0.0, 0.0);
-    //     current_ray_color = vec3<f32>(0.0, 0.4, 0.4) * current_ray_color;
-    // }
 
     return current_ray_color;
 }
