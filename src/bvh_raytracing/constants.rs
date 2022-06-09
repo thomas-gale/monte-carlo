@@ -6,6 +6,7 @@ pub struct Constants {
     pi: f32,
     pass_samples_per_pixel: i32,
     max_depth: i32,
+    render_patch_sub_divisions: i32,
 }
 
 impl Constants {
@@ -16,6 +17,7 @@ impl Constants {
             pi: std::f32::consts::PI,
             pass_samples_per_pixel: 1,
             max_depth: 50,
+            render_patch_sub_divisions: 16,
         }
     }
 }

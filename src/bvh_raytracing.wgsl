@@ -32,6 +32,7 @@ struct Constants {
     pi: f32;
     pass_samples_per_pixel: i32;
     max_depth: i32;
+    render_patch_sub_divisions: i32;
 };
 
 [[group(0), binding(0)]]
@@ -472,9 +473,9 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
 
     // BVH rendering - darken the ray by the number of bvh hits
     if (number_bvh_hits_first_bounce > 0u) {
-           current_ray_color = current_ray_color * pow(vec3<f32>(0.9, 0.9, 0.9), vec3<f32>(f32(number_bvh_hits_first_bounce)));
+        current_ray_color = current_ray_color * pow(vec3<f32>(0.9, 0.9, 0.9), vec3<f32>(f32(number_bvh_hits_first_bounce)));
     }
-    
+
     return current_ray_color;
 }
 
@@ -492,7 +493,18 @@ var<uniform> result_uniforms: ResultUniforms;
 
 [[stage(fragment)]]
 fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
-    // Compute a new sampled color
+    // TODO - add code to only render code in the patch given the current pass_index modulated by the number of subdivisions ^ 2.
+
+    // Read the current sampled colour of the pixel from the texture
+    var texture_coords = vec2<i32>(i32(in.tex_coords.x * f32(window.width_pixels)), i32(in.tex_coords.y * f32(window.height_pixels)));
+    var existing_pixel_color_with_alpha = textureLoad(texture, texture_coords);
+
+    // Return early (if we are not in the current subdivision patch)
+    if (result_uniforms.pass_index % u32(in.tex_coords.y * f32(constants.render_patch_sub_divisions) + 1.0) != 0u) {
+        return existing_pixel_color_with_alpha;
+    }
+
+    // Calculate the ray for the current pixel
     var new_sampled_pixel_color = vec3<f32>(0.0, 0.0, 0.0);
     var num_samples = constants.pass_samples_per_pixel;
     for (var s = 0; s < num_samples; s = s + 1) {
@@ -507,9 +519,7 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     var new_pixel_color_with_alpha = vec4<f32>(new_sampled_pixel_color, 1.0);
 
     // Weighted average with existing pixel color in result storage texture.
-    var texture_coords = vec2<i32>(i32(in.tex_coords.x * f32(window.width_pixels)), i32(in.tex_coords.y * f32(window.height_pixels)));
-    var existing_pixel_color_with_alpha = textureLoad(texture, texture_coords);
-    var averaged_pixel_color_with_alpha = (1.0 / (1.0 + f32(result_uniforms.pass_index))) * new_pixel_color_with_alpha + (f32(result_uniforms.pass_index) / (1.0 + f32(result_uniforms.pass_index)) * existing_pixel_color_with_alpha);
+    var averaged_pixel_color_with_alpha = (1.0 / (1.0 + f32(result_uniforms.pass_index) / f32(constants.render_patch_sub_divisions))) * new_pixel_color_with_alpha + ((f32(result_uniforms.pass_index) / f32(constants.render_patch_sub_divisions)) / (1.0 + (f32(result_uniforms.pass_index) / f32(constants.render_patch_sub_divisions))) * existing_pixel_color_with_alpha);
     textureStore(texture, texture_coords, averaged_pixel_color_with_alpha);
     return averaged_pixel_color_with_alpha;
 }
