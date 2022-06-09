@@ -190,12 +190,12 @@ struct Hittable {
 // Releated to Hittable
 let bvh_node_null_ptr: u32 = 4294967295u;
 
-struct SceneBvh {
+struct LinearSceneBvh {
     hittables: array<Hittable>;
 };
 
 [[group(2), binding(0)]]
-var<storage, read> scene_bvh: SceneBvh;
+var<storage, read> scene: LinearSceneBvh;
 
 // Ray
 struct Ray {
@@ -212,7 +212,7 @@ fn ray_at(ray: ptr<function,Ray>, t: f32) -> vec3<f32> {
 // Attribution: https://gamedev.stackexchange.com/a/18459
 // t is length of ray until intersection
 fn aabb_hit(hittables_bvh_node_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, t: ptr<function, f32>) -> bool {
-    var aabb = scene_bvh.hittables[hittables_bvh_node_index].bvh_node.aabb;
+    var aabb = scene.hittables[hittables_bvh_node_index].bvh_node.aabb;
 
     var dir_frac = vec3<f32>(1.0 / (*ray).direction.x, 1.0 / (*ray).direction.y, 1.0 / (*ray).direction.z);
     var t_1 = (aabb.min.x - (*ray).origin.x) * dir_frac.x;
@@ -281,7 +281,7 @@ fn set_face_normal(hit_record: ptr<function, HitRecord>, r: ptr<function, Ray>, 
 
 // Sphere Helpers
 fn sphere_hit(hittables_sphere_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
-    var sphere = scene_bvh.hittables[hittables_sphere_index].sphere;
+    var sphere = scene.hittables[hittables_sphere_index].sphere;
 
     var oc = (*ray).origin - sphere.center;
     var a = dot((*ray).direction, (*ray).direction);
@@ -320,7 +320,7 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
     var closest_so_far = t_max;
 
     // Precondition, return early if scene is empty
-    if (arrayLength(&scene_bvh.hittables) == 0u) {
+    if (arrayLength(&scene.hittables) == 0u) {
         return hit_anything;
     }
 
@@ -331,7 +331,7 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
     // Track the top of the stack
     var stack_top = 0;
 
-    // Push the root node index onto the stack (which is the first value in the scene_bvh array)
+    // Push the root node index onto the stack (which is the first value in the scene array)
     stack[stack_top] = 0u;
 
     // While the stack is not empty
@@ -342,7 +342,7 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
         }
 
         // Get hittable from top of stack 
-        var current_hittable = scene_bvh.hittables[ stack[stack_top] ];
+        var current_hittable = scene.hittables[ stack[stack_top] ];
         // Check the type of this hittable
         switch (current_hittable.geometry_type) {
             case 0u: {

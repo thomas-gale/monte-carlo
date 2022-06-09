@@ -1,14 +1,14 @@
 mod aabb;
 mod buffer_bindings;
-mod bvh;
-mod bvh_construction_node;
+mod linear_scene_bvh;
+mod scene_bvh_construction_node;
 mod bvh_node;
 mod camera;
 mod constants;
 mod hittable;
 mod quad;
 mod result;
-mod scene;
+mod scenes;
 mod sphere;
 mod uniforms_bindings;
 mod util;
@@ -94,7 +94,7 @@ impl BvhRaytracing {
         );
 
         // Scene
-        let scene_bvh = scene::final_scene();
+        let scene_bvh = scenes::final_scene();
         // let scene_bvh = scene::test_scene();
         // let scene_bvh = scene::simple_scene();
         let (scene_bvh_bind_group_layout, scene_bvh_bind_group, _) =

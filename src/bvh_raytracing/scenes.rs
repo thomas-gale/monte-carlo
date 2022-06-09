@@ -1,9 +1,10 @@
 use cgmath::{prelude::*, Vector3};
 
-use super::{bvh::Bvh, sphere::Sphere};
+use super::{linear_scene_bvh::LinearSceneBvh, sphere::Sphere};
 
-pub fn simple_scene() -> Bvh {
-    Bvh::build_from_spheres(&vec![Sphere::new(
+#[allow(dead_code)]
+pub fn simple_scene() -> LinearSceneBvh {
+    LinearSceneBvh::build_from_spheres(&vec![Sphere::new(
         Vector3::<f32>::new(0.0, 0.0, 0.0),
         0.5,
         0,
@@ -14,8 +15,8 @@ pub fn simple_scene() -> Bvh {
 }
 
 #[allow(dead_code)]
-pub fn test_scene() -> Bvh {
-    Bvh::build_from_spheres(&vec![
+pub fn test_scene() -> LinearSceneBvh {
+    LinearSceneBvh::build_from_spheres(&vec![
         // Sphere::new(
         //     Vector3::<f32>::new(0.0, -100.5, 0.0),
         //     100.0,
@@ -75,7 +76,8 @@ pub fn test_scene() -> Bvh {
     ])
 }
 
-pub fn final_scene() -> Bvh {
+#[allow(dead_code)]
+pub fn final_scene() -> LinearSceneBvh {
     let mut spheres = Vec::<Sphere>::new();
 
     // spheres.push(Sphere::new(
@@ -167,7 +169,7 @@ pub fn final_scene() -> Bvh {
         Vector3::<f32>::new(0.7, 0.6, 0.5),
     ));
 
-    Bvh::build_from_spheres(&spheres)
+    LinearSceneBvh::build_from_spheres(&spheres)
 }
 
 #[cfg(test)]

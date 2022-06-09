@@ -1,10 +1,10 @@
 use std::cmp::Ordering;
 use std::collections::VecDeque;
 
-use super::aabb::{surrounding_box, Aabb};
-use super::bvh::Bvh;
+use super::aabb::surrounding_box;
 use super::bvh_node::BvhNode;
-use super::hittable::{self, GeometryType, Hittable};
+use super::hittable::{GeometryType, Hittable};
+use super::linear_scene_bvh::LinearSceneBvh;
 
 use super::util;
 
@@ -12,16 +12,16 @@ use super::util;
 /// Box reference based bvh node, used for recursive bvh construction
 ///
 #[derive(Debug, Clone)]
-pub struct BvhConstructionNode {
-    left: Option<Box<BvhConstructionNode>>,
-    right: Option<Box<BvhConstructionNode>>,
+pub struct SceneBvhConstructionNode {
+    left: Option<Box<SceneBvhConstructionNode>>,
+    right: Option<Box<SceneBvhConstructionNode>>,
     // aabb: Aabb,
     hittable: Hittable,
 }
 
-impl BvhConstructionNode {
+impl SceneBvhConstructionNode {
     fn leaf(hittable: Hittable) -> Self {
-        BvhConstructionNode {
+        SceneBvhConstructionNode {
             left: None,
             right: None,
             hittable,
@@ -49,27 +49,27 @@ impl BvhConstructionNode {
         // let comparator = |a, b| -> Ordering { box_compare(a, b, axis) };
 
         // The nodes
-        let mut left: Option<Box<BvhConstructionNode>> = None;
-        let mut right: Option<Box<BvhConstructionNode>> = None;
+        let left: Option<Box<SceneBvhConstructionNode>>;
+        let right: Option<Box<SceneBvhConstructionNode>>;
 
         // If we have only 1 or 2 items to place in bvh (base cases)
         if source_objects.len() == 1 {
-            left = Some(Box::new(BvhConstructionNode::leaf(objects[0])));
+            left = Some(Box::new(SceneBvhConstructionNode::leaf(objects[0])));
             right = left.clone();
         } else if source_objects.len() == 2 {
             if box_compare(&objects[0], &objects[1], axis) == Ordering::Less {
-                left = Some(Box::new(BvhConstructionNode::leaf(objects[0])));
-                right = Some(Box::new(BvhConstructionNode::leaf(objects[1])));
+                left = Some(Box::new(SceneBvhConstructionNode::leaf(objects[0])));
+                right = Some(Box::new(SceneBvhConstructionNode::leaf(objects[1])));
             } else {
-                left = Some(Box::new(BvhConstructionNode::leaf(objects[1])));
-                right = Some(Box::new(BvhConstructionNode::leaf(objects[0])));
+                left = Some(Box::new(SceneBvhConstructionNode::leaf(objects[1])));
+                right = Some(Box::new(SceneBvhConstructionNode::leaf(objects[0])));
             }
         } else {
             // General recursive case
             objects.sort_by(|a, b| box_compare(a, b, axis));
             let mid = objects.len() / 2;
-            left = Some(Box::new(BvhConstructionNode::new(&objects[0..mid])));
-            right = Some(Box::new(BvhConstructionNode::new(&objects[mid..])))
+            left = Some(Box::new(SceneBvhConstructionNode::new(&objects[0..mid])));
+            right = Some(Box::new(SceneBvhConstructionNode::new(&objects[mid..])))
         }
 
         let box_left = left.as_ref().unwrap().hittable.bounding_box();
@@ -77,7 +77,7 @@ impl BvhConstructionNode {
 
         let box_surround = surrounding_box(&box_left, &box_right);
 
-        BvhConstructionNode {
+        SceneBvhConstructionNode {
             left,
             right,
             // aabb: Aabb::empty()
@@ -87,23 +87,20 @@ impl BvhConstructionNode {
     }
 
     ///
-    /// Convert the box based referential structure into a flat (linearised version) of the Bvh, using the POD BvhNode data structure that uses index
+    /// Convert the box based referential structure into a flat (linearized version) of the Bvh, using the POD BvhNode data structure that uses index
     /// based referencing to child nodes
     ///  
-    pub fn flatten(&self) -> Bvh {
+    pub fn flatten(&self) -> LinearSceneBvh {
         // Bvh construction flattened.
         let mut flat_bvh_hittables: Vec<Hittable> = vec![];
 
         // BFS traversal
-        let mut queue: VecDeque<Box<BvhConstructionNode>> = VecDeque::new();
+        let mut queue: VecDeque<Box<SceneBvhConstructionNode>> = VecDeque::new();
         queue.push_back(Box::new(self.clone()));
 
         while !queue.is_empty() {
             let current = queue.pop_front();
             let current_ref = current.as_ref().unwrap();
-
-            // println!("\n TEST Current: {:?}", current_ref);
-            // hittables.push(current_ref.hittable);
 
             // Create a flattened hittable
             let mut flat_hittable = current_ref.hittable.clone();
@@ -129,16 +126,16 @@ impl BvhConstructionNode {
             flat_bvh_hittables.push(flat_hittable);
         }
 
-        // Debug - pretty print the flattened bvh
-        for hittable in flat_bvh_hittables.iter() {
-            if hittable.geometry_type == 0 {
-                println!("\n BVH Node: {:?}", hittable.bvh_node);
-            } else if hittable.geometry_type == 1 {
-                println!("\n Sphere: {:?}", hittable.sphere);
-            }
-        }
+        // Debug - pretty print the flattened scene bvh
+        // for hittable in flat_bvh_hittables.iter() {
+        //     if hittable.geometry_type == 0 {
+        //         println!("\n BVH Node: {:?}", hittable.bvh_node);
+        //     } else if hittable.geometry_type == 1 {
+        //         println!("\n Sphere: {:?}", hittable.sphere);
+        //     }
+        // }
 
-        Bvh::build_from_hittables(flat_bvh_hittables)
+        LinearSceneBvh::build_from_hittables(flat_bvh_hittables)
     }
 }
 
@@ -147,15 +144,3 @@ fn box_compare(a: &Hittable, b: &Hittable, axis: usize) -> Ordering {
         .partial_cmp(&b.bounding_box().max()[axis])
         .unwrap()
 }
-
-// fn box_x_compare(a: &Hittable, b: &Hittable) -> bool {
-//     box_compare(a, b, 0)
-// }
-
-// fn box_y_compare(a: &Hittable, b: &Hittable) -> bool {
-//     box_compare(a, b, 1)
-// }
-
-// fn box_z_compare(a: &Hittable, b: &Hittable) -> bool {
-//     box_compare(a, b, 2)
-// }

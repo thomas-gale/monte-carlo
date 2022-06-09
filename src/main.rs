@@ -1,5 +1,5 @@
 // Code to support features for 'ray tracing in a weekend'
-mod basic_raytracing;
+// mod basic_raytracing;
 // Code to support (a few) features for 'ray tracing the next week'
 mod bvh_raytracing;
 
