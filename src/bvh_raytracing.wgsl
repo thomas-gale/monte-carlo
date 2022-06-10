@@ -225,7 +225,7 @@ let bvh_node_null_ptr: u32 = 4294967295u;
 
 // Scene Linear Arrays
 struct SceneLinearHittables {
-    hittables: array<LinearHittable>;
+    vals: array<LinearHittable>;
 };
 
 struct SceneLinearBvhNodes {
@@ -244,19 +244,11 @@ struct SceneLinearMaterials {
     vals: array<Material>;
 };
 
-// struct LinearSceneBvh {
-//     hittables: array<LinearHittable>;
-//     bvh_nodes: array<BvhNode>;
-//     spheres: array<Sphere>;
-//     cuboids: array<Cuboid>;
-//     materials: array<Material>;
-// };
-
 [[group(2), binding(0)]]
-var<storage, read> scene: SceneLinearHittables;
+var<storage, read> scene_hittables: SceneLinearHittables;
 
 [[group(2), binding(1)]]
-var<storage, read> scene_nodes: SceneLinearBvhNodes;
+var<storage, read> scene_bvh_nodes: SceneLinearBvhNodes;
 
 [[group(2), binding(2)]]
 var<storage, read> scene_spheres: SceneLinearSpheres;
@@ -282,7 +274,7 @@ fn ray_at(ray: ptr<function,Ray>, t: f32) -> vec3<f32> {
 // Attribution: https://gamedev.stackexchange.com/a/18459
 // t is length of ray until intersection
 fn aabb_hit(hittables_bvh_node_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, t: ptr<function, f32>) -> bool {
-    var aabb = scene.hittables[hittables_bvh_node_index].bvh_node.aabb;
+    var aabb = scene_hittables.vals[hittables_bvh_node_index].bvh_node.aabb;
 
     var dir_frac = vec3<f32>(1.0 / (*ray).direction.x, 1.0 / (*ray).direction.y, 1.0 / (*ray).direction.z);
     var t_1 = (aabb.min.x - (*ray).origin.x) * dir_frac.x;
@@ -351,7 +343,7 @@ fn set_face_normal(hit_record: ptr<function, HitRecord>, r: ptr<function, Ray>, 
 
 // Sphere Helpers
 fn sphere_hit(hittables_sphere_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
-    var sphere = scene.hittables[hittables_sphere_index].sphere;
+    var sphere = scene_hittables.vals[hittables_sphere_index].sphere;
 
     var oc = (*ray).origin - sphere.center;
     var a = dot((*ray).direction, (*ray).direction);
@@ -390,7 +382,7 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
     var closest_so_far = t_max;
 
     // Precondition, return early if scene is empty
-    if (arrayLength(&scene.hittables) == 0u) {
+    if (arrayLength(&scene_hittables.vals) == 0u) {
         return hit_anything;
     }
 
@@ -412,7 +404,7 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
         }
 
         // Get hittable from top of stack 
-        var current_hittable = scene.hittables[ stack[stack_top] ];
+        var current_hittable = scene_hittables.vals[ stack[stack_top] ];
         // Check the type of this hittable
         switch (current_hittable.geometry_type) {
             case 0u: {
