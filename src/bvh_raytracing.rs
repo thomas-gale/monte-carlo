@@ -3,7 +3,7 @@ mod buffer_bindings;
 mod bvh_node;
 mod camera;
 mod constants;
-mod hittable;
+mod linear_hittable;
 mod linear_scene_bvh;
 mod quad;
 mod result;

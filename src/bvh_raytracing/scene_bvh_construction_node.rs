@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 
 use super::aabb::surrounding_box;
 use super::bvh_node::BvhNode;
-use super::hittable::{GeometryType, Hittable};
+use super::linear_hittable::{GeometryType, LinearHittable};
 use super::linear_scene_bvh::LinearSceneBvh;
 
 use super::util;
@@ -15,12 +15,11 @@ use super::util;
 pub struct SceneBvhConstructionNode {
     left: Option<Box<SceneBvhConstructionNode>>,
     right: Option<Box<SceneBvhConstructionNode>>,
-    // aabb: Aabb,
-    hittable: Hittable,
+    hittable: LinearHittable,
 }
 
 impl SceneBvhConstructionNode {
-    fn leaf(hittable: Hittable) -> Self {
+    fn leaf(hittable: LinearHittable) -> Self {
         SceneBvhConstructionNode {
             left: None,
             right: None,
@@ -32,7 +31,7 @@ impl SceneBvhConstructionNode {
     /// Recursive constructor
     /// https://raytracing.github.io/books/RayTracingTheNextWeek.html#boundingvolumehierarchies/hierarchiesofboundingvolumes
     ///
-    pub fn new(source_objects: &[Hittable]) -> Self {
+    pub fn new(source_objects: &[LinearHittable]) -> Self {
         let mut objects = source_objects.to_vec();
 
         // Compute random sorting axis (for X, Y, Z)
@@ -80,9 +79,7 @@ impl SceneBvhConstructionNode {
         SceneBvhConstructionNode {
             left,
             right,
-            // aabb: Aabb::empty()
-            // TODO - check the Bvh node is correct,
-            hittable: Hittable::new(GeometryType::BvhNode(BvhNode::new(0, 0, box_surround))),
+            hittable: LinearHittable::new(GeometryType::BvhNode(BvhNode::new(0, 0, box_surround))),
         }
     }
 
@@ -92,7 +89,7 @@ impl SceneBvhConstructionNode {
     ///  
     pub fn flatten(&self) -> LinearSceneBvh {
         // Bvh construction flattened.
-        let mut flat_bvh_hittables: Vec<Hittable> = vec![];
+        let mut flat_bvh_hittables: Vec<LinearHittable> = vec![];
 
         // BFS traversal
         let mut queue: VecDeque<Box<SceneBvhConstructionNode>> = VecDeque::new();
@@ -139,7 +136,7 @@ impl SceneBvhConstructionNode {
     }
 }
 
-fn box_compare(a: &Hittable, b: &Hittable, axis: usize) -> Ordering {
+fn box_compare(a: &LinearHittable, b: &LinearHittable, axis: usize) -> Ordering {
     a.bounding_box().min()[axis]
         .partial_cmp(&b.bounding_box().max()[axis])
         .unwrap()

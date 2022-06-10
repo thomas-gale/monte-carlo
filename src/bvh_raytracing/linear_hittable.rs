@@ -7,10 +7,11 @@ pub enum GeometryType {
 
 ///
 /// Experimental data structure to hold all bvh compatible data for a single hittable geometry to compose into the bvh tree
+/// This is the linearized form, expected to be part of the linear scene bvh
 ///
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct Hittable {
+pub struct LinearHittable {
     /// 0 = BvhNode, 1 = Sphere
     pub geometry_type: u32,
     pub _pad_1: u32,
@@ -20,13 +21,13 @@ pub struct Hittable {
     pub sphere: Sphere,
 }
 
-impl Hittable {
+impl LinearHittable {
     ///
     /// Create a new hittable (which is a bytemuck::Pod and can be sent to GPU/addresses as a struct in wgsl)
     ///
     pub fn new(geometry_type: GeometryType) -> Self {
         match geometry_type {
-            GeometryType::BvhNode(bvh_node) => Hittable {
+            GeometryType::BvhNode(bvh_node) => LinearHittable {
                 geometry_type: 0,
                 _pad_1: 0,
                 _pad_2: 0,
@@ -34,7 +35,7 @@ impl Hittable {
                 bvh_node,
                 sphere: Sphere::empty(),
             },
-            GeometryType::Sphere(sphere) => Hittable {
+            GeometryType::Sphere(sphere) => LinearHittable {
                 geometry_type: 1,
                 _pad_1: 0,
                 _pad_2: 0,

@@ -187,7 +187,7 @@ struct Sphere {
 };
 
 /// Experimental data structure to hold all bvh compatible data for a single hittable geometry to compose into the bvh tree
-struct Hittable {
+struct LinearHittable {
     /// 0 = BvhNode, 1 = Sphere
     geometry_type: u32;
     bvh_node: BvhNode;
@@ -198,7 +198,7 @@ struct Hittable {
 let bvh_node_null_ptr: u32 = 4294967295u;
 
 struct LinearSceneBvh {
-    hittables: array<Hittable>;
+    hittables: array<LinearHittable>;
 };
 
 [[group(2), binding(0)]]
