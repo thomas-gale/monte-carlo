@@ -166,15 +166,15 @@ struct Camera {
 var<uniform> camera: Camera;
 
 // Scene
-struct Aabb {
-    min: vec3<f32>;
-    max: vec3<f32>;
-};
-
-struct BvhNode {
-    left_hittable: u32;  // Pointer to left hittable
-    right_hittable: u32; // Pointer to right hittable
-    aabb: Aabb;
+struct Material {
+    /// 0 = lambertian, 1 = metal, 2 = dielectric
+    material_type: u32; 
+    /// Roughness for metals
+    fuzz: f32; 
+    /// Refraction index for dielectrics
+    refraction_index: f32; 
+    /// Ray bounce color
+    albedo: vec3<f32>;
 };
 
 struct Sphere {
@@ -200,15 +200,19 @@ struct Cuboid {
     txi: mat4x4<f32>;
 };
 
-struct Material {
-    /// 0 = lambertian, 1 = metal, 2 = dielectric
-    material_type: u32; 
-    /// Roughness for metals
-    fuzz: f32; 
-    /// Refraction index for dielectrics
-    refraction_index: f32; 
-    /// Ray bounce color
-    albedo: vec3<f32>;
+/// Axis aligned bounding box.
+struct Aabb {
+    min: vec3<f32>;
+    max: vec3<f32>;
+};
+
+struct BvhNode {
+    /// Pointer to left hittable
+    left_hittable: u32;  
+    /// Pointer to right hittable
+    right_hittable: u32; 
+    /// Aabb pre-computed in rust before sending accross buffer.
+    aabb: Aabb;
 };
 
 /// Experimental data structure to hold all bvh compatible data for a single hittable geometry to compose into the bvh tree
@@ -224,6 +228,10 @@ struct LinearHittable {
 let bvh_node_null_ptr: u32 = 4294967295u;
 
 // Scene Linear Arrays
+struct SceneLinearMaterials {
+    vals: array<Material>;
+};
+
 struct SceneLinearHittables {
     vals: array<LinearHittable>;
 };
@@ -240,24 +248,20 @@ struct SceneLinearCuboids {
     vals: array<Sphere>;
 };
 
-struct SceneLinearMaterials {
-    vals: array<Material>;
-};
-
 [[group(2), binding(0)]]
-var<storage, read> scene_hittables: SceneLinearHittables;
+var<storage, read> scene_materials: SceneLinearMaterials;
 
 [[group(2), binding(1)]]
-var<storage, read> scene_bvh_nodes: SceneLinearBvhNodes;
+var<storage, read> scene_hittables: SceneLinearHittables;
 
 [[group(2), binding(2)]]
-var<storage, read> scene_spheres: SceneLinearSpheres;
+var<storage, read> scene_bvh_nodes: SceneLinearBvhNodes;
 
 [[group(2), binding(3)]]
-var<storage, read> scene_cuboids: SceneLinearCuboids;
+var<storage, read> scene_spheres: SceneLinearSpheres;
 
 [[group(2), binding(4)]]
-var<storage, read> scene_materials: SceneLinearMaterials;
+var<storage, read> scene_cuboids: SceneLinearCuboids;
 
 // Ray
 struct Ray {

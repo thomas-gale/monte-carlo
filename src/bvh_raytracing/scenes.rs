@@ -17,14 +17,14 @@ pub fn simple_scene() -> LinearSceneBvh {
 #[allow(dead_code)]
 pub fn test_scene() -> LinearSceneBvh {
     LinearSceneBvh::build_from_spheres(&vec![
-        // Sphere::new(
-        //     Vector3::<f32>::new(0.0, -100.5, 0.0),
-        //     100.0,
-        //     0,
-        //     0.0,
-        //     0.0,
-        //     Vector3::<f32>::new(0.8, 0.8, 0.0),
-        // ),
+        Sphere::new(
+            Vector3::<f32>::new(0.0, -100.5, 0.0),
+            100.0,
+            0,
+            0.0,
+            0.0,
+            Vector3::<f32>::new(0.8, 0.8, 0.0),
+        ),
         Sphere::new(
             Vector3::<f32>::new(0.0, 0.0, 0.0),
             0.5,
@@ -76,6 +76,7 @@ pub fn test_scene() -> LinearSceneBvh {
     ])
 }
 
+#[allow(dead_code)]
 pub fn final_scene() -> LinearSceneBvh {
     let mut spheres = Vec::<Sphere>::new();
 
@@ -258,21 +259,4 @@ pub fn stress_test_scene() -> LinearSceneBvh {
     ));
 
     LinearSceneBvh::build_from_spheres(&spheres)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_test_scene() {
-        let scene = test_scene();
-        assert!(scene.get_hittables().len() == 5);
-    }
-
-    #[test]
-    fn test_final_scene() {
-        let scene = final_scene();
-        assert!(scene.get_hittables().len() > 5);
-    }
 }
