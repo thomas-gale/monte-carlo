@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::collections::VecDeque;
 
-use super::aabb::surrounding_box;
+use super::aabb::{surrounding_box, Aabb};
 use super::bvh_node::BvhNode;
 use super::hittable_primitive::HittablePrimitive;
 use super::linear_hittable::LinearHittable;
@@ -50,13 +50,14 @@ impl SceneBvhConstructionNode {
 
         // The nodes
         let left: Option<Box<SceneBvhConstructionNode>>;
-        let right: Option<Box<SceneBvhConstructionNode>>;
+        let mut right: Option<Box<SceneBvhConstructionNode>> = None;
 
         // If we have only 1 or 2 items to place in bvh (base cases)
         if source_objects.len() == 1 {
+            // left arm of the tree is always used in the case of a single leaf.
             left = Some(Box::new(SceneBvhConstructionNode::leaf(objects[0])));
-            right = left.clone();
         } else if source_objects.len() == 2 {
+            // Quick swap without recursion.
             if box_compare(&objects[0], &objects[1], axis) == Ordering::Less {
                 left = Some(Box::new(SceneBvhConstructionNode::leaf(objects[0])));
                 right = Some(Box::new(SceneBvhConstructionNode::leaf(objects[1])));
@@ -73,16 +74,20 @@ impl SceneBvhConstructionNode {
         }
 
         let box_left = left.as_ref().unwrap().hittable.bounding_box();
-        let box_right = right.as_ref().unwrap().hittable.bounding_box();
-
-        let box_surround = surrounding_box(&box_left, &box_right);
+        let box_surround: Aabb;
+        if right.is_some() {
+            let box_right = right.as_ref().unwrap().hittable.bounding_box();
+            box_surround = surrounding_box(&box_left, &box_right);
+        } else {
+            box_surround = box_left;
+        }
 
         SceneBvhConstructionNode {
             left,
             right,
             hittable: LinearHittable::new(HittablePrimitive::BvhNode(BvhNode::new(
-                0,
-                0,
+                BvhNode::null_hittable_ptr(),
+                BvhNode::null_hittable_ptr(),
                 box_surround,
             ))),
         }

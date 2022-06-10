@@ -2,7 +2,7 @@ use super::aabb::Aabb;
 
 ///
 /// POD BvhNode ready to ship to GPU
-/// 
+///
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct BvhNode {
@@ -16,6 +16,13 @@ pub struct BvhNode {
 }
 
 impl BvhNode {
+    ///
+    /// Helper to get the convention for the null value
+    ///
+    pub fn null_hittable_ptr() -> u32 {
+        u32::max_value()
+    }
+
     ///
     /// Create a new BvhNode
     /// TODO - the pointer for left and right should refer to some index in of slice/block of memory allocated for use on CPU->GPU
@@ -34,8 +41,8 @@ impl BvhNode {
         BvhNode {
             left_hittable: u32::max_value(),
             right_hittable: u32::max_value(),
-            _pad_1: 0,
-            _pad_2: 0,
+            _pad_1: BvhNode::null_hittable_ptr(),
+            _pad_2: BvhNode::null_hittable_ptr(),
             aabb: Aabb::empty(),
         }
     }

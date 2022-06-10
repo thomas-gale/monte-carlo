@@ -105,14 +105,6 @@ impl BvhRaytracing {
         let (scene_bvh_bind_group_layout, scene_bvh_bind_group) =
             scene_bvh.create_device_buffer_binding(&device);
 
-        // let (scene_bvh_bind_group_layout, scene_bvh_bind_group, _) =
-        //     buffer_bindings::create_device_buffer_binding(
-        //         &scene_bvh.get_hittables()[..],
-        //         &device,
-        //         wgpu::BufferUsages::STORAGE,
-        //         wgpu::BufferBindingType::Storage { read_only: (true) },
-        //     );
-
         // Create basic quad to render fragments onto.
         let quad = quad::Quad::new(&device);
 
