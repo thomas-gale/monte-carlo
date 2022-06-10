@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 
 use super::aabb::{surrounding_box, Aabb};
 use super::bvh_node::BvhNode;
-use super::construction_scene::ConstructionScene;
+use super::construction_scene;
 use super::hittable_primitive::HittablePrimitive;
 use super::linear_hittable::LinearHittable;
 use super::linear_scene_bvh::LinearSceneBvh;
@@ -37,13 +37,13 @@ impl SceneBvhConstructionNode {
         let mut objects = source_objects.to_vec();
 
         // Compute random sorting axis (for X, Y, Z)
-        let axis = util::random_int(0, 2) as usize;
+        // let axis = util::random_int(0, 2) as usize;
 
         // Hard code to XZ (the horizontal plane)
-        // let mut axis = util::random_int(0, 1) as usize;
-        // if axis == 1 {
-        //     axis = 2;
-        // }
+        let mut axis = util::random_int(0, 1) as usize;
+        if axis == 1 {
+            axis = 2;
+        }
 
         // Hard code to X
         // let axis = 0 as usize;
@@ -143,7 +143,7 @@ impl SceneBvhConstructionNode {
         //     }
         // }
 
-        ConstructionScene::build_from_hittables(flat_bvh_hittables)
+        construction_scene::build_from_hittables(flat_bvh_hittables)
     }
 }
 

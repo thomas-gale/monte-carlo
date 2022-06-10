@@ -13,6 +13,8 @@ pub struct Constants {
     draw_vertical_render_slice_region: u32,
     /// 0: Off, 1: On
     draw_bvh: u32,
+    /// Fraction of light attenuated by each bvh traversed - bit hacky (larger scenes will need values like 0.999 and small scenes 0.9)
+    draw_bvh_attenuation: f32,
 }
 
 impl Constants {
@@ -25,7 +27,8 @@ impl Constants {
             max_depth: 64,
             vertical_render_slices: 32,
             draw_vertical_render_slice_region: 0,
-            draw_bvh: 0,
+            draw_bvh: 1,
+            draw_bvh_attenuation: 0.9,
         }
     }
 }

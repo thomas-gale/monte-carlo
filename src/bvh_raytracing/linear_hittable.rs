@@ -40,22 +40,16 @@ impl LinearHittable {
                 bvh_node: BvhNode::empty(),
                 sphere,
             },
+            HittablePrimitive::Cuboid(_) => LinearHittable {
+                geometry_type: 2,
+                _pad_1: 0,
+                _pad_2: 0,
+                _pad_3: 0,
+                bvh_node: BvhNode::empty(),
+                sphere: Sphere::empty(),
+            },
         }
     }
-
-    ///
-    /// Empty hittable
-    ///
-    // pub fn empty() -> Self {
-    //     Hittable {
-    //         geometry_type: u32::max_value(),
-    //         _pad_1: 0,
-    //         _pad_2: 0,
-    //         _pad_3: 0,
-    //         bvh_node: BvhNode::empty(),
-    //         sphere: Sphere::empty(),
-    //     }
-    // }
 
     /// TODO - refactor (this code should be moved to the hittable)
     pub fn bounding_box(&self) -> Aabb {

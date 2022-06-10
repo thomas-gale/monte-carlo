@@ -39,6 +39,8 @@ struct Constants {
     draw_vertical_render_slice_region: u32;
     /// 0: Off, 1: On
     draw_bvh: u32;
+    /// Fraction of light attenuated by each bvh traversed - bit hacky (larger scenes will need values like 0.999 and small scenes 0.9)
+    draw_bvh_attenuation: f32;
 };
 
 [[group(0), binding(0)]]
@@ -277,7 +279,8 @@ fn ray_at(ray: ptr<function,Ray>, t: f32) -> vec3<f32> {
 
 // Attribution: https://gamedev.stackexchange.com/a/18459
 // t is length of ray until intersection
-fn aabb_hit(hittables_bvh_node_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, t: ptr<function, f32>) -> bool {
+// fn aabb_hit(hittables_bvh_node_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, t: ptr<function, f32>) -> bool {
+fn aabb_hit(hittables_bvh_node_index: u32, ray: ptr<function, Ray>, t: ptr<function, f32>) -> bool {
     var aabb = scene_hittables.vals[hittables_bvh_node_index].bvh_node.aabb;
 
     var dir_frac = vec3<f32>(1.0 / (*ray).direction.x, 1.0 / (*ray).direction.y, 1.0 / (*ray).direction.z);
@@ -415,13 +418,14 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
                 // Bvh
                 // Does this BVH node intersect the ray?
                 var t = 0.0;
-                var hit = aabb_hit(stack[stack_top], ray, t_min, closest_so_far, &t);
+                // var hit = aabb_hit(stack[stack_top], ray, t_min, closest_so_far, &t);
+                var hit = aabb_hit(stack[stack_top], ray, &t);
 
                 // Pop the stack (aabb hit check done).
                 stack_top = stack_top - 1;
 
                 if (hit) {
-                    // Count number bvh hits (for rendering)
+                    // Track the number of bvh hits for bvh debug rendering purposes
                     (*rec).number_bvh_hits = (*rec).number_bvh_hits + 1u;
 
                     // Push the left and right children onto the stack (if they exist)
@@ -538,7 +542,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
 
     // Optional bvh rendering - darken the ray by the number of bvh hits
     if (constants.draw_bvh == 1u && number_bvh_hits_first_bounce > 0u) {
-        current_ray_color = current_ray_color * pow(vec3<f32>(0.9, 0.9, 0.9), vec3<f32>(f32(number_bvh_hits_first_bounce)));
+        current_ray_color = current_ray_color * pow(vec3<f32>(constants.draw_bvh_attenuation), vec3<f32>(f32(number_bvh_hits_first_bounce)));
     }
 
     return current_ray_color;

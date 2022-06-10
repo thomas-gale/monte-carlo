@@ -1,12 +1,12 @@
 use cgmath::{prelude::*, Vector3};
 
 use super::{
-    construction_scene::ConstructionScene, linear_scene_bvh::LinearSceneBvh, sphere::Sphere,
+    construction_scene, linear_scene_bvh::LinearSceneBvh, sphere::Sphere,
 };
 
 #[allow(dead_code)]
 pub fn simple_scene() -> LinearSceneBvh {
-    ConstructionScene::build_from_spheres(&vec![Sphere::new(
+    construction_scene::build_from_spheres(&vec![Sphere::new(
         Vector3::<f32>::new(0.0, 0.0, 0.0),
         0.5,
         0,
@@ -18,7 +18,7 @@ pub fn simple_scene() -> LinearSceneBvh {
 
 #[allow(dead_code)]
 pub fn test_scene() -> LinearSceneBvh {
-    ConstructionScene::build_from_spheres(&vec![
+    construction_scene::build_from_spheres(&vec![
         Sphere::new(
             Vector3::<f32>::new(0.0, -100.5, 0.0),
             100.0,
@@ -171,7 +171,7 @@ pub fn final_scene() -> LinearSceneBvh {
         Vector3::<f32>::new(0.7, 0.6, 0.5),
     ));
 
-    ConstructionScene::build_from_spheres(&spheres)
+    construction_scene::build_from_spheres(&spheres)
 }
 
 #[allow(dead_code)]
@@ -260,5 +260,5 @@ pub fn stress_test_scene() -> LinearSceneBvh {
         Vector3::<f32>::new(0.7, 0.6, 0.5),
     ));
 
-    ConstructionScene::build_from_spheres(&spheres)
+    construction_scene::build_from_spheres(&spheres)
 }
