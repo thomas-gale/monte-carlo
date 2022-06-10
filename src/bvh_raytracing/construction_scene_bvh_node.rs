@@ -36,13 +36,13 @@ impl SceneBvhConstructionNode {
         let mut objects = source_objects.to_vec();
 
         // Compute random sorting axis (for X, Y, Z)
-        // let axis = util::random_int(0, 2) as usize;
+        let axis = util::random_int(0, 2) as usize;
 
         // Hard code to XZ (the horizontal plane)
-        let mut axis = util::random_int(0, 1) as usize;
-        if axis == 1 {
-            axis = 2;
-        }
+        // let mut axis = util::random_int(0, 1) as usize;
+        // if axis == 1 {
+        //     axis = 2;
+        // }
 
         // Hard code to X
         // let axis = 0 as usize;

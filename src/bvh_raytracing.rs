@@ -99,6 +99,7 @@ impl BvhRaytracing {
         );
 
         // Scene
+        // let scene_bvh = scenes::stress_test_scene();
         let scene_bvh = scenes::final_scene();
         // let scene_bvh = scenes::test_scene();
         // let scene_bvh = scenes::simple_scene();

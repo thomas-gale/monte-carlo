@@ -181,9 +181,9 @@ pub fn stress_test_scene() -> LinearSceneBvh {
             for c in -32..32 {
                 let choose_mat = rand::random::<f32>();
                 let center = Vector3::<f32>::new(
-                    a as f32 + 0.9 * rand::random::<f32>(),
-                    c as f32 + 0.9 * rand::random::<f32>(),
-                    b as f32 + 0.9 * rand::random::<f32>(),
+                    2.0 * a as f32 + 1.9 * rand::random::<f32>(),
+                    2.0 * c as f32 + 1.9 * rand::random::<f32>(),
+                    2.0 * b as f32 + 1.9 * rand::random::<f32>(),
                 );
 
                 if (center - Vector3::<f32>::new(4.0, 0.2, 0.0)).magnitude() > 0.9 {
