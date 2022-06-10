@@ -5,8 +5,14 @@ pub struct Constants {
     epsilon: f32,
     pi: f32,
     pass_samples_per_pixel: i32,
+    /// Maximum depth of bounced ray.
     max_depth: i32,
-    render_patch_sub_divisions: i32,
+    /// Number of vertical subdivision for single frame passes.
+    vertical_render_slices: i32,
+    /// 0: Off, 1: On
+    draw_vertical_render_slice_region: u32,
+    /// 0: Off, 1: On
+    draw_bvh: u32,
 }
 
 impl Constants {
@@ -16,8 +22,10 @@ impl Constants {
             epsilon: 1.0e-4,
             pi: std::f32::consts::PI,
             pass_samples_per_pixel: 1,
-            max_depth: 50,
-            render_patch_sub_divisions: 16,
+            max_depth: 64,
+            vertical_render_slices: 32,
+            draw_vertical_render_slice_region: 0,
+            draw_bvh: 0,
         }
     }
 }

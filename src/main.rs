@@ -56,7 +56,9 @@ async fn run() {
         },
         Event::RedrawRequested(window_id) if window_id == window.id() => {
             match renderer.render() {
-                Ok(_) => {}
+                // Sleep a tiny bit to allow host machine to do other stuff - remove if you want to run a full chat.
+                // Ok(_) => std::thread::sleep(std::time::Duration::from_millis(32)),
+                Ok(_) => {},
                 // Reconfigure the surface if lost
                 // Err(wgpu::SurfaceError::Lost) => basic_renderer.resize(basic_renderer.get_size()),
                 // The system is out of memory, we should probably quit

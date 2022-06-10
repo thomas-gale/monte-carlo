@@ -31,8 +31,14 @@ struct Constants {
     epsilon: f32;
     pi: f32;
     pass_samples_per_pixel: i32;
+    /// Maximum depth of bounced ray.
     max_depth: i32;
-    render_patch_sub_divisions: i32;
+    /// Number of vertical subdivision for single frame passes.
+    vertical_render_slices: i32;
+    /// 0: Off, 1: On
+    draw_vertical_render_slice_region: u32;
+    /// 0: Off, 1: On
+    draw_bvh: u32;
 };
 
 [[group(0), binding(0)]]
@@ -471,8 +477,8 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
         }
     }
 
-    // BVH rendering - darken the ray by the number of bvh hits
-    if (number_bvh_hits_first_bounce > 0u) {
+    // Optional bvh rendering - darken the ray by the number of bvh hits
+    if (constants.draw_bvh == 1u && number_bvh_hits_first_bounce > 0u) {
         current_ray_color = current_ray_color * pow(vec3<f32>(0.9, 0.9, 0.9), vec3<f32>(f32(number_bvh_hits_first_bounce)));
     }
 
@@ -485,7 +491,7 @@ var texture: texture_storage_2d<rgba32float, read_write>;
 
 // Result uniforms  
 struct ResultUniforms {
-    pass_index: u32;
+    pass_index: u32; // TODO - what happens after we reach u32 max number of passes (we would need to leave running for 136 years at 1fps though :D)?
 };
 
 [[group(3), binding(1)]]
@@ -493,14 +499,12 @@ var<uniform> result_uniforms: ResultUniforms;
 
 [[stage(fragment)]]
 fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
-    // TODO - add code to only render code in the patch given the current pass_index modulated by the number of subdivisions ^ 2.
-
-    // Read the current sampled colour of the pixel from the texture
+    // // Read the current sampled colour of the pixel from the texture
     var texture_coords = vec2<i32>(i32(in.tex_coords.x * f32(window.width_pixels)), i32(in.tex_coords.y * f32(window.height_pixels)));
     var existing_pixel_color_with_alpha = textureLoad(texture, texture_coords);
 
-    // Return early (if we are not in the current subdivision patch)
-    if (result_uniforms.pass_index % u32(in.tex_coords.y * f32(constants.render_patch_sub_divisions) + 1.0) != 0u) {
+    // Return early (if we are not in the current vertical render slice region or first pass to prevent a full screen render first frame, which can be very slow for a complex scene)
+    if ((result_uniforms.pass_index % u32(constants.vertical_render_slices)) != u32((1.0 - in.tex_coords.y) * f32(constants.vertical_render_slices))) {
         return existing_pixel_color_with_alpha;
     }
 
@@ -519,8 +523,14 @@ fn fs_main(in: VertexOutput) -> [[location(0)]] vec4<f32> {
     var new_pixel_color_with_alpha = vec4<f32>(new_sampled_pixel_color, 1.0);
 
     // Weighted average with existing pixel color in result storage texture.
-    var averaged_pixel_color_with_alpha = (1.0 / (1.0 + f32(result_uniforms.pass_index) / f32(constants.render_patch_sub_divisions))) * new_pixel_color_with_alpha + ((f32(result_uniforms.pass_index) / f32(constants.render_patch_sub_divisions)) / (1.0 + (f32(result_uniforms.pass_index) / f32(constants.render_patch_sub_divisions))) * existing_pixel_color_with_alpha);
+    var averaged_pixel_color_with_alpha = (1.0 / (1.0 + f32(result_uniforms.pass_index) / f32(constants.vertical_render_slices))) * new_pixel_color_with_alpha + ((f32(result_uniforms.pass_index) / f32(constants.vertical_render_slices)) / (1.0 + (f32(result_uniforms.pass_index) / f32(constants.vertical_render_slices))) * existing_pixel_color_with_alpha);
     textureStore(texture, texture_coords, averaged_pixel_color_with_alpha);
+
+    // Optionally draw the current vertical render slice region
+    if (constants.draw_vertical_render_slice_region == 1u && (result_uniforms.pass_index % u32(constants.vertical_render_slices)) == u32((1.0 - in.tex_coords.y) * f32(constants.vertical_render_slices))) {
+        return vec4<f32>(1.0, 0.156, 0.949, 1.0); // Nice pink
+    }
+
     return averaged_pixel_color_with_alpha;
 }
 
