@@ -1,9 +1,7 @@
-use super::{aabb::Aabb, bvh_node::BvhNode, sphere::Sphere};
-
-pub enum GeometryType {
-    BvhNode(BvhNode),
-    Sphere(Sphere),
-}
+use super::{
+    aabb::Aabb, bvh_node::BvhNode, hittable::Hittable, hittable_primitive::HittablePrimitive,
+    sphere::Sphere,
+};
 
 ///
 /// Experimental data structure to hold all bvh compatible data for a single hittable geometry to compose into the bvh tree
@@ -17,6 +15,7 @@ pub struct LinearHittable {
     pub _pad_1: u32,
     pub _pad_2: u32,
     pub _pad_3: u32,
+    // TODO - replace with a reference to the index of the geometry type in the appropriate linear scene array for that type.
     pub bvh_node: BvhNode,
     pub sphere: Sphere,
 }
@@ -24,10 +23,11 @@ pub struct LinearHittable {
 impl LinearHittable {
     ///
     /// Create a new hittable (which is a bytemuck::Pod and can be sent to GPU/addresses as a struct in wgsl)
+    /// TODO - refactor
     ///
-    pub fn new(geometry_type: GeometryType) -> Self {
-        match geometry_type {
-            GeometryType::BvhNode(bvh_node) => LinearHittable {
+    pub fn new(hittable_primitive: HittablePrimitive) -> Self {
+        match hittable_primitive {
+            HittablePrimitive::BvhNode(bvh_node) => LinearHittable {
                 geometry_type: 0,
                 _pad_1: 0,
                 _pad_2: 0,
@@ -35,7 +35,7 @@ impl LinearHittable {
                 bvh_node,
                 sphere: Sphere::empty(),
             },
-            GeometryType::Sphere(sphere) => LinearHittable {
+            HittablePrimitive::Sphere(sphere) => LinearHittable {
                 geometry_type: 1,
                 _pad_1: 0,
                 _pad_2: 0,
@@ -60,6 +60,7 @@ impl LinearHittable {
     //     }
     // }
 
+    /// TODO - refactor (this code should be moved to the hittable)
     pub fn bounding_box(&self) -> Aabb {
         match self.geometry_type {
             0 => self.bvh_node.bounding_box(),

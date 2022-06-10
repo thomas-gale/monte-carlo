@@ -15,3 +15,16 @@ pub struct Material {
     pub albedo: [f32; 3],
     pub _pad2: f32,
 }
+
+impl Material {
+    pub fn empty() -> Self {
+        Material {
+            material_type: 0,
+            fuzz: 0.0,
+            refraction_index: 0.0,
+            _pad1: 0.0,
+            albedo: [0.0; 3],
+            _pad2: 0.0,
+        }
+    }
+}

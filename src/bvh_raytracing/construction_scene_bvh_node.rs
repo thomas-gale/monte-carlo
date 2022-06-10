@@ -3,7 +3,8 @@ use std::collections::VecDeque;
 
 use super::aabb::surrounding_box;
 use super::bvh_node::BvhNode;
-use super::linear_hittable::{GeometryType, LinearHittable};
+use super::hittable_primitive::HittablePrimitive;
+use super::linear_hittable::LinearHittable;
 use super::linear_scene_bvh::LinearSceneBvh;
 
 use super::util;
@@ -79,7 +80,11 @@ impl SceneBvhConstructionNode {
         SceneBvhConstructionNode {
             left,
             right,
-            hittable: LinearHittable::new(GeometryType::BvhNode(BvhNode::new(0, 0, box_surround))),
+            hittable: LinearHittable::new(HittablePrimitive::BvhNode(BvhNode::new(
+                0,
+                0,
+                box_surround,
+            ))),
         }
     }
 

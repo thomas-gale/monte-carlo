@@ -180,16 +180,42 @@ struct BvhNode {
 struct Sphere {
     center: vec3<f32>;
     radius: f32;
-    material_type: u32; // 0 = lambertian, 1 = metal, 2 = dielectric
+    /// TODO - about to be refactored to material index, 0 = lambertian, 1 = metal, 2 = dielectric
+    material_type: u32; 
     fuzz: f32; // Roughness for metals
     refraction_index: f32; // Refraction index for dielectrics
     albedo: vec3<f32>; // Ray bounce color
+};
+
+struct Cuboid {
+    /// Centroid of the cuboid (Is this needed? or will the txx/txi suffice)
+    center: vec3<f32>;
+    /// Axis aligned 'radius' (half edge length) of the cuboid
+    radius: vec3<f32>;
+    /// New reference to the material index in the scene materials
+    material: u32; 
+    /// World to object space transform
+    txx: mat4x4<f32>;
+    /// Object to world space transform
+    txi: mat4x4<f32>;
+};
+
+struct Material {
+    /// 0 = lambertian, 1 = metal, 2 = dielectric
+    material_type: u32; 
+    /// Roughness for metals
+    fuzz: f32; 
+    /// Refraction index for dielectrics
+    refraction_index: f32; 
+    /// Ray bounce color
+    albedo: vec3<f32>;
 };
 
 /// Experimental data structure to hold all bvh compatible data for a single hittable geometry to compose into the bvh tree
 struct LinearHittable {
     /// 0 = BvhNode, 1 = Sphere
     geometry_type: u32;
+    // TODO - These two below are about to be refactored into indexes of the primitive type in the LinearScene
     bvh_node: BvhNode;
     sphere: Sphere;
 };
@@ -197,12 +223,49 @@ struct LinearHittable {
 // Releated to Hittable
 let bvh_node_null_ptr: u32 = 4294967295u;
 
-struct LinearSceneBvh {
+// Scene Linear Arrays
+struct SceneLinearHittables {
     hittables: array<LinearHittable>;
 };
 
+struct SceneLinearBvhNodes {
+    vals: array<BvhNode>;
+};
+
+struct SceneLinearSpheres {
+    vals: array<Sphere>;
+};
+
+struct SceneLinearCuboids {
+    vals: array<Sphere>;
+};
+
+struct SceneLinearMaterials {
+    vals: array<Material>;
+};
+
+// struct LinearSceneBvh {
+//     hittables: array<LinearHittable>;
+//     bvh_nodes: array<BvhNode>;
+//     spheres: array<Sphere>;
+//     cuboids: array<Cuboid>;
+//     materials: array<Material>;
+// };
+
 [[group(2), binding(0)]]
-var<storage, read> scene: LinearSceneBvh;
+var<storage, read> scene: SceneLinearHittables;
+
+[[group(2), binding(1)]]
+var<storage, read> scene_nodes: SceneLinearBvhNodes;
+
+[[group(2), binding(2)]]
+var<storage, read> scene_spheres: SceneLinearSpheres;
+
+[[group(2), binding(3)]]
+var<storage, read> scene_cuboids: SceneLinearCuboids;
+
+[[group(2), binding(4)]]
+var<storage, read> scene_materials: SceneLinearMaterials;
 
 // Ray
 struct Ray {

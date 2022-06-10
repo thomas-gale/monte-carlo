@@ -3,11 +3,16 @@ mod buffer_bindings;
 mod bvh_node;
 mod camera;
 mod constants;
+mod construction_scene;
+mod construction_scene_bvh_node;
+mod cuboid;
+mod hittable;
+mod hittable_primitive;
 mod linear_hittable;
 mod linear_scene_bvh;
+mod material;
 mod quad;
 mod result;
-mod scene_bvh_construction_node;
 mod scenes;
 mod sphere;
 mod uniforms_bindings;
@@ -97,13 +102,16 @@ impl BvhRaytracing {
         let scene_bvh = scenes::final_scene();
         // let scene_bvh = scenes::test_scene();
         // let scene_bvh = scenes::simple_scene();
-        let (scene_bvh_bind_group_layout, scene_bvh_bind_group, _) =
-            buffer_bindings::create_device_buffer_binding(
-                &scene_bvh.get_hittables()[..],
-                &device,
-                wgpu::BufferUsages::STORAGE,
-                wgpu::BufferBindingType::Storage { read_only: (true) },
-            );
+        let (scene_bvh_bind_group_layout, scene_bvh_bind_group) =
+            scene_bvh.create_device_buffer_binding(&device);
+
+        // let (scene_bvh_bind_group_layout, scene_bvh_bind_group, _) =
+        //     buffer_bindings::create_device_buffer_binding(
+        //         &scene_bvh.get_hittables()[..],
+        //         &device,
+        //         wgpu::BufferUsages::STORAGE,
+        //         wgpu::BufferBindingType::Storage { read_only: (true) },
+        //     );
 
         // Create basic quad to render fragments onto.
         let quad = quad::Quad::new(&device);
