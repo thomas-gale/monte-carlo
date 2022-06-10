@@ -1,8 +1,7 @@
 use wgpu::util::DeviceExt;
 
 use super::{
-    bvh_node::BvhNode, construction_scene_bvh_node::SceneBvhConstructionNode, cuboid::Cuboid,
-    hittable_primitive::HittablePrimitive, linear_hittable::*, material::Material, sphere::Sphere,
+    bvh_node::BvhNode, cuboid::Cuboid, linear_hittable::*, material::Material, sphere::Sphere,
 };
 
 ///
@@ -10,38 +9,15 @@ use super::{
 ///
 #[derive(Debug)]
 pub struct LinearSceneBvh {
-    materials: Vec<Material>,
+    pub materials: Vec<Material>,
     /// TODO - this is being refactored to contain a redirection the the index of the geometry type in the appropriate linear scene array for that type.
-    hittables: Vec<LinearHittable>,
-    bvh_nodes: Vec<BvhNode>,
-    spheres: Vec<Sphere>,
-    cuboids: Vec<Cuboid>,
+    pub hittables: Vec<LinearHittable>,
+    pub bvh_nodes: Vec<BvhNode>,
+    pub spheres: Vec<Sphere>,
+    pub cuboids: Vec<Cuboid>,
 }
 
 impl LinearSceneBvh {
-    /// TODO - this is being replaced with direct construction from the "Construction Scene" methods
-    /// Experimental function to build a BVH from a slice of spheres
-    pub fn build_from_spheres(spheres: &[Sphere]) -> Self {
-        let hittables: Vec<LinearHittable> = spheres
-            .iter()
-            .map(|sphere| LinearHittable::new(HittablePrimitive::Sphere(*sphere)))
-            .collect();
-
-        let bvh_construction = SceneBvhConstructionNode::new(&hittables[..]);
-        bvh_construction.flatten()
-    }
-
-    /// TODO - this is being replaced with direct construction from the "Construction Scene" methods
-    pub fn build_from_hittables(hittables: Vec<LinearHittable>) -> Self {
-        LinearSceneBvh {
-            hittables,
-            bvh_nodes: vec![BvhNode::empty()],
-            spheres: vec![Sphere::empty()],
-            cuboids: vec![Cuboid::empty()],
-            materials: vec![Material::empty()],
-        }
-    }
-
     pub fn create_device_buffer_binding(
         &self,
         device: &wgpu::Device,

@@ -1,7 +1,4 @@
-use super::{
-    aabb::Aabb, bvh_node::BvhNode, hittable::Hittable, hittable_primitive::HittablePrimitive,
-    sphere::Sphere,
-};
+use super::{aabb::Aabb, bvh_node::BvhNode, hittable_primitive::HittablePrimitive, sphere::Sphere};
 
 ///
 /// Experimental data structure to hold all bvh compatible data for a single hittable geometry to compose into the bvh tree

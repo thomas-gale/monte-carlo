@@ -3,6 +3,7 @@ use std::collections::VecDeque;
 
 use super::aabb::{surrounding_box, Aabb};
 use super::bvh_node::BvhNode;
+use super::construction_scene::ConstructionScene;
 use super::hittable_primitive::HittablePrimitive;
 use super::linear_hittable::LinearHittable;
 use super::linear_scene_bvh::LinearSceneBvh;
@@ -142,7 +143,7 @@ impl SceneBvhConstructionNode {
         //     }
         // }
 
-        LinearSceneBvh::build_from_hittables(flat_bvh_hittables)
+        ConstructionScene::build_from_hittables(flat_bvh_hittables)
     }
 }
 
