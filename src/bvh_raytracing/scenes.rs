@@ -89,18 +89,18 @@ pub fn final_scene() -> LinearSceneBvh {
     //     Vector3::<f32>::new(0.5, 0.5, 0.5),
     // ));
 
-    for a in -64..64 {
-        for b in -64..64 {
-            for c in -16..16 {
+    for a in -8..8 {
+        for b in -8..8 {
+            for c in -8..8 {
                 let choose_mat = rand::random::<f32>();
                 let center = Vector3::<f32>::new(
-                    4.0 * a as f32 + 3.9 * rand::random::<f32>(),
-                    4.0 * c as f32 + 3.9 * rand::random::<f32>(),
-                    4.0 * b as f32 + 3.9 * rand::random::<f32>(),
+                    a as f32 + 0.9 * rand::random::<f32>(),
+                    c as f32 + 0.9 * rand::random::<f32>(),
+                    b as f32 + 0.9 * rand::random::<f32>(),
                 );
 
                 if (center - Vector3::<f32>::new(4.0, 0.2, 0.0)).magnitude() > 0.9 {
-                    if choose_mat < 0.8 {
+                    if choose_mat < 0.1 {
                         // diffuse
                         spheres.push(Sphere::new(
                             center,
@@ -114,7 +114,7 @@ pub fn final_scene() -> LinearSceneBvh {
                                 rand::random::<f32>() * rand::random::<f32>(),
                             ),
                         ));
-                    } else if choose_mat < 0.95 {
+                    } else if choose_mat < 0.8 {
                         // metal
                         spheres.push(Sphere::new(
                             center,
