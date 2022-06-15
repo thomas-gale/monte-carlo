@@ -51,6 +51,9 @@ pub fn build_from_hittable_primitives(
 
     bvh_construction.flatten(&mut scene);
 
+    // Validate the scene and ensure that it has no empty arrays (otherwise throws error in the wgpu binding)
+    scene.check_pad_empty_arrays();
+
     // Debug - pretty print the flattened scene bvh
     scene.debug_print();
 

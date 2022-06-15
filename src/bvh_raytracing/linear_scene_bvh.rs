@@ -27,7 +27,28 @@ impl LinearSceneBvh {
             hittables: vec![],
             bvh_nodes: vec![],
             spheres: vec![],
-            cuboids: vec![Cuboid::empty()],
+            cuboids: vec![],
+        }
+    }
+
+    ///
+    /// The WGPU binding groups must be non-empty, so place an empty/placeholder value in any empty array
+    ///
+    pub fn check_pad_empty_arrays(&mut self) {
+        if self.materials.len() == 0 {
+            panic!("Expect at least 1 material defined");
+        }
+        if self.hittables.len() == 0 {
+            panic!("Expect at least 1 hittable defined");
+        }
+        if self.bvh_nodes.len() == 0 {
+            self.bvh_nodes.push(BvhNode::empty());
+        }
+        if self.spheres.len() == 0 {
+            self.spheres.push(Sphere::empty());
+        }
+        if self.cuboids.len() == 0 {
+            self.cuboids.push(Cuboid::empty());
         }
     }
 
