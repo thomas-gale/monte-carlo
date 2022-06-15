@@ -17,67 +17,27 @@ pub fn simple_scene() -> LinearSceneBvh {
     )
 }
 
-// #[allow(dead_code)]
-// pub fn test_scene() -> LinearSceneBvh {
-//     construction_scene::build_from_spheres(&vec![
-//         Sphere::new(
-//             Vector3::<f32>::new(0.0, -100.5, 0.0),
-//             100.0,
-//             0,
-//             0.0,
-//             0.0,
-//             Vector3::<f32>::new(0.8, 0.8, 0.0),
-//         ),
-//         Sphere::new(
-//             Vector3::<f32>::new(0.0, 0.0, 0.0),
-//             0.5,
-//             0,
-//             0.0,
-//             0.0,
-//             Vector3::<f32>::new(0.1, 0.2, 0.5),
-//         ),
-//         Sphere::new(
-//             Vector3::<f32>::new(0.0, 0.0, -1.0),
-//             0.5,
-//             1,
-//             0.0,
-//             1.5,
-//             Vector3::<f32>::new(1.0, 0.0, 0.0),
-//         ),
-//         Sphere::new(
-//             Vector3::<f32>::new(0.0, 0.0, 1.0),
-//             0.5,
-//             1,
-//             0.0,
-//             1.5,
-//             Vector3::<f32>::new(0.0, 0.0, 1.0),
-//         ),
-//         Sphere::new(
-//             Vector3::<f32>::new(-1.0, 0.0, 0.0),
-//             0.5,
-//             2,
-//             0.0,
-//             1.5,
-//             Vector3::<f32>::new(0.0, 0.0, 0.0),
-//         ),
-//         Sphere::new(
-//             Vector3::<f32>::new(-1.0, 0.0, 0.0),
-//             -0.45,
-//             2,
-//             0.0,
-//             1.5,
-//             Vector3::<f32>::new(0.0, 0.0, 0.0),
-//         ),
-//         Sphere::new(
-//             Vector3::<f32>::new(1.0, 0.0, 0.0),
-//             0.5,
-//             1,
-//             0.0,
-//             0.0,
-//             Vector3::<f32>::new(0.8, 0.6, 0.2),
-//         ),
-//     ])
-// }
+#[allow(dead_code)]
+pub fn test_scene() -> LinearSceneBvh {
+    construction_scene::build_from_spheres(
+        &vec![
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.8, 0.8, 0.0)),
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.1, 0.2, 0.5)),
+            Material::new(1, 0.0, 1.5, Vector3::<f32>::new(1.0, 0.0, 0.0)),
+            Material::new(1, 0.0, 1.5, Vector3::<f32>::new(0.0, 0.0, 1.0)),
+            Material::new(2, 0.0, 1.5, Vector3::<f32>::new(0.0, 0.0, 0.0)),
+        ],
+        &vec![
+            Sphere::new(Vector3::<f32>::new(0.0, -100.5, 0.0), 100.0, 0),
+            Sphere::new(Vector3::<f32>::new(0.0, 0.0, 0.0), 0.5, 1),
+            Sphere::new(Vector3::<f32>::new(0.0, 0.0, -1.0), 0.5, 3),
+            Sphere::new(Vector3::<f32>::new(0.0, 0.0, 1.0), 0.5, 3),
+            Sphere::new(Vector3::<f32>::new(-1.0, 0.0, 0.0), 0.5, 4),
+            Sphere::new(Vector3::<f32>::new(-1.0, 0.0, 0.0), -0.45, 4),
+            Sphere::new(Vector3::<f32>::new(1.0, 0.0, 0.0), 0.5, 2),
+        ],
+    )
+}
 
 // #[allow(dead_code)]
 // pub fn final_scene() -> LinearSceneBvh {
