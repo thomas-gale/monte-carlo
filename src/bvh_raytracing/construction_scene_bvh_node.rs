@@ -1,6 +1,8 @@
 use std::cmp::Ordering;
 use std::collections::VecDeque;
 
+use image::flat;
+
 use super::aabb::{surrounding_box, Aabb};
 use super::bvh_node::BvhNode;
 use super::construction_scene;
@@ -33,8 +35,12 @@ impl SceneBvhConstructionNode {
     /// Recursive constructor
     /// https://raytracing.github.io/books/RayTracingTheNextWeek.html#boundingvolumehierarchies/hierarchiesofboundingvolumes
     ///
-    pub fn new(source_objects: &[LinearHittable]) -> Self {
+    // pub fn new(source_objects: &[LinearHittable]) -> Self {
+    pub fn new(scene: &mut LinearSceneBvh, source_objects: &[LinearHittable]) -> Self {
         let mut objects = source_objects.to_vec();
+
+        // Can we remove this clone?
+        // let mut hittables = scene.hittables.clone();
 
         // Compute random sorting axis (for X, Y, Z)
         // let axis = util::random_int(0, 2) as usize;
@@ -54,12 +60,12 @@ impl SceneBvhConstructionNode {
         let mut right: Option<Box<SceneBvhConstructionNode>> = None;
 
         // If we have only 1 or 2 items to place in bvh (base cases)
-        if source_objects.len() == 1 {
+        if objects.len() == 1 {
             // left arm of the tree is always used in the case of a single leaf.
             left = Some(Box::new(SceneBvhConstructionNode::leaf(objects[0])));
-        } else if source_objects.len() == 2 {
+        } else if objects.len() == 2 {
             // Quick swap without recursion.
-            if box_compare(&objects[0], &objects[1], axis) == Ordering::Less {
+            if box_compare(scene, &objects[0], &objects[1], axis) == Ordering::Less {
                 left = Some(Box::new(SceneBvhConstructionNode::leaf(objects[0])));
                 right = Some(Box::new(SceneBvhConstructionNode::leaf(objects[1])));
             } else {
@@ -68,29 +74,42 @@ impl SceneBvhConstructionNode {
             }
         } else {
             // General recursive case
-            objects.sort_by(|a, b| box_compare(a, b, axis));
+            objects.sort_by(|a, b| box_compare(scene, a, b, axis));
             let mid = objects.len() / 2;
-            left = Some(Box::new(SceneBvhConstructionNode::new(&objects[0..mid])));
-            right = Some(Box::new(SceneBvhConstructionNode::new(&objects[mid..])))
+            left = Some(Box::new(SceneBvhConstructionNode::new(
+                scene,
+                &objects[0..mid],
+            )));
+            right = Some(Box::new(SceneBvhConstructionNode::new(
+                scene,
+                &objects[mid..],
+            )))
         }
 
-        let box_left = left.as_ref().unwrap().hittable.bounding_box();
+        let box_left = left.as_ref().unwrap().hittable.bounding_box(scene);
         let box_surround: Aabb;
         if right.is_some() {
-            let box_right = right.as_ref().unwrap().hittable.bounding_box();
+            let box_right = right.as_ref().unwrap().hittable.bounding_box(scene);
             box_surround = surrounding_box(&box_left, &box_right);
         } else {
             box_surround = box_left;
         }
 
+        // In the case where we are creating a new bvh node primitive, we need to push this value to a bvh storage vector
+        scene.bvh_nodes.push(BvhNode::new(
+            BvhNode::null_hittable_ptr(),
+            BvhNode::null_hittable_ptr(),
+            box_surround,
+        ));
+
+        // Return a new bvh node with the reference to the new index in the linearized scene storage.
         SceneBvhConstructionNode {
             left,
             right,
-            hittable: LinearHittable::new(HittablePrimitive::BvhNode(BvhNode::new(
-                BvhNode::null_hittable_ptr(),
-                BvhNode::null_hittable_ptr(),
-                box_surround,
-            ))),
+            hittable: LinearHittable {
+                geometry_type: 0,
+                scene_index: (scene.bvh_nodes.len() - 1) as u32,
+            },
         }
     }
 
@@ -98,7 +117,7 @@ impl SceneBvhConstructionNode {
     /// Convert the box based referential structure into a flat (linearized version) of the Bvh, using the POD BvhNode data structure that uses index
     /// based referencing to child nodes
     ///  
-    pub fn flatten(&self) -> LinearSceneBvh {
+    pub fn flatten(&self, scene: &mut LinearSceneBvh) {
         // Bvh construction flattened.
         let mut flat_bvh_hittables: Vec<LinearHittable> = vec![];
 
@@ -117,38 +136,62 @@ impl SceneBvhConstructionNode {
                 // Add the left child to the bfs queue to process later
                 queue.push_back(current_ref.left.clone().unwrap());
                 // Add the computed index of left child (which will be added later)
-                flat_hittable
-                    .bvh_node
-                    .set_left((flat_bvh_hittables.len() + queue.len()) as u32)
+                // scene.hittables.push(LinearHittable {
+                //     geometry_type: 0,
+                //     scene_index: scene.bvh_nodes.len() as u32 - 1,
+                // });
+
+                scene.bvh_nodes[flat_hittable.get_scene_index()]
+                    .set_left((flat_bvh_hittables.len() + queue.len()) as u32);
+
+                // flat_hittable
+                //     .bvh_node
+                //     .set_right((flat_bvh_hittables.len() + queue.len()) as u32)
             }
             if current_ref.right.is_some() {
                 // Add the right child to the bfs queue to process later
                 queue.push_back(current_ref.right.clone().unwrap());
                 // Add the computed index of right child (which will be added later)
-                flat_hittable
-                    .bvh_node
-                    .set_right((flat_bvh_hittables.len() + queue.len()) as u32)
+                // scene.bvh_nodes[current_ref.hittable.get_scene_index()]
+                //     .set_right((scene.hittables.len() + queue.len()) as u32);
+                // scene.hittables.push(LinearHittable {
+                //     geometry_type: 0,
+                //     scene_index: scene.bvh_nodes.len() as u32 - 1,
+                // });
+
+                scene.bvh_nodes[flat_hittable.get_scene_index()]
+                    .set_right((flat_bvh_hittables.len() + queue.len()) as u32);
+
+                // flat_hittable
+                //     .bvh_node
+                //     .set_right((flat_bvh_hittables.len() + queue.len()) as u32)
             }
 
             // Add the flattened hittable to the collection
             flat_bvh_hittables.push(flat_hittable);
+
+            // if (flat_hittable.geometry_type == 0) {
+            //     scene.hittables.push(flat_hittable);
+            // }
         }
 
-        // Debug - pretty print the flattened scene bvh
-        // for hittable in flat_bvh_hittables.iter() {
-        //     if hittable.geometry_type == 0 {
-        //         println!("\n BVH Node: {:?}", hittable.bvh_node);
-        //     } else if hittable.geometry_type == 1 {
-        //         println!("\n Sphere: {:?}", hittable.sphere);
-        //     }
-        // }
+        // Finally, update the scene primitives
+        scene.hittables = flat_bvh_hittables;
 
-        construction_scene::build_from_hittables(flat_bvh_hittables)
+        // construction_scene::build_from_hittables(flat_bvh_hittables)
     }
 }
 
-fn box_compare(a: &LinearHittable, b: &LinearHittable, axis: usize) -> Ordering {
-    a.bounding_box().min()[axis]
-        .partial_cmp(&b.bounding_box().max()[axis])
+///
+/// Given a scene (containing the underlying scene data), compare a hittable entity to another hittable entity (using bounding box and sorting axis)
+///
+fn box_compare(
+    scene: &LinearSceneBvh,
+    a: &LinearHittable,
+    b: &LinearHittable,
+    axis: usize,
+) -> Ordering {
+    a.bounding_box(scene).min()[axis]
+        .partial_cmp(&b.bounding_box(scene).max()[axis])
         .unwrap()
 }

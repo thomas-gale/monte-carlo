@@ -182,11 +182,13 @@ struct Material {
 struct Sphere {
     center: vec3<f32>;
     radius: f32;
+    /// Reference to the material index in the scene materials
+    material_index: u32; 
     /// TODO - about to be refactored to material index, 0 = lambertian, 1 = metal, 2 = dielectric
-    material_type: u32; 
-    fuzz: f32; // Roughness for metals
-    refraction_index: f32; // Refraction index for dielectrics
-    albedo: vec3<f32>; // Ray bounce color
+    // material_type: u32; 
+    // fuzz: f32; // Roughness for metals
+    // refraction_index: f32; // Refraction index for dielectrics
+    // albedo: vec3<f32>; // Ray bounce color
 };
 
 struct Cuboid {
@@ -194,8 +196,8 @@ struct Cuboid {
     center: vec3<f32>;
     /// Axis aligned 'radius' (half edge length) of the cuboid
     radius: vec3<f32>;
-    /// New reference to the material index in the scene materials
-    material: u32; 
+    /// Reference to the material index in the scene materials
+    material_index: u32; 
     /// World to object space transform
     txx: mat4x4<f32>;
     /// Object to world space transform
@@ -219,11 +221,13 @@ struct BvhNode {
 
 /// Experimental data structure to hold all bvh compatible data for a single hittable geometry to compose into the bvh tree
 struct LinearHittable {
-    /// 0 = BvhNode, 1 = Sphere
+    /// 0: BvhNode, 1: Sphere, 2: Cuboid
     geometry_type: u32;
+    /// Given the geometry type, the actual data is stored at the following index in the linear_scene_bvh vector (for the appropriate type).
+    scene_index: u32;
     // TODO - These two below are about to be refactored into indexes of the primitive type in the LinearScene
-    bvh_node: BvhNode;
-    sphere: Sphere;
+    // bvh_node: BvhNode;
+    // sphere: Sphere;
 };
 
 // Releated to Hittable
@@ -281,7 +285,7 @@ fn ray_at(ray: ptr<function,Ray>, t: f32) -> vec3<f32> {
 // t is length of ray until intersection
 // fn aabb_hit(hittables_bvh_node_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, t: ptr<function, f32>) -> bool {
 fn aabb_hit(hittables_bvh_node_index: u32, ray: ptr<function, Ray>, t: ptr<function, f32>) -> bool {
-    var aabb = scene_hittables.vals[hittables_bvh_node_index].bvh_node.aabb;
+    var aabb = scene_bvh_nodes.vals[ scene_hittables.vals[hittables_bvh_node_index].scene_index ].aabb;
 
     var dir_frac = vec3<f32>(1.0 / (*ray).direction.x, 1.0 / (*ray).direction.y, 1.0 / (*ray).direction.z);
     var t_1 = (aabb.min.x - (*ray).origin.x) * dir_frac.x;
@@ -350,7 +354,9 @@ fn set_face_normal(hit_record: ptr<function, HitRecord>, r: ptr<function, Ray>, 
 
 // Sphere Helpers
 fn sphere_hit(hittables_sphere_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
-    var sphere = scene_hittables.vals[hittables_sphere_index].sphere;
+    var sphere = scene_spheres.vals[ scene_hittables.vals[hittables_sphere_index].scene_index ];
+    // var aabb = scene_bvh_nodes.vals[ scene_hittables.vals[hittables_bvh_node_index].scene_index ].aabb;
+    var material = scene_materials.vals[ sphere.material_index ];
 
     var oc = (*ray).origin - sphere.center;
     var a = dot((*ray).direction, (*ray).direction);
@@ -376,10 +382,10 @@ fn sphere_hit(hittables_sphere_index: u32, ray: ptr<function, Ray>, t_min: f32, 
     (*hit_record).p = ray_at(ray, (*hit_record).t);
     var outward_normal = ((*hit_record).p - sphere.center) / sphere.radius;
     set_face_normal(hit_record, ray, outward_normal);
-    (*hit_record).material_type = sphere.material_type;
-    (*hit_record).albedo = sphere.albedo;
-    (*hit_record).fuzz = sphere.fuzz;
-    (*hit_record).refraction_index = sphere.refraction_index;
+    (*hit_record).material_type = material.material_type;
+    (*hit_record).albedo = material.albedo;
+    (*hit_record).fuzz = material.fuzz;
+    (*hit_record).refraction_index = material.refraction_index;
 
     return true;
 } 
@@ -416,6 +422,8 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
         switch (current_hittable.geometry_type) {
             case 0u: {
                 // Bvh
+                var bvh = scene_bvh_nodes.vals[ current_hittable.scene_index ];
+
                 // Does this BVH node intersect the ray?
                 var t = 0.0;
                 // var hit = aabb_hit(stack[stack_top], ray, t_min, closest_so_far, &t);
@@ -429,13 +437,13 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
                     (*rec).number_bvh_hits = (*rec).number_bvh_hits + 1u;
 
                     // Push the left and right children onto the stack (if they exist)
-                    if (current_hittable.bvh_node.left_hittable != bvh_node_null_ptr) {
+                    if (bvh.left_hittable != bvh_node_null_ptr) {
                         stack_top = stack_top + 1;
-                        stack[stack_top] = current_hittable.bvh_node.left_hittable;
+                        stack[stack_top] = bvh.left_hittable;
                     }
-                    if (current_hittable.bvh_node.right_hittable != bvh_node_null_ptr) {
+                    if (bvh.right_hittable != bvh_node_null_ptr) {
                         stack_top = stack_top + 1;
-                        stack[stack_top] = current_hittable.bvh_node.right_hittable;
+                        stack[stack_top] = bvh.right_hittable;
                     }
                 }
             }

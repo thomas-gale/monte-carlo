@@ -1,3 +1,5 @@
+use cgmath::Vector3;
+
 ///
 /// POD Material ready to ship to GPU
 ///
@@ -17,6 +19,22 @@ pub struct Material {
 }
 
 impl Material {
+    pub fn new(
+        material_type: u32,
+        fuzz: f32,
+        refraction_index: f32,
+        albedo: Vector3<f32>,
+    ) -> Self {
+        Material {
+            material_type,
+            fuzz,
+            refraction_index,
+            _pad1: 0.0,
+            albedo: albedo.into(),
+            _pad2: 0.0,
+        }
+    }
+
     pub fn empty() -> Self {
         Material {
             material_type: 0,

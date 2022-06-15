@@ -1,6 +1,6 @@
 use cgmath::{Matrix4, Point3, Vector3};
 
-use super::{aabb::Aabb, hittable::Hittable};
+use super::{aabb::Aabb, hittable::Hittable, linear_scene_bvh::LinearSceneBvh};
 
 ///
 /// POD Rectangle ready to ship to GPU
@@ -10,11 +10,11 @@ use super::{aabb::Aabb, hittable::Hittable};
 pub struct Cuboid {
     /// Centroid of the cuboid
     pub center: [f32; 3],
-    pub _pad1: f32,
+    pub _pad1: f32, // 8
     /// Axis aligned 'radius' (half edge length) of the cuboid
     pub radius: [f32; 3],
     /// Index of the material in the linear scene bvh
-    pub material: u32,
+    pub material_index: u32, // 16
     /// World to object space transform
     pub txx: [[f32; 4]; 4],
     /// Object to world space transform
@@ -25,7 +25,7 @@ impl Cuboid {
     pub fn new(
         center: Vector3<f32>,
         radius: Vector3<f32>,
-        material: u32,
+        material_index: u32,
         txx: Matrix4<f32>,
         txi: Matrix4<f32>,
     ) -> Self {
@@ -33,7 +33,7 @@ impl Cuboid {
             center: center.into(),
             _pad1: 0.0,
             radius: radius.into(),
-            material,
+            material_index,
             txx: txx.into(),
             txi: txi.into(),
         }
@@ -44,7 +44,7 @@ impl Cuboid {
             center: [0.0; 3],
             _pad1: 0.0,
             radius: [0.0; 3],
-            material: 0,
+            material_index: LinearSceneBvh::null_index_ptr(),
             txx: [[0.0; 4]; 4],
             txi: [[0.0; 4]; 4],
         }

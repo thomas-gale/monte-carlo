@@ -100,9 +100,9 @@ impl BvhRaytracing {
 
         // Scene
         // let scene_bvh = scenes::stress_test_scene();
-        let scene_bvh = scenes::final_scene();
+        // let scene_bvh = scenes::final_scene();
         // let scene_bvh = scenes::test_scene();
-        // let scene_bvh = scenes::simple_scene();
+        let scene_bvh = scenes::simple_scene();
         let (scene_bvh_bind_group_layout, scene_bvh_bind_group) =
             scene_bvh.create_device_buffer_binding(&device);
 

@@ -10,7 +10,6 @@ use super::{
 #[derive(Debug)]
 pub struct LinearSceneBvh {
     pub materials: Vec<Material>,
-    /// TODO - this is being refactored to contain a redirection the the index of the geometry type in the appropriate linear scene array for that type.
     pub hittables: Vec<LinearHittable>,
     pub bvh_nodes: Vec<BvhNode>,
     pub spheres: Vec<Sphere>,
@@ -18,6 +17,37 @@ pub struct LinearSceneBvh {
 }
 
 impl LinearSceneBvh {
+    pub fn null_index_ptr() -> u32 {
+        u32::max_value()
+    }
+
+    pub fn new() -> Self {
+        LinearSceneBvh {
+            materials: vec![],
+            hittables: vec![],
+            bvh_nodes: vec![],
+            spheres: vec![],
+            cuboids: vec![Cuboid::empty()],
+        }
+    }
+
+    pub fn debug_print(&self) {
+        println!("LinearSceneBvh:");
+        println!("  materials: {:?}", self.materials);
+        for hittable in self.hittables.iter() {
+            if hittable.geometry_type == 0 {
+                println!(
+                    "\n BVH Node: {:?}",
+                    self.bvh_nodes[hittable.get_scene_index()]
+                );
+            } else if hittable.geometry_type == 1 {
+                println!("\n Sphere: {:?}", self.spheres[hittable.get_scene_index()]);
+            } else if hittable.geometry_type == 2 {
+                println!("\n Cuboid: {:?}", self.cuboids[hittable.get_scene_index()]);
+            }
+        }
+    }
+
     pub fn create_device_buffer_binding(
         &self,
         device: &wgpu::Device,
