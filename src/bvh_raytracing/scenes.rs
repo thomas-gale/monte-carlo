@@ -28,7 +28,7 @@ pub fn test_scene() -> LinearSceneBvh {
             Material::new(2, 0.0, 1.5, Vector3::<f32>::new(0.0, 0.0, 0.0)),
         ],
         &vec![
-            Sphere::new(Vector3::<f32>::new(0.0, -100.5, 0.0), 100.0, 0),
+            // Sphere::new(Vector3::<f32>::new(0.0, -100.5, 0.0), 100.0, 0),
             Sphere::new(Vector3::<f32>::new(0.0, 0.0, 0.0), 0.5, 1),
             Sphere::new(Vector3::<f32>::new(0.0, 0.0, -1.0), 0.5, 3),
             Sphere::new(Vector3::<f32>::new(0.0, 0.0, 1.0), 0.5, 3),
