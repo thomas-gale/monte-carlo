@@ -1,4 +1,4 @@
-use cgmath::{prelude::*, Vector3};
+use cgmath::Vector3;
 
 use super::{
     construction_scene, linear_scene_bvh::LinearSceneBvh, material::Material, sphere::Sphere,

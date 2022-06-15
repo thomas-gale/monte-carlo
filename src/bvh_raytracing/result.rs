@@ -9,7 +9,6 @@ struct ResultUniforms {
 }
 
 pub struct Result {
-    // texture_size: wgpu::Extent3d,
     texture: wgpu::Texture,
     uniforms: ResultUniforms,
     uniforms_buffer: wgpu::Buffer,
@@ -114,10 +113,6 @@ impl Result {
     pub fn get_bind_group(&self) -> &wgpu::BindGroup {
         &self.bind_group
     }
-
-    // pub fn get_pass_index(&self) -> u32 {
-    //     self.uniforms.pass_index
-    // }
 
     pub fn increment_pass_index(&mut self, queue: &wgpu::Queue) {
         self.set_pass_index(queue, self.uniforms.pass_index + 1);

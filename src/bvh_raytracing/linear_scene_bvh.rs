@@ -4,9 +4,7 @@ use super::{
     bvh_node::BvhNode, cuboid::Cuboid, linear_hittable::*, material::Material, sphere::Sphere,
 };
 
-///
 /// The basic linearized version of the scene, each vector is separately bound to a different bind group entry in the scene layout group (due to their dynamic nature in length)
-///
 #[derive(Debug)]
 pub struct LinearSceneBvh {
     pub materials: Vec<Material>,
@@ -21,6 +19,7 @@ impl LinearSceneBvh {
         u32::max_value()
     }
 
+    /// Creates an empty scene
     pub fn new() -> Self {
         LinearSceneBvh {
             materials: vec![],
@@ -31,9 +30,7 @@ impl LinearSceneBvh {
         }
     }
 
-    ///
     /// The WGPU binding groups must be non-empty, so place an empty/placeholder value in any empty array
-    ///
     pub fn check_pad_empty_arrays(&mut self) {
         if self.materials.len() == 0 {
             panic!("Expect at least 1 material defined");

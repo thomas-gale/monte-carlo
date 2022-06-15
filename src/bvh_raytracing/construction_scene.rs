@@ -1,21 +1,18 @@
 use super::{
-    bvh_node::BvhNode, construction_scene_bvh_node::SceneBvhConstructionNode, cuboid::Cuboid,
+    construction_scene_bvh_node::SceneBvhConstructionNode,
     hittable_primitive::HittablePrimitive, linear_hittable::LinearHittable,
     linear_scene_bvh::LinearSceneBvh, material::Material, sphere::Sphere,
 };
 
-// pub struct ConstructionScene {
-//     root_bvh_node: Vec<SceneBvhConstructionNode>,
-//     materials: Vec<Material>,
-// }
-
-// impl ConstructionScene {
+/// Primary scene construction function
 pub fn build_from_hittable_primitives(
     materials: &[Material],
     primitives: &[HittablePrimitive],
 ) -> LinearSceneBvh {
-    // Rough and ready test code
+    // First create a new scene which will be assembled in the follow steps
     let mut scene = LinearSceneBvh::new();
+
+    // Materials are directly added
     scene.materials = materials.to_vec();
 
     // Convert the hittable primitives to individual vectors of each primitives type
@@ -37,31 +34,33 @@ pub fn build_from_hittable_primitives(
                     scene_index: (scene.spheres.len() - 1) as u32,
                 });
             }
+            // Other hittable primitives will be added in due course.
             _ => {
                 panic!("Can't build, unsupported hittable primitive type");
             }
         }
     }
 
+    // Source objects are cloned at the array slice is used within the following recursive bvh construction function
     let source_objects = scene.hittables.clone();
 
+    // Build a referenced structure bvh tree from the scene
     let bvh_construction = SceneBvhConstructionNode::new(&mut scene, &source_objects[..]);
 
-    scene.debug_print();
-
+    // Flatten the bvh tree into a linearized structure and update the scene accordingly
     bvh_construction.flatten(&mut scene);
 
-    // Validate the scene and ensure that it has no empty arrays (otherwise throws error in the wgpu binding)
+    // Finally, validate the scene and ensure that it has no empty arrays (otherwise throws error in the wgpu binding)
     scene.check_pad_empty_arrays();
 
     // Debug - pretty print the flattened scene bvh
-    scene.debug_print();
+    // scene.debug_print();
 
+    // Return the constructed scene
     scene
 }
 
-/// TODO - this is being replaced with direct construction from the "Construction Scene" methods
-/// Experimental function to build a BVH from a slice of spheres
+/// Build a LinearSceneBvh from just materials and spheres
 pub fn build_from_spheres(materials: &[Material], spheres: &[Sphere]) -> LinearSceneBvh {
     let hittables: Vec<HittablePrimitive> = spheres
         .iter()
@@ -70,15 +69,3 @@ pub fn build_from_spheres(materials: &[Material], spheres: &[Sphere]) -> LinearS
 
     self::build_from_hittable_primitives(materials, &hittables[..])
 }
-
-// TODO - this is being replaced with direct construction from the "Construction Scene" methods
-// pub fn build_from_hittables(hittables: Vec<LinearHittable>) -> LinearSceneBvh {
-//     LinearSceneBvh {
-//         hittables,
-//         bvh_nodes: vec![BvhNode::empty()],
-//         spheres: vec![Sphere::empty()],
-//         cuboids: vec![Cuboid::empty()],
-//         materials: vec![Material::empty()],
-//     }
-// }
-// }

@@ -2,9 +2,7 @@ use cgmath::{Matrix4, Point3, Vector3};
 
 use super::{aabb::Aabb, hittable::Hittable, linear_scene_bvh::LinearSceneBvh};
 
-///
 /// POD Rectangle ready to ship to GPU
-///
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Cuboid {
