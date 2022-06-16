@@ -1,7 +1,8 @@
 use cgmath::Vector3;
 
 use super::{
-    construction_scene, linear_scene_bvh::LinearSceneBvh, material::Material, sphere::Sphere,
+    construction_scene, hittable_primitive::HittablePrimitive, linear_scene_bvh::LinearSceneBvh,
+    material::Material, sphere::Sphere,
 };
 
 #[allow(dead_code)]
@@ -19,22 +20,22 @@ pub fn simple_scene() -> LinearSceneBvh {
 
 #[allow(dead_code)]
 pub fn test_scene() -> LinearSceneBvh {
-    construction_scene::build_from_spheres(
+    construction_scene::build_from_hittable_primitives(
         &vec![
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.8, 0.8, 0.0)),
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.1, 0.2, 0.5)),
             Material::new(1, 0.0, 1.5, Vector3::<f32>::new(1.0, 0.0, 0.0)),
+            Material::new(1, 0.0, 1.5, Vector3::<f32>::new(0.0, 1.0, 0.0)),
             Material::new(1, 0.0, 1.5, Vector3::<f32>::new(0.0, 0.0, 1.0)),
             Material::new(2, 0.0, 1.5, Vector3::<f32>::new(0.0, 0.0, 0.0)),
         ],
         &vec![
             // Sphere::new(Vector3::<f32>::new(0.0, -100.5, 0.0), 100.0, 0),
-            Sphere::new(Vector3::<f32>::new(0.0, 0.0, 0.0), 0.5, 1),
-            Sphere::new(Vector3::<f32>::new(0.0, 0.0, -1.0), 0.5, 3),
-            Sphere::new(Vector3::<f32>::new(0.0, 0.0, 1.0), 0.5, 3),
-            Sphere::new(Vector3::<f32>::new(-1.0, 0.0, 0.0), 0.5, 4),
-            Sphere::new(Vector3::<f32>::new(-1.0, 0.0, 0.0), -0.45, 4),
-            Sphere::new(Vector3::<f32>::new(1.0, 0.0, 0.0), 0.5, 2),
+            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, 0.0), 0.5, 1)),
+            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, -1.0), 0.5, 2)),
+            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(-1.0, 0.0, 0.0), 0.5, 3)),
+            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, 1.0), 0.5, 4)),
+            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(1.0, 0.0, 0.0), 0.5, 5)),
         ],
     )
 }
