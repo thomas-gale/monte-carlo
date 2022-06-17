@@ -193,7 +193,7 @@ struct Sphere {
 
 struct Cuboid {
     /// Centroid of the cuboid (Is this needed? or will the txx/txi suffice)
-    center: vec3<f32>;
+    // center: vec3<f32>;
     /// Axis aligned 'radius' (half edge length) of the cuboid
     radius: vec3<f32>;
     /// Reference to the material index in the scene materials
@@ -283,7 +283,6 @@ fn ray_at(ray: ptr<function,Ray>, t: f32) -> vec3<f32> {
 
 // Attribution: https://gamedev.stackexchange.com/a/18459
 // t is length of ray until intersection
-// fn aabb_hit(hittables_bvh_node_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, t: ptr<function, f32>) -> bool {
 fn aabb_hit(hittables_bvh_node_index: u32, ray: ptr<function, Ray>, t: ptr<function, f32>) -> bool {
     var aabb = scene_bvh_nodes.vals[ scene_hittables.vals[hittables_bvh_node_index].scene_index ].aabb;
 
