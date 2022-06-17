@@ -421,21 +421,28 @@ fn cuboid_hit(hittables_cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, 
     var tN = max(max(t1.x, t1.y), t1.z);
     var tF = min(min(t2.x, t2.y), t2.z);
 
+    // check hit is in allowed range 
+    if (tN > t_max || tF < t_min) {
+        return false;
+    }
+
+    // check for hit with cuboid
     if (tN > tF || tF < 0.0) {
         return false;
     }
 
     // compute normal (in world space)
     if (t1.x > t1.y && t1.x > t1.z) {
-        (*hit_record).normal = cuboid.txi[0].xyz * s.x;
+        (*hit_record).normal = cuboid.txi[0].xyz * s.x * 1.0;
     } else if (t1.y > t1.z) {
-        (*hit_record).normal = cuboid.txi[1].xyz * s.y;
+        (*hit_record).normal = cuboid.txi[1].xyz * s.y * 1.0;
     } else {
-        (*hit_record).normal = cuboid.txi[2].xyz * s.z;
+        (*hit_record).normal = cuboid.txi[2].xyz * s.z * 1.0;
     }
 
     // Intersection point in world space
-    (*hit_record).p = cuboid.txi[0].xyz * ((rd + ro) * tN);
+    (*hit_record).p = (cuboid.txi * vec4<f32>((ro + (rd * tN)), 1.0)).xyz;
+
     // Distance to intersection point
     (*hit_record).t = tN;
 

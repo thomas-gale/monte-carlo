@@ -1,4 +1,4 @@
-use cgmath::{Matrix4, Point3, Vector3};
+use cgmath::{Matrix4, Point3, SquareMatrix, Vector3};
 
 use super::{aabb::Aabb, hittable::Hittable, linear_scene_bvh::LinearSceneBvh};
 
@@ -27,13 +27,22 @@ impl Cuboid {
         txx: Matrix4<f32>,
         txi: Matrix4<f32>,
     ) -> Self {
+        let txx_updated = txx
+            // * Matrix4::from_nonuniform_scale(-radius.x, -radius.y, -radius.z)
+            * Matrix4::from_translation(center * -1.0);
+
+        let txi_computed = txx_updated.invert().unwrap();
+
+        println!("txx_updated: {:?}", txx_updated);
+        println!("txx_computed: {:?}", txi_computed);
+
         Cuboid {
             center: center.into(),
             _pad1: 0.0,
             radius: radius.into(),
             material_index,
-            txx: txx.into(),
-            txi: txi.into(),
+            txx: txx_updated.into(),
+            txi: txi_computed.into(),
         }
     }
 
@@ -54,14 +63,14 @@ impl Hittable for Cuboid {
     fn bounding_box(&self) -> Aabb {
         Aabb::new(
             Point3::new(
-                self.center[0] - self.radius[0],
-                self.center[1] - self.radius[1],
-                self.center[2] - self.radius[2],
+                self.center[0] - 10.0 * self.radius[0],
+                self.center[1] - 10.0 * self.radius[1],
+                self.center[2] - 10.0 * self.radius[2],
             ),
             Point3::new(
-                self.center[0] + self.radius[0],
-                self.center[1] + self.radius[1],
-                self.center[2] + self.radius[2],
+                self.center[0] + 10.0 * self.radius[0],
+                self.center[1] + 10.0 * self.radius[1],
+                self.center[2] + 10.0 * self.radius[2],
             ),
         )
     }
