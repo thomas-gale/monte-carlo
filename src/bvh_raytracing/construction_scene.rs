@@ -1,7 +1,7 @@
 use super::{
-    construction_scene_bvh_node::SceneBvhConstructionNode,
-    hittable_primitive::HittablePrimitive, linear_hittable::LinearHittable,
-    linear_scene_bvh::LinearSceneBvh, material::Material, sphere::Sphere,
+    construction_scene_bvh_node::SceneBvhConstructionNode, hittable_primitive::HittablePrimitive,
+    linear_hittable::LinearHittable, linear_scene_bvh::LinearSceneBvh, material::Material,
+    sphere::Sphere,
 };
 
 /// Primary scene construction function
@@ -31,7 +31,7 @@ pub fn build_from_hittable_primitives(
                 scene.cuboids.push(*cuboid);
                 scene.hittables.push(LinearHittable {
                     geometry_type: 2,
-                    scene_index: (scene.spheres.len() - 1) as u32,
+                    scene_index: (scene.cuboids.len() - 1) as u32,
                 });
             }
             // Other hittable primitives will be added in due course.

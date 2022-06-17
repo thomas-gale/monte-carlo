@@ -251,7 +251,7 @@ struct SceneLinearSpheres {
 };
 
 struct SceneLinearCuboids {
-    vals: array<Sphere>;
+    vals: array<Cuboid>;
 };
 
 [[group(2), binding(0)]]
@@ -355,7 +355,6 @@ fn set_face_normal(hit_record: ptr<function, HitRecord>, r: ptr<function, Ray>, 
 // Sphere Helpers
 fn sphere_hit(hittables_sphere_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
     var sphere = scene_spheres.vals[ scene_hittables.vals[hittables_sphere_index].scene_index ];
-    // var aabb = scene_bvh_nodes.vals[ scene_hittables.vals[hittables_bvh_node_index].scene_index ].aabb;
     var material = scene_materials.vals[ sphere.material_index ];
 
     var oc = (*ray).origin - sphere.center;
@@ -389,6 +388,65 @@ fn sphere_hit(hittables_sphere_index: u32, ray: ptr<function, Ray>, t_min: f32, 
 
     return true;
 } 
+
+/// Attribution: https://iquilezles.org/articles/boxfunctions/
+fn cuboid_hit(hittables_cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
+    var cuboid = scene_cuboids.vals[ scene_hittables.vals[hittables_cuboid_index].scene_index ];
+    var material = scene_materials.vals[ cuboid.material_index ];
+
+    // convert from world to box space
+    var rd = (cuboid.txx * vec4<f32>((*ray).direction, 0.0)).xyz;
+    var ro = (cuboid.txx * vec4<f32>((*ray).origin, 1.0)).xyz;
+
+    // ray-box intersection in box space
+    var m = 1.0 / rd;
+
+    var s_x = -1.0;
+    if (rd.x < 0.0) {
+        s_x = 1.0;
+    }
+    var s_y = -1.0;
+    if (rd.y < 0.0) {
+        s_y = 1.0;
+    }
+    var s_z = -1.0;
+    if (rd.z < 0.0) {
+        s_z = 1.0;
+    }
+    var s = vec3<f32>(s_x, s_y, s_z);
+
+    var t1 = m * (-ro + s * cuboid.radius);
+    var t2 = m * (-ro - s * cuboid.radius);
+
+    var tN = max(max(t1.x, t1.y), t1.z);
+    var tF = min(min(t2.x, t2.y), t2.z);
+
+    if (tN > tF || tF < 0.0) {
+        return false;
+    }
+
+    // compute normal (in world space)
+    if (t1.x > t1.y && t1.x > t1.z) {
+        (*hit_record).normal = cuboid.txi[0].xyz * s.x;
+    } else if (t1.y > t1.z) {
+        (*hit_record).normal = cuboid.txi[1].xyz * s.y;
+    } else {
+        (*hit_record).normal = cuboid.txi[2].xyz * s.z;
+    }
+
+    // Intersection point in world space
+    (*hit_record).p = cuboid.txi[0].xyz * ((rd + ro) * tN);
+    // Distance to intersection point
+    (*hit_record).t = tN;
+
+    // Material data
+    (*hit_record).material_type = material.material_type;
+    (*hit_record).albedo = material.albedo;
+    (*hit_record).fuzz = material.fuzz;
+    (*hit_record).refraction_index = material.refraction_index;
+
+    return true;
+}
 
 fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function, HitRecord>) -> bool {
     var hit_anything = false;
@@ -452,6 +510,18 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
                 var hit = sphere_hit(stack[stack_top], ray, t_min, closest_so_far, rec);
 
                 // Pop the stack (sphere hit check done).
+                stack_top = stack_top - 1;
+
+                if (hit) {
+                    hit_anything = true;
+                    closest_so_far = (*rec).t;
+                }
+            }
+            case 2u: {
+                // Cuboid
+                var hit = cuboid_hit(stack[stack_top], ray, t_min, closest_so_far, rec);
+
+                // Pop the stack (cuboid hit check done).
                 stack_top = stack_top - 1;
 
                 if (hit) {

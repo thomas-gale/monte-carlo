@@ -1,7 +1,4 @@
-use super::{
-    aabb::Aabb,
-    linear_scene_bvh::LinearSceneBvh,
-};
+use super::{aabb::Aabb, linear_scene_bvh::LinearSceneBvh, hittable::Hittable};
 
 ///
 /// Experimental data structure to hold all bvh compatible data for a single hittable geometry to compose into the bvh tree
@@ -29,8 +26,9 @@ impl LinearHittable {
             0 => scene.bvh_nodes[self.get_scene_index()].bounding_box(),
             // Sphere
             1 => scene.spheres[self.get_scene_index()].bounding_box(),
-            // Cuboid & others (TODO)
-            _ => Aabb::empty(),
+            // Cuboid
+            2 => scene.cuboids[self.get_scene_index()].bounding_box(),
+            _ => panic!("Unsupported geometry type"),
         }
     }
 }

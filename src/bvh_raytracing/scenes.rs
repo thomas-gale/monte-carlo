@@ -1,8 +1,8 @@
-use cgmath::Vector3;
+use cgmath::{prelude::*, Matrix4, Vector3};
 
 use super::{
-    construction_scene, hittable_primitive::HittablePrimitive, linear_scene_bvh::LinearSceneBvh,
-    material::Material, sphere::Sphere,
+    construction_scene, cuboid::Cuboid, hittable_primitive::HittablePrimitive,
+    linear_scene_bvh::LinearSceneBvh, material::Material, sphere::Sphere,
 };
 
 #[allow(dead_code)]
@@ -31,11 +31,18 @@ pub fn test_scene() -> LinearSceneBvh {
         ],
         &vec![
             // Sphere::new(Vector3::<f32>::new(0.0, -100.5, 0.0), 100.0, 0),
-            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, 0.0), 0.5, 1)),
-            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, -1.0), 0.5, 2)),
-            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(-1.0, 0.0, 0.0), 0.5, 3)),
-            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, 1.0), 0.5, 4)),
-            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(1.0, 0.0, 0.0), 0.5, 5)),
+            // HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, 0.0), 0.5, 1)),
+            // HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, -1.0), 0.5, 2)),
+            // HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(-1.0, 0.0, 0.0), 0.5, 3)),
+            // HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, 1.0), 0.5, 4)),
+            // HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(1.0, 0.0, 0.0), 0.5, 5)),
+            HittablePrimitive::Cuboid(Cuboid::new(
+                Vector3::new(0.0, 0.0, 0.0),
+                Vector3::new(1.0, 2.0, 3.0),
+                0,
+                Matrix4::identity(),
+                Matrix4::identity(),
+            )),
         ],
     )
 }
