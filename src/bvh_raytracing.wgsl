@@ -439,13 +439,13 @@ fn cuboid_hit(hittables_cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, 
         (*hit_record).normal = cuboid.txi[2].xyz * s.z * 1.0;
     }
 
-    // Intersection point in world space
+    // intersection point (in world space)
     (*hit_record).p = (cuboid.txi * vec4<f32>((ro + (rd * tN)), 1.0)).xyz;
 
-    // Distance to intersection point
+    // distance to intersection point (in world space)
     (*hit_record).t = tN;
 
-    // Material data
+    // material data
     (*hit_record).material_type = material.material_type;
     (*hit_record).albedo = material.albedo;
     (*hit_record).fuzz = material.fuzz;
