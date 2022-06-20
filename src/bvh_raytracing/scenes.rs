@@ -57,7 +57,7 @@ pub fn cornell_box() -> LinearSceneBvh {
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.0, 1.0, 0.0)),
             Material::new(3, 0.0, 0.0, Vector3::<f32>::new(2.0, 2.0, 2.0)),
             Material::new(2, 0.0, 1.5, Vector3::<f32>::new(0.0, 0.0, 0.0)),
-            Material::new(1, 0.99, 0.0, Vector3::<f32>::new(1.0, 1.0, 1.0)),
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.9, 0.9, 0.9)),
         ],
         &vec![
             HittablePrimitive::Cuboid(Cuboid::new(
@@ -87,7 +87,7 @@ pub fn cornell_box() -> LinearSceneBvh {
             )),
             HittablePrimitive::Cuboid(Cuboid::new(
                 Matrix4::identity() * Matrix4::from_translation(Vector3::new(0.0, 0.9999, 0.0)),
-                Vector3::new(0.1, 0.0001, 0.1),
+                Vector3::new(0.25, 0.0001, 0.25),
                 3,
             )),
             HittablePrimitive::Cuboid(Cuboid::new(
@@ -95,15 +95,21 @@ pub fn cornell_box() -> LinearSceneBvh {
                     * Matrix4::from_translation(Vector3::new(-0.25, 0.3, -0.25))
                     * Matrix4::from_angle_y(Deg(20.0)),
                 Vector3::new(0.125, 0.3, 0.125),
-                0,
+                5,
             )),
             HittablePrimitive::Cuboid(Cuboid::new(
                 Matrix4::identity()
                     * Matrix4::from_translation(Vector3::new(0.125, 0.125, 0.25))
                     * Matrix4::from_angle_y(Deg(-20.0)),
                 Vector3::new(0.125, 0.125, 0.125),
-                0,
+                5,
             )),
+            HittablePrimitive::Sphere(Sphere::new(
+                Vector3::<f32>::new(-0.125, 0.125, 0.125),
+                0.125,
+                4,
+            )),
+            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.24, 0.25, -0.24), 0.25, 5)),
             // HittablePrimitive::Sphere(Sphere::new(
             //     Vector3::<f32>::new(0.0, 0.125, 0.125),
             //     0.125,
