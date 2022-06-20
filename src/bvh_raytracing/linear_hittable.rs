@@ -1,4 +1,4 @@
-use super::{aabb::Aabb, linear_scene_bvh::LinearSceneBvh, hittable::Hittable};
+use super::{aabb::Aabb, linear_scene_bvh::LinearSceneBvh};
 
 ///
 /// Experimental data structure to hold all bvh compatible data for a single hittable geometry to compose into the bvh tree
@@ -7,7 +7,7 @@ use super::{aabb::Aabb, linear_scene_bvh::LinearSceneBvh, hittable::Hittable};
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct LinearHittable {
-    /// 0: BvhNode, 1: Sphere, 2: Cuboid
+    /// 0: BvhNode, 1: Sphere, 2: Cuboid, 3: ConstantMedium
     pub geometry_type: u32,
     /// Given the geometry type, the actual data is stored at the following index in the linear_scene_bvh vector (for the appropriate type).
     pub scene_index: u32,
@@ -28,6 +28,8 @@ impl LinearHittable {
             1 => scene.spheres[self.get_scene_index()].bounding_box(),
             // Cuboid
             2 => scene.cuboids[self.get_scene_index()].bounding_box(),
+            // ConstantMedium
+            3 => scene.constant_mediums[self.get_scene_index()].bounding_box(scene),
             _ => panic!("Unsupported geometry type"),
         }
     }

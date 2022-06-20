@@ -6,7 +6,7 @@ use cgmath::Vector3;
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Material {
-    /// 0: lambertian, 1: metal, 2: dielectric, 3: emissive
+    /// 0: lambertian, 1: metal, 2: dielectric, 3: emissive, 4: isotropic medium
     pub material_type: u32,
     /// Roughness for metals
     pub fuzz: f32,
@@ -19,12 +19,11 @@ pub struct Material {
 }
 
 impl Material {
-    pub fn new(
-        material_type: u32,
-        fuzz: f32,
-        refraction_index: f32,
-        albedo: Vector3<f32>,
-    ) -> Self {
+    /// - *material_type* - 0: lambertian, 1: metal, 2: dielectric, 3: emissive, 4: isotropic medium
+    /// - *fuzz* - Roughness for metals
+    /// - *refraction_index* - Refraction index for dielectrics
+    /// - *albedo* - Coloration of the ray bounce
+    pub fn new(material_type: u32, fuzz: f32, refraction_index: f32, albedo: Vector3<f32>) -> Self {
         Material {
             material_type,
             fuzz,

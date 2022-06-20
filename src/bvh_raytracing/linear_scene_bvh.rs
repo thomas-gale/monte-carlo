@@ -1,7 +1,8 @@
 use wgpu::util::DeviceExt;
 
 use super::{
-    bvh_node::BvhNode, cuboid::Cuboid, linear_hittable::*, material::Material, sphere::Sphere,
+    bvh_node::BvhNode, cuboid::Cuboid, linear_constant_medium::LinearConstantMedium,
+    linear_hittable::*, material::Material, sphere::Sphere,
 };
 
 /// The basic linearized version of the scene, each vector is separately bound to a different bind group entry in the scene layout group (due to their dynamic nature in length)
@@ -13,6 +14,7 @@ pub struct LinearSceneBvh {
     pub bvh_nodes: Vec<BvhNode>,
     pub spheres: Vec<Sphere>,
     pub cuboids: Vec<Cuboid>,
+    pub constant_mediums: Vec<LinearConstantMedium>,
 }
 
 impl LinearSceneBvh {
@@ -29,6 +31,7 @@ impl LinearSceneBvh {
             bvh_nodes: vec![],
             spheres: vec![],
             cuboids: vec![],
+            constant_mediums: vec![],
         }
     }
 
@@ -49,6 +52,9 @@ impl LinearSceneBvh {
         if self.cuboids.len() == 0 {
             self.cuboids.push(Cuboid::empty());
         }
+        if self.constant_mediums.len() == 0 {
+            self.constant_mediums.push(LinearConstantMedium::empty());
+        }
     }
 
     pub fn debug_print(&self) {
@@ -65,6 +71,11 @@ impl LinearSceneBvh {
                 println!("\n Sphere: {:?}", self.spheres[hittable.get_scene_index()]);
             } else if hittable.geometry_type == 2 {
                 println!("\n Cuboid: {:?}", self.cuboids[hittable.get_scene_index()]);
+            } else if hittable.geometry_type == 3 {
+                println!(
+                    "\n Constant Medium (volume): {:?}",
+                    self.constant_mediums[hittable.get_scene_index()]
+                );
             }
         }
     }
@@ -74,7 +85,7 @@ impl LinearSceneBvh {
         device: &wgpu::Device,
     ) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
         // Create bind group layout.
-        let bind_group_entries: Vec<wgpu::BindGroupLayoutEntry> = (0..6)
+        let bind_group_entries: Vec<wgpu::BindGroupLayoutEntry> = (0..7)
             .map(|i| wgpu::BindGroupLayoutEntry {
                 binding: i,
                 count: None,
@@ -124,6 +135,11 @@ impl LinearSceneBvh {
             contents: bytemuck::cast_slice(&self.cuboids[..]),
             usage: buffer_usage,
         });
+        let constant_mediums = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: None,
+            contents: bytemuck::cast_slice(&self.constant_mediums[..]),
+            usage: buffer_usage,
+        });
 
         // Finally create bind group
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -152,6 +168,10 @@ impl LinearSceneBvh {
                 wgpu::BindGroupEntry {
                     binding: 5,
                     resource: cuboids.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 6,
+                    resource: constant_mediums.as_entire_binding(),
                 },
             ],
             label: None,

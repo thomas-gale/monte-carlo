@@ -1,6 +1,11 @@
 use super::{
-    construction_scene_bvh_node::SceneBvhConstructionNode, hittable_primitive::HittablePrimitive,
-    linear_hittable::LinearHittable, linear_scene_bvh::LinearSceneBvh, material::Material,
+    constant_medium,
+    construction_scene_bvh_node::SceneBvhConstructionNode,
+    hittable_primitive::HittablePrimitive,
+    linear_constant_medium::{self, LinearConstantMedium},
+    linear_hittable::LinearHittable,
+    linear_scene_bvh::LinearSceneBvh,
+    material::Material,
     sphere::Sphere,
 };
 
@@ -36,6 +41,39 @@ pub fn build_from_hittable_primitives(
                 scene.hittables.push(LinearHittable {
                     geometry_type: 2,
                     scene_index: (scene.cuboids.len() - 1) as u32,
+                });
+            }
+            HittablePrimitive::ConstantMedium(constant_medium) => {
+                let mut boundary_geometry_type = LinearSceneBvh::null_index_ptr();
+                let mut boundary_scene_index = LinearSceneBvh::null_index_ptr();
+
+                match *constant_medium.boundary_hittable {
+                    HittablePrimitive::Sphere(sphere) => {
+                        scene.spheres.push(sphere);
+                        boundary_geometry_type = 1;
+                        boundary_scene_index = (scene.spheres.len() - 1) as u32;
+                    }
+                    HittablePrimitive::Cuboid(cuboid) => {
+                        scene.cuboids.push(cuboid);
+                        boundary_geometry_type = 2;
+                        boundary_scene_index = (scene.cuboids.len() - 1) as u32;
+                    }
+                    _ => {
+                        panic!("Can't build, unsupported constant medium boundary primitive type");
+                    }
+                }
+
+                let linear_constant_medium = LinearConstantMedium::new(
+                    boundary_geometry_type,
+                    boundary_scene_index,
+                    constant_medium.material_index,
+                    constant_medium.density,
+                );
+
+                scene.constant_mediums.push(linear_constant_medium);
+                scene.hittables.push(LinearHittable {
+                    geometry_type: 3,
+                    scene_index: (scene.constant_mediums.len() - 1) as u32,
                 });
             }
             // Other hittable primitives will be added in due course.

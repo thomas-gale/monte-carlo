@@ -1,8 +1,6 @@
-use cgmath::{
-    EuclideanSpace, Matrix3, Matrix4, Point3, Rad, SquareMatrix, Transform, Vector3, Vector4,
-};
+use cgmath::{EuclideanSpace, Matrix3, Matrix4, Point3, SquareMatrix, Vector3, Vector4};
 
-use super::{aabb::Aabb, hittable::Hittable, linear_scene_bvh::LinearSceneBvh};
+use super::{aabb::Aabb, linear_scene_bvh::LinearSceneBvh};
 
 /// POD Rectangle ready to ship to GPU
 #[repr(C)]
@@ -41,12 +39,10 @@ impl Cuboid {
             txi: [[0.0; 4]; 4],
         }
     }
-}
 
-impl Hittable for Cuboid {
     /// Returns the bounding box of the cuboid.
     /// TODO - some tidying to reduce line count can be done as highlighted in comments within function
-    fn bounding_box(&self) -> Aabb {
+    pub fn bounding_box(&self) -> Aabb {
         // the cuboids transformation matrix from local to world space
         let rotation = Matrix3::from_cols(
             Vector4::from(self.txi[0]).truncate(),

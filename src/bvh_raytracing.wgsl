@@ -184,16 +184,9 @@ struct Sphere {
     radius: f32;
     /// Reference to the material index in the scene materials
     material_index: u32; 
-    /// TODO - about to be refactored to material index, 0 = lambertian, 1 = metal, 2 = dielectric
-    // material_type: u32; 
-    // fuzz: f32; // Roughness for metals
-    // refraction_index: f32; // Refraction index for dielectrics
-    // albedo: vec3<f32>; // Ray bounce color
 };
 
 struct Cuboid {
-    /// Centroid of the cuboid (Is this needed? or will the txx/txi suffice)
-    // center: vec3<f32>;
     /// Axis aligned 'radius' (half edge length) of the cuboid
     radius: vec3<f32>;
     /// Reference to the material index in the scene materials
@@ -202,6 +195,15 @@ struct Cuboid {
     txx: mat4x4<f32>;
     /// Object to world space transform
     txi: mat4x4<f32>;
+};
+
+struct ConstantMedium {
+    /// Pointer to hittable boundary (u32 max == null)
+    boundary_hittable: u32;
+    /// Index of the material in the linear scene bvh (know as phase function)
+    material_index: u32;
+    /// Negative inverse of the density of the medium
+    neg_inv_density: f32;
 };
 
 /// Axis aligned bounding box.
@@ -221,13 +223,10 @@ struct BvhNode {
 
 /// Experimental data structure to hold all bvh compatible data for a single hittable geometry to compose into the bvh tree
 struct LinearHittable {
-    /// 0: BvhNode, 1: Sphere, 2: Cuboid
+    /// 0: BvhNode, 1: Sphere, 2: Cuboid, 3: ConstantMedium
     geometry_type: u32;
     /// Given the geometry type, the actual data is stored at the following index in the linear_scene_bvh vector (for the appropriate type).
     scene_index: u32;
-    // TODO - These two below are about to be refactored into indexes of the primitive type in the LinearScene
-    // bvh_node: BvhNode;
-    // sphere: Sphere;
 };
 
 // Releated to Hittable
@@ -254,6 +253,10 @@ struct SceneLinearCuboids {
     vals: array<Cuboid>;
 };
 
+struct SceneConstantMediums {
+    vals: array<ConstantMedium>;
+};
+
 [[group(2), binding(0)]]
 var<storage, read> scene_background: Material;
 
@@ -271,6 +274,9 @@ var<storage, read> scene_spheres: SceneLinearSpheres;
 
 [[group(2), binding(5)]]
 var<storage, read> scene_cuboids: SceneLinearCuboids;
+
+[[group(2), binding(6)]]
+var<storage, read> scene_constant_mediums: SceneConstantMediums;
 
 // Ray
 struct Ray {
@@ -457,6 +463,12 @@ fn cuboid_hit(hittables_cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, 
     return true;
 }
 
+fn constant_medium_hit(hittables_cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
+    // var constant_medium = .vals[ scene_hittables.vals[hittables_cuboid_index].scene_index ];
+    // var material = scene_materials.vals[ cuboid.material_index ];
+    return false;
+}
+
 fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function, HitRecord>) -> bool {
     var hit_anything = false;
     var closest_so_far = t_max;
@@ -466,7 +478,7 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
         return hit_anything;
     }
 
-    // Use a basic stack data structure from a fixed array (the stack value is the index of the scene hittable)
+    // Use a basic stack data structure frfom a fixed array (the stack value is the index of the scene hittable)
     // Max depth is 32 (which means the scene can contain maximum of approximatly 2^32 hittables)
     var stack: array<u32, 32>;
 
@@ -537,6 +549,24 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
                     hit_anything = true;
                     closest_so_far = (*rec).t;
                 }
+            }
+            case 3u: {
+
+                stack_top = stack_top - 1;
+
+                // Constant Medium
+
+                // // 
+
+                // var hit = cuboid_hit(stack[stack_top], ray, t_min, closest_so_far, rec);
+
+                // // Pop the stack (cuboid hit check done).
+                // stack_top = stack_top - 1;
+
+                // if (hit) {
+                //     hit_anything = true;
+                //     closest_so_far = (*rec).t;
+                // }
             }
             default: {
                 // Error

@@ -2,12 +2,13 @@ mod aabb;
 mod buffer_bindings;
 mod bvh_node;
 mod camera;
+mod constant_medium;
 mod constants;
 mod construction_scene;
 mod construction_scene_bvh_node;
 mod cuboid;
-mod hittable;
 mod hittable_primitive;
+mod linear_constant_medium;
 mod linear_hittable;
 mod linear_scene_bvh;
 mod material;
@@ -101,8 +102,8 @@ impl BvhRaytracing {
         // Scene
         // let scene_bvh = scenes::stress_test_scene();
         // let scene_bvh = scenes::final_scene();
-        // let scene_bvh = scenes::cornell_box();
-        let scene_bvh = scenes::test_scene();
+        let scene_bvh = scenes::cornell_box();
+        // let scene_bvh = scenes::test_scene();
         // let scene_bvh = scenes::simple_scene();
         let (scene_bvh_bind_group_layout, scene_bvh_bind_group) =
             scene_bvh.create_device_buffer_binding(&device);
