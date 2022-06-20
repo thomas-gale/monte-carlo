@@ -57,6 +57,7 @@ pub fn cornell_box() -> LinearSceneBvh {
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.0, 1.0, 0.0)),
             Material::new(3, 0.0, 0.0, Vector3::<f32>::new(4.0, 4.0, 4.0)),
             Material::new(2, 0.0, 1.5, Vector3::<f32>::new(0.0, 0.0, 0.0)),
+            Material::new(1, 0.99, 0.0, Vector3::<f32>::new(1.0, 1.0, 1.0)),
         ],
         &vec![
             HittablePrimitive::Cuboid(Cuboid::new(
@@ -89,21 +90,35 @@ pub fn cornell_box() -> LinearSceneBvh {
                 Vector3::new(0.15, 0.01, 0.15),
                 3,
             )),
-            HittablePrimitive::Sphere(Sphere::new(
-                Vector3::<f32>::new(0.0, 0.125, 0.125),
-                0.125,
-                4,
+            HittablePrimitive::Cuboid(Cuboid::new(
+                Matrix4::identity()
+                    * Matrix4::from_translation(Vector3::new(-0.25, 0.3, -0.25))
+                    * Matrix4::from_angle_y(Deg(20.0)),
+                Vector3::new(0.125, 0.3, 0.125),
+                0,
             )),
-            HittablePrimitive::Sphere(Sphere::new(
-                Vector3::<f32>::new(-0.25, 0.125, -0.125),
-                0.125,
-                4,
+            HittablePrimitive::Cuboid(Cuboid::new(
+                Matrix4::identity()
+                    * Matrix4::from_translation(Vector3::new(0.125, 0.125, 0.25))
+                    * Matrix4::from_angle_y(Deg(-20.0)),
+                Vector3::new(0.125, 0.125, 0.125),
+                0,
             )),
-            HittablePrimitive::Sphere(Sphere::new(
-                Vector3::<f32>::new(0.25, 0.125, -0.125),
-                0.125,
-                4,
-            )),
+            // HittablePrimitive::Sphere(Sphere::new(
+            //     Vector3::<f32>::new(0.0, 0.125, 0.125),
+            //     0.125,
+            //     4,
+            // )),
+            // HittablePrimitive::Sphere(Sphere::new(
+            //     Vector3::<f32>::new(-0.25, 0.125, -0.125),
+            //     0.125,
+            //     4,
+            // )),
+            // HittablePrimitive::Sphere(Sphere::new(
+            //     Vector3::<f32>::new(0.25, 0.125, -0.125),
+            //     0.125,
+            //     4,
+            // )),
         ],
     )
 }
