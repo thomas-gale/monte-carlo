@@ -44,8 +44,8 @@ pub fn build_from_hittable_primitives(
                 });
             }
             HittablePrimitive::ConstantMedium(constant_medium) => {
-                let mut boundary_geometry_type = LinearSceneBvh::null_index_ptr();
-                let mut boundary_scene_index = LinearSceneBvh::null_index_ptr();
+                let boundary_geometry_type: u32;
+                let boundary_scene_index: u32;
 
                 match *constant_medium.boundary_hittable {
                     HittablePrimitive::Sphere(sphere) => {

@@ -169,7 +169,7 @@ var<uniform> camera: Camera;
 
 // Scene
 struct Material {
-    /// 0: lambertian, 1: metal, 2: dielectric, 3: emissive
+    /// 0: lambertian, 1: metal, 2: dielectric, 3: emissive, 4: isotropic medium
     material_type: u32; 
     /// Roughness for metals
     fuzz: f32; 
@@ -198,8 +198,10 @@ struct Cuboid {
 };
 
 struct ConstantMedium {
-    /// Pointer to hittable boundary (u32 max == null)
-    boundary_hittable: u32;
+    /// 0: BvhNode, 1: Sphere, 2: Cuboid, 3: ConstantMedium
+    boundary_geometry_type: u32;
+    /// Given the geometry type, the actual data is stored at the following index in the linear_scene_bvh vector (for the appropriate type).
+    boundary_scene_index: u32;
     /// Index of the material in the linear scene bvh (know as phase function)
     material_index: u32;
     /// Negative inverse of the density of the medium
@@ -360,10 +362,17 @@ fn set_face_normal(hit_record: ptr<function, HitRecord>, r: ptr<function, Ray>, 
     }
 }
 
+fn set_material_data(hit_record: ptr<function, HitRecord>, material: ptr<function, Material>) {
+    (*hit_record).material_type = (*material).material_type;
+    (*hit_record).albedo = (*material).albedo;
+    (*hit_record).fuzz = (*material).fuzz;
+    (*hit_record).refraction_index = (*material).refraction_index;
+}
+
 // Sphere Helpers
-fn sphere_hit(hittables_sphere_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
-    var sphere = scene_spheres.vals[ scene_hittables.vals[hittables_sphere_index].scene_index ];
-    var material = scene_materials.vals[ sphere.material_index ];
+fn sphere_hit(sphere_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
+    var sphere = scene_spheres.vals[sphere_index];
+    var material = scene_materials.vals[sphere.material_index];
 
     var oc = (*ray).origin - sphere.center;
     var a = dot((*ray).direction, (*ray).direction);
@@ -389,18 +398,20 @@ fn sphere_hit(hittables_sphere_index: u32, ray: ptr<function, Ray>, t_min: f32, 
     (*hit_record).p = ray_at(ray, (*hit_record).t);
     var outward_normal = ((*hit_record).p - sphere.center) / sphere.radius;
     set_face_normal(hit_record, ray, outward_normal);
-    (*hit_record).material_type = material.material_type;
-    (*hit_record).albedo = material.albedo;
-    (*hit_record).fuzz = material.fuzz;
-    (*hit_record).refraction_index = material.refraction_index;
+
+    set_material_data(hit_record, &material);
+    // (*hit_record).material_type = material.material_type;
+    // (*hit_record).albedo = material.albedo;
+    // (*hit_record).fuzz = material.fuzz;
+    // (*hit_record).refraction_index = material.refraction_index;
 
     return true;
 } 
 
 /// Attribution: https://iquilezles.org/articles/boxfunctions/
-fn cuboid_hit(hittables_cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
-    var cuboid = scene_cuboids.vals[ scene_hittables.vals[hittables_cuboid_index].scene_index ];
-    var material = scene_materials.vals[ cuboid.material_index ];
+fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
+    var cuboid = scene_cuboids.vals[cuboid_index];
+    var material = scene_materials.vals[cuboid.material_index];
 
     // convert from world to box space
     var rd = (cuboid.txx * vec4<f32>((*ray).direction, 0.0)).xyz;
@@ -455,21 +466,92 @@ fn cuboid_hit(hittables_cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, 
     (*hit_record).t = tN;
 
     // material data
-    (*hit_record).material_type = material.material_type;
-    (*hit_record).albedo = material.albedo;
-    (*hit_record).fuzz = material.fuzz;
-    (*hit_record).refraction_index = material.refraction_index;
+    set_material_data(hit_record, &material);
+    // (*hit_record).material_type = material.material_type;
+    // (*hit_record).albedo = material.albedo;
+    // (*hit_record).fuzz = material.fuzz;
+    // (*hit_record).refraction_index = material.refraction_index;
 
     return true;
 }
 
-fn constant_medium_hit(hittables_cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
-    // var constant_medium = .vals[ scene_hittables.vals[hittables_cuboid_index].scene_index ];
-    // var material = scene_materials.vals[ cuboid.material_index ];
-    return false;
+fn is_primitive(geometry_type: u32) -> bool {
+    return geometry_type == 1u || geometry_type == 2u;
 }
 
-fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function, HitRecord>) -> bool {
+fn primitive_hit(primitive_geometry_type: u32, primitive_scene_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
+    switch (primitive_geometry_type) {
+        case 1u: {
+            // Sphere
+            return sphere_hit(primitive_scene_index, ray, t_min, t_max, hit_record);
+        }
+        case 2u: {
+            // Cuboid
+            return cuboid_hit(primitive_scene_index, ray, t_min, t_max, hit_record);
+        }
+        default: {
+            return false; // Non-primitive geometry type
+        }
+    }
+}
+
+// Based on https://raytracing.github.io/books/RayTracingTheNextWeek.html (Chapter 9 Volumes)
+fn constant_medium_hit(constant_medium_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>, entropy: u32) -> bool {
+    var constant_medium = scene_constant_mediums.vals[constant_medium_index];
+    var material = scene_materials.vals[constant_medium.material_index];
+
+    // Check if within boundary
+    // Assume convex primitive
+    var rec_1 = new_hit_record();
+    var rec_2 = new_hit_record();
+
+    // if (primitive_hit(constant_medium.boundary_geometry_type, constant_medium.boundary_scene_index, ray, -1.0 / 0.0, 1.0 / 0.0, &rec_1)) {
+    if (primitive_hit(constant_medium.boundary_geometry_type, constant_medium.boundary_scene_index, ray, -1000000000.0, 100000000.0, &rec_1)) {
+        return false;
+    }
+    // if (primitive_hit(constant_medium.boundary_geometry_type, constant_medium.boundary_scene_index, ray, rec_1.t + 0.0001, 1.0 / 0.0, &rec_2)) {
+    if (primitive_hit(constant_medium.boundary_geometry_type, constant_medium.boundary_scene_index, ray, rec_1.t + 0.0001, 1000000000.0, &rec_2)) {
+        return false;
+    }
+
+    if (rec_1.t < t_min) {
+        rec_1.t = t_min;
+    }
+    if (rec_2.t > t_max) {
+        rec_2.t = t_max;
+    }
+    if (rec_1.t >= rec_2.t) {
+        return false;
+    }
+    if (rec_1.t < 0.0) {
+        rec_1.t = 0.0;
+    }
+
+    var ray_length = length((*ray).direction);
+    var distance_inside_boundary = (rec_2.t - rec_1.t) * ray_length;
+    var hit_distance = constant_medium.neg_inv_density * log(random_float(entropy));
+
+    if (hit_distance > distance_inside_boundary) {
+        return false;
+    }
+
+    (*hit_record).t = rec_1.t + hit_distance / ray_length;
+    (*hit_record).p = ray_at(ray, (*hit_record).t);
+
+    (*hit_record).normal = vec3<f32>(1.0, 0.0, 0.0); // Arbitary
+    (*hit_record).front_face = true;
+
+    // material data
+    set_material_data(hit_record, &material);
+    // (*hit_record).material_type = material.material_type;
+    // (*hit_record).albedo = material.albedo;
+    // (*hit_record).fuzz = material.fuzz;
+    // (*hit_record).refraction_index = material.refraction_index;
+
+    return true;
+}
+
+fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function, HitRecord>, entropy: u32) -> bool {
     var hit_anything = false;
     var closest_so_far = t_max;
 
@@ -497,82 +579,75 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
 
         // Get hittable from top of stack 
         var current_hittable = scene_hittables.vals[ stack[stack_top] ];
-        // Check the type of this hittable
-        switch (current_hittable.geometry_type) {
-            case 0u: {
+
+        // If BVH 
+        if (current_hittable.geometry_type == 0u) {
+            // case 0u: {
                 // Bvh
-                var bvh = scene_bvh_nodes.vals[ current_hittable.scene_index ];
+            var bvh = scene_bvh_nodes.vals[ current_hittable.scene_index ];
 
                 // Does this BVH node intersect the ray?
-                var t = 0.0;
+            var t = 0.0;
                 // var hit = aabb_hit(stack[stack_top], ray, t_min, closest_so_far, &t);
-                var hit = aabb_hit(stack[stack_top], ray, &t);
+            var hit = aabb_hit(stack[stack_top], ray, &t);
 
                 // Pop the stack (aabb hit check done).
-                stack_top = stack_top - 1;
+            stack_top = stack_top - 1;
 
-                if (hit) {
+            if (hit) {
                     // Track the number of bvh hits for bvh debug rendering purposes
-                    (*rec).number_bvh_hits = (*rec).number_bvh_hits + 1u;
+                (*rec).number_bvh_hits = (*rec).number_bvh_hits + 1u;
 
                     // Push the left and right children onto the stack (if they exist)
-                    if (bvh.left_hittable != bvh_node_null_ptr) {
-                        stack_top = stack_top + 1;
-                        stack[stack_top] = bvh.left_hittable;
-                    }
-                    if (bvh.right_hittable != bvh_node_null_ptr) {
-                        stack_top = stack_top + 1;
-                        stack[stack_top] = bvh.right_hittable;
-                    }
+                if (bvh.left_hittable != bvh_node_null_ptr) {
+                    stack_top = stack_top + 1;
+                    stack[stack_top] = bvh.left_hittable;
+                }
+                if (bvh.right_hittable != bvh_node_null_ptr) {
+                    stack_top = stack_top + 1;
+                    stack[stack_top] = bvh.right_hittable;
                 }
             }
-            case 1u: {
-                // Sphere
-                var hit = sphere_hit(stack[stack_top], ray, t_min, closest_so_far, rec);
+            continue;
+        } 
 
-                // Pop the stack (sphere hit check done).
-                stack_top = stack_top - 1;
+        // Is this a primitive
+        if (is_primitive(current_hittable.geometry_type)) {
+            // Primitive
+            var hit = primitive_hit(current_hittable.geometry_type, scene_hittables.vals[ stack[stack_top] ].scene_index, ray, t_min, closest_so_far, rec);
 
-                if (hit) {
-                    hit_anything = true;
-                    closest_so_far = (*rec).t;
-                }
+            // Pop the stack primitive hit check done.
+            stack_top = stack_top - 1;
+            if (hit) {
+                hit_anything = true;
+                closest_so_far = (*rec).t;
             }
-            case 2u: {
-                // Cuboid
-                var hit = cuboid_hit(stack[stack_top], ray, t_min, closest_so_far, rec);
-
-                // Pop the stack (cuboid hit check done).
-                stack_top = stack_top - 1;
-
-                if (hit) {
-                    hit_anything = true;
-                    closest_so_far = (*rec).t;
-                }
-            }
-            case 3u: {
-
-                stack_top = stack_top - 1;
-
-                // Constant Medium
-
-                // // 
-
-                // var hit = cuboid_hit(stack[stack_top], ray, t_min, closest_so_far, rec);
-
-                // // Pop the stack (cuboid hit check done).
-                // stack_top = stack_top - 1;
-
-                // if (hit) {
-                //     hit_anything = true;
-                //     closest_so_far = (*rec).t;
-                // }
-            }
-            default: {
-                // Error
-                return false;
-            }
+            continue;
         }
+
+        // Is this a constant medium
+        if (current_hittable.geometry_type == 3u) {
+            // Constant Medium
+            var hit = constant_medium_hit(scene_hittables.vals[ stack[stack_top] ].scene_index, ray, t_min, closest_so_far, rec, hash(entropy + u32(scene_hittables.vals[ stack[stack_top] ].scene_index)));
+
+            // Pop the stack (constant medium hit check done).
+            stack_top = stack_top - 1;
+
+            // Debug
+            (*rec).t = 0.001;
+            (*rec).material_type = 0u;
+            (*rec).albedo = vec3<f32>(1.0, 1.0, 0.0);
+            (*rec).normal = vec3<f32>(0.0, 0.0, 1.0);
+
+            if (hit) {
+                hit_anything = true;
+                closest_so_far = (*rec).t;
+            }
+            continue;
+        }
+
+        // Should never get here
+        return false; // :(
     }
 
     return hit_anything;
@@ -593,9 +668,9 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
     var number_bvh_hits_first_bounce = 0u;
     for (var i = 0; i < depth; i = i + 1) {
         // Check if we hit anything
-        var hit = scene_hits(&current_ray, 0.001, constants.infinity, &hit_record);
+        var hit = scene_hits(&current_ray, 0.001, constants.infinity, &hit_record, hash(entropy + u32(i)));
 
-        // For rendering the bvh (only care about number of bvh intersections on before first bounce)
+        // For rendering the bvh (only care about number of bvh intersections on before first bounce)hash(entropy + u32(i))
         if (i == 0) {
             number_bvh_hits_first_bounce = hit_record.number_bvh_hits;
         }
@@ -651,12 +726,15 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
                 // Emmisive material
                 current_ray_color = current_ray_color * hit_record.albedo;
                 break;
+            } else if (hit_record.material_type == 4u) {
+                // Isotropic medium
+                var scattered = hit_record.p + random_in_unit_sphere(entropy * u32(i + 1));
+
+                current_ray = Ray(hit_record.p, scattered - hit_record.p);
+                current_ray_color = current_ray_color * hit_record.albedo;
             }
         } else {
             // No hit, return background / sky color gradient
-            // var unit_direction = normalize(current_ray.direction);
-            // var t = 0.5 * (unit_direction.y + 1.0);
-            // current_ray_color = current_ray_color * ((1.0 - t) * vec3<f32>(1.0, 1.0, 1.0) + t * vec3<f32>(0.5, 0.7, 1.0));
             current_ray_color = current_ray_color * scene_background.albedo;
             break;
         }

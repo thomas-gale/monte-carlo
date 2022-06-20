@@ -1,8 +1,9 @@
 use cgmath::{prelude::*, Deg, Matrix4, Vector3};
 
 use super::{
-    construction_scene, cuboid::Cuboid, hittable_primitive::HittablePrimitive,
-    linear_scene_bvh::LinearSceneBvh, material::Material, sphere::Sphere, constant_medium::ConstantMedium,
+    constant_medium::ConstantMedium, construction_scene, cuboid::Cuboid,
+    hittable_primitive::HittablePrimitive, linear_scene_bvh::LinearSceneBvh, material::Material,
+    sphere::Sphere,
 };
 
 #[allow(dead_code)]
@@ -102,18 +103,15 @@ pub fn cornell_box() -> LinearSceneBvh {
                 5,
             )),
             HittablePrimitive::ConstantMedium(ConstantMedium {
-                boundary_hittable: Box::new(
-                HittablePrimitive::Cuboid(Cuboid::new(
-                Matrix4::identity()
-                    * Matrix4::from_translation(Vector3::new(0.125, 0.125, 0.25))
-                    * Matrix4::from_angle_y(Deg(-20.0)),
-                Vector3::new(0.125, 0.125, 0.125),
-                LinearSceneBvh::null_index_ptr(),
-            )),
-
-                ),
+                boundary_hittable: Box::new(HittablePrimitive::Cuboid(Cuboid::new(
+                    Matrix4::identity()
+                        * Matrix4::from_translation(Vector3::new(0.125, 0.125, 0.25))
+                        * Matrix4::from_angle_y(Deg(-20.0)),
+                    Vector3::new(0.125, 0.125, 0.125),
+                    LinearSceneBvh::null_index_ptr(),
+                ))),
                 material_index: 6,
-                density: 0.125,
+                density: 0.01,
             }),
             HittablePrimitive::Sphere(Sphere::new(
                 Vector3::<f32>::new(-0.125, 0.125, 0.125),
