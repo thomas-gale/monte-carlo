@@ -48,6 +48,66 @@ pub fn test_scene() -> LinearSceneBvh {
     )
 }
 
+#[allow(dead_code)]
+pub fn cornell_box() -> LinearSceneBvh {
+    construction_scene::build_from_hittable_primitives(
+        &vec![
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(1.0, 1.0, 1.0)),
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(1.0, 0.0, 0.0)),
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.0, 1.0, 0.0)),
+            Material::new(3, 0.0, 0.0, Vector3::<f32>::new(4.0, 4.0, 4.0)),
+            Material::new(2, 0.0, 1.5, Vector3::<f32>::new(0.0, 0.0, 0.0)),
+        ],
+        &vec![
+            HittablePrimitive::Cuboid(Cuboid::new(
+                Matrix4::identity() * Matrix4::from_translation(Vector3::new(0.0, -0.005, 0.0)),
+                Vector3::new(0.5, 0.01, 0.5),
+                0,
+            )),
+            HittablePrimitive::Cuboid(Cuboid::new(
+                Matrix4::identity() * Matrix4::from_translation(Vector3::new(0.0, 1.0, 0.0)),
+                Vector3::new(0.5, 0.01, 0.5),
+                0,
+            )),
+            HittablePrimitive::Cuboid(Cuboid::new(
+                Matrix4::identity() * Matrix4::from_translation(Vector3::new(0.0, 0.5, -0.5)),
+                Vector3::new(0.5, 0.5, 0.01),
+                0,
+            )),
+            HittablePrimitive::Cuboid(Cuboid::new(
+                Matrix4::identity() * Matrix4::from_translation(Vector3::new(-0.5, 0.5, 0.0)),
+                Vector3::new(0.01, 0.5, 0.5),
+                1,
+            )),
+            HittablePrimitive::Cuboid(Cuboid::new(
+                Matrix4::identity() * Matrix4::from_translation(Vector3::new(0.5, 0.5, 0.0)),
+                Vector3::new(0.01, 0.5, 0.5),
+                2,
+            )),
+            HittablePrimitive::Cuboid(Cuboid::new(
+                Matrix4::identity() * Matrix4::from_translation(Vector3::new(0.0, 0.99, 0.0)),
+                Vector3::new(0.15, 0.01, 0.15),
+                3,
+            )),
+            HittablePrimitive::Sphere(Sphere::new(
+                Vector3::<f32>::new(0.0, 0.125, 0.125),
+                0.125,
+                4,
+            )),
+            HittablePrimitive::Sphere(Sphere::new(
+                Vector3::<f32>::new(-0.25, 0.125, -0.125),
+                0.125,
+                4,
+            )),
+            HittablePrimitive::Sphere(Sphere::new(
+                Vector3::<f32>::new(0.25, 0.125, -0.125),
+                0.125,
+                4,
+            )),
+        ],
+    )
+}
+
 // #[allow(dead_code)]
 // pub fn final_scene() -> LinearSceneBvh {
 //     let mut spheres = Vec::<Sphere>::new();

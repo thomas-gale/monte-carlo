@@ -169,7 +169,7 @@ var<uniform> camera: Camera;
 
 // Scene
 struct Material {
-    /// 0 = lambertian, 1 = metal, 2 = dielectric
+    /// 0: lambertian, 1: metal, 2: dielectric, 3: emissive
     material_type: u32; 
     /// Roughness for metals
     fuzz: f32; 
@@ -614,12 +614,17 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
 
                 var scattered = Ray(hit_record.p, direction);
                 current_ray = scattered;
+            } else if (hit_record.material_type == 3u) {
+                // Emmisive material
+                current_ray_color = current_ray_color * hit_record.albedo;
+                break;
             }
         } else {
-            // No hit, return background / sky color
-            var unit_direction = normalize(current_ray.direction);
-            var t = 0.5 * (unit_direction.y + 1.0);
-            current_ray_color = current_ray_color * ((1.0 - t) * vec3<f32>(1.0, 1.0, 1.0) + t * vec3<f32>(0.5, 0.7, 1.0));
+            // No hit, return background / sky color gradient
+            // var unit_direction = normalize(current_ray.direction);
+            // var t = 0.5 * (unit_direction.y + 1.0);
+            // current_ray_color = current_ray_color * ((1.0 - t) * vec3<f32>(1.0, 1.0, 1.0) + t * vec3<f32>(0.5, 0.7, 1.0));
+            current_ray_color = current_ray_color * vec3<f32>(0.0, 0.0, 0.0);
             break;
         }
     }
