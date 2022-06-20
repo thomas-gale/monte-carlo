@@ -6,11 +6,15 @@ use super::{
 
 /// Primary scene construction function
 pub fn build_from_hittable_primitives(
+    background: Material,
     materials: &[Material],
     primitives: &[HittablePrimitive],
 ) -> LinearSceneBvh {
     // First create a new scene which will be assembled in the follow steps
     let mut scene = LinearSceneBvh::new();
+
+    // Background material directly added to the scene
+    scene.background = background;
 
     // Materials are directly added
     scene.materials = materials.to_vec();
@@ -61,11 +65,15 @@ pub fn build_from_hittable_primitives(
 }
 
 /// Build a LinearSceneBvh from just materials and spheres
-pub fn build_from_spheres(materials: &[Material], spheres: &[Sphere]) -> LinearSceneBvh {
+pub fn build_from_spheres(
+    background: Material,
+    materials: &[Material],
+    spheres: &[Sphere],
+) -> LinearSceneBvh {
     let hittables: Vec<HittablePrimitive> = spheres
         .iter()
         .map(|sphere| HittablePrimitive::Sphere(*sphere))
         .collect();
 
-    self::build_from_hittable_primitives(materials, &hittables[..])
+    self::build_from_hittable_primitives(background, materials, &hittables[..])
 }

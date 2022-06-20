@@ -255,18 +255,21 @@ struct SceneLinearCuboids {
 };
 
 [[group(2), binding(0)]]
-var<storage, read> scene_materials: SceneLinearMaterials;
+var<storage, read> scene_background: Material;
 
 [[group(2), binding(1)]]
-var<storage, read> scene_hittables: SceneLinearHittables;
+var<storage, read> scene_materials: SceneLinearMaterials;
 
 [[group(2), binding(2)]]
-var<storage, read> scene_bvh_nodes: SceneLinearBvhNodes;
+var<storage, read> scene_hittables: SceneLinearHittables;
 
 [[group(2), binding(3)]]
-var<storage, read> scene_spheres: SceneLinearSpheres;
+var<storage, read> scene_bvh_nodes: SceneLinearBvhNodes;
 
 [[group(2), binding(4)]]
+var<storage, read> scene_spheres: SceneLinearSpheres;
+
+[[group(2), binding(5)]]
 var<storage, read> scene_cuboids: SceneLinearCuboids;
 
 // Ray
@@ -624,7 +627,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
             // var unit_direction = normalize(current_ray.direction);
             // var t = 0.5 * (unit_direction.y + 1.0);
             // current_ray_color = current_ray_color * ((1.0 - t) * vec3<f32>(1.0, 1.0, 1.0) + t * vec3<f32>(0.5, 0.7, 1.0));
-            current_ray_color = current_ray_color * vec3<f32>(0.0, 0.0, 0.0);
+            current_ray_color = current_ray_color * scene_background.albedo;
             break;
         }
     }

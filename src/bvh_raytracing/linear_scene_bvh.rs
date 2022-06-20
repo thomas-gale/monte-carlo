@@ -7,6 +7,7 @@ use super::{
 /// The basic linearized version of the scene, each vector is separately bound to a different bind group entry in the scene layout group (due to their dynamic nature in length)
 #[derive(Debug)]
 pub struct LinearSceneBvh {
+    pub background: Material,
     pub materials: Vec<Material>,
     pub hittables: Vec<LinearHittable>,
     pub bvh_nodes: Vec<BvhNode>,
@@ -22,6 +23,7 @@ impl LinearSceneBvh {
     /// Creates an empty scene
     pub fn new() -> Self {
         LinearSceneBvh {
+            background: Material::empty(),
             materials: vec![],
             hittables: vec![],
             bvh_nodes: vec![],
@@ -51,7 +53,8 @@ impl LinearSceneBvh {
 
     pub fn debug_print(&self) {
         println!("LinearSceneBvh:");
-        println!("  materials: {:?}", self.materials);
+        println!("background: {:?}", self.background);
+        println!("materials: {:?}", self.materials);
         for hittable in self.hittables.iter() {
             if hittable.geometry_type == 0 {
                 println!(
@@ -71,7 +74,7 @@ impl LinearSceneBvh {
         device: &wgpu::Device,
     ) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
         // Create bind group layout.
-        let bind_group_entries: Vec<wgpu::BindGroupLayoutEntry> = (0..5)
+        let bind_group_entries: Vec<wgpu::BindGroupLayoutEntry> = (0..6)
             .map(|i| wgpu::BindGroupLayoutEntry {
                 binding: i,
                 count: None,
@@ -91,6 +94,11 @@ impl LinearSceneBvh {
 
         // Create buffers
         let buffer_usage = wgpu::BufferUsages::STORAGE;
+        let background = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: None,
+            contents: bytemuck::cast_slice(&[self.background]),
+            usage: buffer_usage,
+        });
         let materials = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
             contents: bytemuck::cast_slice(&self.materials[..]),
@@ -123,22 +131,26 @@ impl LinearSceneBvh {
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: materials.as_entire_binding(),
+                    resource: background.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: hittables_buffer.as_entire_binding(),
+                    resource: materials.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 2,
-                    resource: bvh_nodes_buffer.as_entire_binding(),
+                    resource: hittables_buffer.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 3,
-                    resource: spheres.as_entire_binding(),
+                    resource: bvh_nodes_buffer.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 4,
+                    resource: spheres.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 5,
                     resource: cuboids.as_entire_binding(),
                 },
             ],
