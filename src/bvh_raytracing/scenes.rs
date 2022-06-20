@@ -55,39 +55,39 @@ pub fn cornell_box() -> LinearSceneBvh {
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(1.0, 1.0, 1.0)),
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(1.0, 0.0, 0.0)),
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.0, 1.0, 0.0)),
-            Material::new(3, 0.0, 0.0, Vector3::<f32>::new(4.0, 4.0, 4.0)),
+            Material::new(3, 0.0, 0.0, Vector3::<f32>::new(2.0, 2.0, 2.0)),
             Material::new(2, 0.0, 1.5, Vector3::<f32>::new(0.0, 0.0, 0.0)),
             Material::new(1, 0.99, 0.0, Vector3::<f32>::new(1.0, 1.0, 1.0)),
         ],
         &vec![
             HittablePrimitive::Cuboid(Cuboid::new(
-                Matrix4::identity() * Matrix4::from_translation(Vector3::new(0.0, -0.005, 0.0)),
+                Matrix4::identity() * Matrix4::from_translation(Vector3::new(0.0, -0.01, 0.0)),
                 Vector3::new(0.5, 0.01, 0.5),
                 0,
             )),
             HittablePrimitive::Cuboid(Cuboid::new(
-                Matrix4::identity() * Matrix4::from_translation(Vector3::new(0.0, 1.0, 0.0)),
+                Matrix4::identity() * Matrix4::from_translation(Vector3::new(0.0, 1.01, 0.0)),
                 Vector3::new(0.5, 0.01, 0.5),
                 0,
             )),
             HittablePrimitive::Cuboid(Cuboid::new(
-                Matrix4::identity() * Matrix4::from_translation(Vector3::new(0.0, 0.5, -0.5)),
+                Matrix4::identity() * Matrix4::from_translation(Vector3::new(0.0, 0.5, -0.51)),
                 Vector3::new(0.5, 0.5, 0.01),
                 0,
             )),
             HittablePrimitive::Cuboid(Cuboid::new(
-                Matrix4::identity() * Matrix4::from_translation(Vector3::new(-0.5, 0.5, 0.0)),
+                Matrix4::identity() * Matrix4::from_translation(Vector3::new(-0.51, 0.5, 0.0)),
                 Vector3::new(0.01, 0.5, 0.5),
                 1,
             )),
             HittablePrimitive::Cuboid(Cuboid::new(
-                Matrix4::identity() * Matrix4::from_translation(Vector3::new(0.5, 0.5, 0.0)),
+                Matrix4::identity() * Matrix4::from_translation(Vector3::new(0.51, 0.5, 0.0)),
                 Vector3::new(0.01, 0.5, 0.5),
                 2,
             )),
             HittablePrimitive::Cuboid(Cuboid::new(
-                Matrix4::identity() * Matrix4::from_translation(Vector3::new(0.0, 0.99, 0.0)),
-                Vector3::new(0.15, 0.01, 0.15),
+                Matrix4::identity() * Matrix4::from_translation(Vector3::new(0.0, 0.9999, 0.0)),
+                Vector3::new(0.1, 0.0001, 0.1),
                 3,
             )),
             HittablePrimitive::Cuboid(Cuboid::new(
