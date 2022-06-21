@@ -405,15 +405,12 @@ fn sphere_hit(sphere_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
     set_face_normal(hit_record, ray, outward_normal);
 
     set_material_data(hit_record, &material);
-    // (*hit_record).material_type = material.material_type;
-    // (*hit_record).albedo = material.albedo;
-    // (*hit_record).fuzz = material.fuzz;
-    // (*hit_record).refraction_index = material.refraction_index;
 
     return true;
 } 
 
 /// Attribution: https://iquilezles.org/articles/boxfunctions/
+/// WIP: Need to fix the issues with dielectric exit normals.
 fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
     var cuboid = scene_cuboids.vals[cuboid_index];
     var material = scene_materials.vals[cuboid.material_index];
@@ -471,12 +468,7 @@ fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
     (*hit_record).t = tN;
     (*hit_record).t_out = tF;
 
-    // material data
     set_material_data(hit_record, &material);
-    // (*hit_record).material_type = material.material_type;
-    // (*hit_record).albedo = material.albedo;
-    // (*hit_record).fuzz = material.fuzz;
-    // (*hit_record).refraction_index = material.refraction_index;
 
     return true;
 }
@@ -502,22 +494,19 @@ fn primitive_hit(primitive_geometry_type: u32, primitive_scene_index: u32, ray: 
 }
 
 // Based on https://raytracing.github.io/books/RayTracingTheNextWeek.html (Chapter 9 Volumes)
-// WIP: Need to fix the cuboid intersection code.
 fn constant_medium_hit(constant_medium_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>, entropy: u32) -> bool {
     var constant_medium = scene_constant_mediums.vals[constant_medium_index];
     var material = scene_materials.vals[constant_medium.material_index];
 
     // Check if within boundary
-    // Assume convex primitive
+    // Assuming convex primitive
     var rec_1 = new_hit_record();
     var rec_2 = new_hit_record();
 
-    // if (primitive_hit(constant_medium.boundary_geometry_type, constant_medium.boundary_scene_index, ray, -1.0 / 0.0, 1.0 / 0.0, &rec_1)) {
-    if (!primitive_hit(constant_medium.boundary_geometry_type, constant_medium.boundary_scene_index, ray, -1000.0, 1000.0, &rec_1)) {
+    if (!primitive_hit(constant_medium.boundary_geometry_type, constant_medium.boundary_scene_index, ray, -constants.infinity, constants.infinity, &rec_1)) {
         return false;
     }
-    // if (primitive_hit(constant_medium.boundary_geometry_type, constant_medium.boundary_scene_index, ray, rec_1.t + 0.0001, 1.0 / 0.0, &rec_2)) {
-    if (!primitive_hit(constant_medium.boundary_geometry_type, constant_medium.boundary_scene_index, ray, rec_1.t + 0.001, 1000.0, &rec_2)) {
+    if (!primitive_hit(constant_medium.boundary_geometry_type, constant_medium.boundary_scene_index, ray, rec_1.t + constants.epsilon, constants.infinity, &rec_2)) {
         return false;
     }
 
@@ -534,21 +523,10 @@ fn constant_medium_hit(constant_medium_index: u32, ray: ptr<function, Ray>, t_mi
         rec_1.t = 0.0;
     }
 
-    // Test 1
-    // return true;
-
     var ray_length = length((*ray).direction);
     var distance_inside_boundary = (rec_2.t - rec_1.t) * ray_length;
-    // var distance_inside_boundary = (rec_2.t - rec_1.t) * 0.2;
     var hit_distance = constant_medium.neg_inv_density * log(random_float(entropy));
-    // var hit_distance = constant_medium.neg_inv_density * -0.1;
 
-    // if (hit_distance > 0.0) {
-    //     return false;
-    // }
-
-    // One of these values are evaluating incorrectly.
-    // if (hit_distance > 20.0 * distance_inside_boundary) {
     if (hit_distance > distance_inside_boundary) {
         return false;
     }
@@ -558,21 +536,7 @@ fn constant_medium_hit(constant_medium_index: u32, ray: ptr<function, Ray>, t_mi
 
     set_material_data(hit_record, &material);
 
-    (*hit_record).normal = vec3<f32>(1.0, 0.0, 0.0); // Arbitary
-    (*hit_record).front_face = true;
-
     return true;
-
-
-
-    // // material data
-    // set_material_data(hit_record, &material);
-    // // (*hit_record).material_type = material.material_type;
-    // // (*hit_record).albedo = material.albedo;
-    // // (*hit_record).fuzz = material.fuzz;
-    // // (*hit_record).refraction_index = material.refraction_index;
-
-    // return true;
 }
 
 fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function, HitRecord>, entropy: u32) -> bool {
@@ -650,19 +614,12 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
         // Is this a constant medium
         if (current_hittable.geometry_type == 3u) {
             // Constant Medium
-            // var hit = constant_medium_hit(scene_hittables.vals[ stack[stack_top] ].scene_index, ray, t_min, t_max, rec, hash(entropy + u32(scene_hittables.vals[ stack[stack_top] ].scene_index)));
             var hit = constant_medium_hit(scene_hittables.vals[ stack[stack_top] ].scene_index, ray, t_min, closest_so_far, rec, hash(entropy + u32(scene_hittables.vals[ stack[stack_top] ].scene_index)));
 
             // Pop the stack (constant medium hit check done).
             stack_top = stack_top - 1;
 
             if (hit) {
-                // Debug
-                // (*rec).t = 0.001;
-                // (*rec).material_type = 4u;
-                // (*rec).albedo = vec3<f32>(1.0, 1.0, 0.0);
-                // (*rec).normal = vec3<f32>(0.0, 0.0, 1.0);
-
                 hit_anything = true;
                 closest_so_far = (*rec).t;
             }
