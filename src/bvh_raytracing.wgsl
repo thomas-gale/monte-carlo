@@ -328,7 +328,8 @@ fn aabb_hit(hittables_bvh_node_index: u32, ray: ptr<function, Ray>, t: ptr<funct
 struct HitRecord {
     p: vec3<f32>;
     normal: vec3<f32>;
-    t: f32;
+    t: f32; // ray length until intersection
+    t_out: f32; // ray length after intersection
     front_face: bool;
 
     material_type: u32; // 0 = lambertian, 1 = metal, 2 = dielectric
@@ -343,6 +344,7 @@ fn new_hit_record() -> HitRecord {
     return HitRecord(
         vec3<f32>(0.0, 0.0, 0.0),
         vec3<f32>(0.0, 0.0, 0.0),
+        0.0,
         0.0,
         false,
         0u,
@@ -387,14 +389,17 @@ fn sphere_hit(sphere_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
  
     // Find the nearest root that lies in acceptable range
     var root = (-half_b - sqrtd) / a;
+    var root_far = (-half_b + sqrtd) / a;
     if (root < t_min || root > t_max) {
         root = (-half_b + sqrtd) / a;
+        root_far = (-half_b - sqrtd) / a;
         if (root < t_min || root > t_max) {
             return false;
         }
     }
 
     (*hit_record).t = root;
+    (*hit_record).t_out = root_far;
     (*hit_record).p = ray_at(ray, (*hit_record).t);
     var outward_normal = ((*hit_record).p - sphere.center) / sphere.radius;
     set_face_normal(hit_record, ray, outward_normal);
@@ -464,6 +469,7 @@ fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
 
     // distance to intersection point (in world space)
     (*hit_record).t = tN;
+    (*hit_record).t_out = tF;
 
     // material data
     set_material_data(hit_record, &material);
@@ -496,6 +502,7 @@ fn primitive_hit(primitive_geometry_type: u32, primitive_scene_index: u32, ray: 
 }
 
 // Based on https://raytracing.github.io/books/RayTracingTheNextWeek.html (Chapter 9 Volumes)
+// WIP: Need to fix the cuboid intersection code.
 fn constant_medium_hit(constant_medium_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>, entropy: u32) -> bool {
     var constant_medium = scene_constant_mediums.vals[constant_medium_index];
     var material = scene_materials.vals[constant_medium.material_index];
@@ -506,45 +513,49 @@ fn constant_medium_hit(constant_medium_index: u32, ray: ptr<function, Ray>, t_mi
     var rec_2 = new_hit_record();
 
     // if (primitive_hit(constant_medium.boundary_geometry_type, constant_medium.boundary_scene_index, ray, -1.0 / 0.0, 1.0 / 0.0, &rec_1)) {
-    if (!primitive_hit(constant_medium.boundary_geometry_type, constant_medium.boundary_scene_index, ray, -1000000000.0, 100000000.0, &rec_1)) {
+    if (!primitive_hit(constant_medium.boundary_geometry_type, constant_medium.boundary_scene_index, ray, -1000.0, 1000.0, &rec_1)) {
         return false;
     }
     // if (primitive_hit(constant_medium.boundary_geometry_type, constant_medium.boundary_scene_index, ray, rec_1.t + 0.0001, 1.0 / 0.0, &rec_2)) {
-    if (!primitive_hit(constant_medium.boundary_geometry_type, constant_medium.boundary_scene_index, ray, rec_1.t + 0.0001, 1000000000.0, &rec_2)) {
+    if (!primitive_hit(constant_medium.boundary_geometry_type, constant_medium.boundary_scene_index, ray, rec_1.t + 0.01, 1000.0, &rec_2)) {
         return false;
     }
-
-    // Test 1
-    return true;
-
-    // TODO - debug what is wrong from here to line 536 (529 always runs)
-
-    // if (rec_1.t < t_min) {
-    //     rec_1.t = t_min;
-    // }
-    // if (rec_2.t > t_max) {
-    //     rec_2.t = t_max;
-    // }
-    // if (rec_1.t >= rec_2.t) {
-    //     return false;
-    // }
-    // if (rec_1.t < 0.0) {
-    //     rec_1.t = 0.0;
-    // }
 
     // Test 1
     // return true;
 
-    // var ray_length = length((*ray).direction);
-    // var distance_inside_boundary = (rec_2.t - rec_1.t) * ray_length;
-    // var hit_distance = constant_medium.neg_inv_density * log(random_float(entropy));
+    // TODO - debug what is wrong from here to line 536 (529 always runs)
 
-    // if (hit_distance > distance_inside_boundary) {
-    //     return false;
-    // }
+    if (rec_1.t < t_min) {
+        rec_1.t = t_min;
+    }
+    if (rec_2.t > t_max) {
+        rec_2.t = t_max;
+    }
+    if (rec_1.t >= rec_2.t) {
+        return false;
+    }
+    if (rec_1.t < 0.0) {
+        rec_1.t = 0.0;
+    }
 
-    // (*hit_record).t = rec_1.t + hit_distance / ray_length;
-    // (*hit_record).p = ray_at(ray, (*hit_record).t);
+    // Test 1
+    // return true;
+
+    var ray_length = length((*ray).direction);
+    var distance_inside_boundary = (rec_2.t - rec_1.t) * ray_length;
+    var hit_distance = constant_medium.neg_inv_density * log(random_float(entropy));
+
+    if (hit_distance > distance_inside_boundary) {
+        // return false;
+    }
+
+    (*hit_record).t = rec_1.t + hit_distance / ray_length;
+    (*hit_record).p = ray_at(ray, (*hit_record).t);
+
+    set_material_data(hit_record, &material);
+
+    return true;
 
     // (*hit_record).normal = vec3<f32>(1.0, 0.0, 0.0); // Arbitary
     // (*hit_record).front_face = true;
@@ -642,10 +653,10 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
 
             if (hit) {
                 // Debug
-                (*rec).t = 0.001;
-                (*rec).material_type = 3u;
-                (*rec).albedo = vec3<f32>(1.0, 1.0, 0.0);
-                (*rec).normal = vec3<f32>(0.0, 0.0, 1.0);
+                // (*rec).t = 0.001;
+                // (*rec).material_type = 4u;
+                // (*rec).albedo = vec3<f32>(1.0, 1.0, 0.0);
+                // (*rec).normal = vec3<f32>(0.0, 0.0, 1.0);
 
                 hit_anything = true;
                 closest_so_far = (*rec).t;
@@ -735,7 +746,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
                 break;
             } else if (hit_record.material_type == 4u) {
                 // Isotropic medium
-                var scattered = hit_record.p + random_in_unit_sphere(entropy * u32(i + 1));
+                var scattered = hit_record.p + random_in_unit_sphere(entropy * u32(i + 4));
 
                 current_ray = Ray(hit_record.p, scattered - hit_record.p);
                 current_ray_color = current_ray_color * hit_record.albedo;
