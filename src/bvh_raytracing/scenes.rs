@@ -47,7 +47,6 @@ pub fn test_scene() -> LinearSceneBvh {
                 material_index: 6,
                 density: 1.5,
             }),
-            // HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, -2.5), 0.5, 5)),
             HittablePrimitive::Cuboid(Cuboid::new(
                 Matrix4::identity()
                     * Matrix4::from_translation(Vector3::new(5.0, 2.0, 5.0))
@@ -112,23 +111,39 @@ pub fn cornell_box() -> LinearSceneBvh {
                 Vector3::new(0.125, 0.3, 0.125),
                 5,
             )),
-            HittablePrimitive::ConstantMedium(ConstantMedium {
-                boundary_hittable: Box::new(HittablePrimitive::Cuboid(Cuboid::new(
-                    Matrix4::identity()
-                        * Matrix4::from_translation(Vector3::new(0.125, 0.125, 0.25))
-                        * Matrix4::from_angle_y(Deg(-20.0)),
-                    Vector3::new(0.125, 0.125, 0.125),
-                    LinearSceneBvh::null_index_ptr(),
-                ))),
-                material_index: 6,
-                density: 0.01,
-            }),
+            HittablePrimitive::Cuboid(Cuboid::new(
+                Matrix4::identity()
+                    * Matrix4::from_translation(Vector3::new(0.125, 0.125, 0.25))
+                    * Matrix4::from_angle_y(Deg(-20.0)),
+                Vector3::new(0.125, 0.125, 0.125),
+                5,
+            )),
+            // HittablePrimitive::ConstantMedium(ConstantMedium {
+            //     boundary_hittable: Box::new(HittablePrimitive::Cuboid(Cuboid::new(
+            //         Matrix4::identity()
+            //             * Matrix4::from_translation(Vector3::new(0.125, 0.125, 0.25))
+            //             * Matrix4::from_angle_y(Deg(-20.0)),
+            //         Vector3::new(0.125, 0.125, 0.125),
+            //         LinearSceneBvh::null_index_ptr(),
+            //     ))),
+            //     material_index: 6,
+            //     density: 5.0,
+            // }),
             HittablePrimitive::Sphere(Sphere::new(
                 Vector3::<f32>::new(-0.125, 0.125, 0.125),
                 0.125,
                 4,
             )),
-            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.24, 0.25, -0.24), 0.25, 5)),
+            // HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.24, 0.25, -0.24), 0.25, 5)),
+            HittablePrimitive::ConstantMedium(ConstantMedium {
+                boundary_hittable: Box::new(HittablePrimitive::Sphere(Sphere::new(
+                    Vector3::<f32>::new(0.24, 0.25, -0.24),
+                    0.25,
+                    5,
+                ))),
+                material_index: 6,
+                density: 5.0,
+            }),
             // HittablePrimitive::Sphere(Sphere::new(
             //     Vector3::<f32>::new(0.0, 0.125, 0.125),
             //     0.125,

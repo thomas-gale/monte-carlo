@@ -90,20 +90,20 @@ impl BvhRaytracing {
         // Camera
         let camera = camera::Camera::new(
             &device,
-            Point3::<f32>::new(0.0, 0.5, 10.0),
+            Point3::<f32>::new(0.0, 0.5, 2.8),
             Point3::<f32>::new(0.0, 0.5, 0.0),
             Vector3::<f32>::new(0.0, 1.0, 0.0),
             25.0,
             window,
             0.0,
-            10.0,
+            2.8,
         );
 
         // Scene
         // let scene_bvh = scenes::stress_test_scene();
         // let scene_bvh = scenes::final_scene();
-        // let scene_bvh = scenes::cornell_box();
-        let scene_bvh = scenes::test_scene();
+        let scene_bvh = scenes::cornell_box();
+        // let scene_bvh = scenes::test_scene();
         // let scene_bvh = scenes::simple_scene();
         let (scene_bvh_bind_group_layout, scene_bvh_bind_group) =
             scene_bvh.create_device_buffer_binding(&device);

@@ -411,6 +411,7 @@ fn sphere_hit(sphere_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
 
 /// Attribution: https://iquilezles.org/articles/boxfunctions/
 /// WIP: Need to fix the issues with dielectric exit normals.
+////     - Essentially, this hit function doesn't work if the ray starts inside the cuboid.
 fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
     var cuboid = scene_cuboids.vals[cuboid_index];
     var material = scene_materials.vals[cuboid.material_index];
