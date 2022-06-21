@@ -517,14 +517,9 @@ fn constant_medium_hit(constant_medium_index: u32, ray: ptr<function, Ray>, t_mi
         return false;
     }
     // if (primitive_hit(constant_medium.boundary_geometry_type, constant_medium.boundary_scene_index, ray, rec_1.t + 0.0001, 1.0 / 0.0, &rec_2)) {
-    if (!primitive_hit(constant_medium.boundary_geometry_type, constant_medium.boundary_scene_index, ray, rec_1.t + 0.01, 1000.0, &rec_2)) {
+    if (!primitive_hit(constant_medium.boundary_geometry_type, constant_medium.boundary_scene_index, ray, rec_1.t + 0.001, 1000.0, &rec_2)) {
         return false;
     }
-
-    // Test 1
-    // return true;
-
-    // TODO - debug what is wrong from here to line 536 (529 always runs)
 
     if (rec_1.t < t_min) {
         rec_1.t = t_min;
@@ -544,10 +539,18 @@ fn constant_medium_hit(constant_medium_index: u32, ray: ptr<function, Ray>, t_mi
 
     var ray_length = length((*ray).direction);
     var distance_inside_boundary = (rec_2.t - rec_1.t) * ray_length;
+    // var distance_inside_boundary = (rec_2.t - rec_1.t) * 0.2;
     var hit_distance = constant_medium.neg_inv_density * log(random_float(entropy));
+    // var hit_distance = constant_medium.neg_inv_density * -0.1;
 
+    // if (hit_distance > 0.0) {
+    //     return false;
+    // }
+
+    // One of these values are evaluating incorrectly.
+    // if (hit_distance > 20.0 * distance_inside_boundary) {
     if (hit_distance > distance_inside_boundary) {
-        // return false;
+        return false;
     }
 
     (*hit_record).t = rec_1.t + hit_distance / ray_length;
@@ -555,10 +558,12 @@ fn constant_medium_hit(constant_medium_index: u32, ray: ptr<function, Ray>, t_mi
 
     set_material_data(hit_record, &material);
 
+    (*hit_record).normal = vec3<f32>(1.0, 0.0, 0.0); // Arbitary
+    (*hit_record).front_face = true;
+
     return true;
 
-    // (*hit_record).normal = vec3<f32>(1.0, 0.0, 0.0); // Arbitary
-    // (*hit_record).front_face = true;
+
 
     // // material data
     // set_material_data(hit_record, &material);
@@ -645,8 +650,8 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
         // Is this a constant medium
         if (current_hittable.geometry_type == 3u) {
             // Constant Medium
-            var hit = constant_medium_hit(scene_hittables.vals[ stack[stack_top] ].scene_index, ray, t_min, t_max, rec, hash(entropy + u32(scene_hittables.vals[ stack[stack_top] ].scene_index)));
-            // var hit = constant_medium_hit(scene_hittables.vals[ stack[stack_top] ].scene_index, ray, t_min, closest_so_far, rec, hash(entropy + u32(scene_hittables.vals[ stack[stack_top] ].scene_index)));
+            // var hit = constant_medium_hit(scene_hittables.vals[ stack[stack_top] ].scene_index, ray, t_min, t_max, rec, hash(entropy + u32(scene_hittables.vals[ stack[stack_top] ].scene_index)));
+            var hit = constant_medium_hit(scene_hittables.vals[ stack[stack_top] ].scene_index, ray, t_min, closest_so_far, rec, hash(entropy + u32(scene_hittables.vals[ stack[stack_top] ].scene_index)));
 
             // Pop the stack (constant medium hit check done).
             stack_top = stack_top - 1;

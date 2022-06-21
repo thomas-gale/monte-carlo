@@ -45,7 +45,7 @@ pub fn test_scene() -> LinearSceneBvh {
                     LinearSceneBvh::null_index_ptr(),
                 ))),
                 material_index: 6,
-                density: 0.1,
+                density: 1.5,
             }),
             // HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, -2.5), 0.5, 5)),
             HittablePrimitive::Cuboid(Cuboid::new(
