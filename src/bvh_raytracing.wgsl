@@ -444,30 +444,72 @@ fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
     var tF = min(min(t2.x, t2.y), t2.z);
 
     // check hit is in allowed range 
-    if (tN > t_max || tF < t_min) {
-        return false;
-    }
+    // if (tN > t_max || tF < t_min) {
+    //     return false;
+    // }
 
     // check for hit with cuboid
     if (tN > tF || tF < 0.0) {
         return false;
     }
+    // if (tF < 0.0) {
+    //     return false;
+    // }
 
-    // compute normal (in world space)
-    if (t1.x > t1.y && t1.x > t1.z) {
-        (*hit_record).normal = cuboid.txi[0].xyz * s.x * 1.0;
-    } else if (t1.y > t1.z) {
-        (*hit_record).normal = cuboid.txi[1].xyz * s.y * 1.0;
+    if (tN > 0.0) {
+        // Ray originates from outside cuboid
+        // check hit is in allowed range 
+        if (tN > t_max || tF < t_min) {
+            return false;
+        }
+
+        // compute normal (in world space)
+        if (t1.x > t1.y && t1.x > t1.z) {
+            (*hit_record).normal = cuboid.txi[0].xyz * s.x * 1.0;
+        } else if (t1.y > t1.z) {
+            (*hit_record).normal = cuboid.txi[1].xyz * s.y * 1.0;
+        } else {
+            (*hit_record).normal = cuboid.txi[2].xyz * s.z * 1.0;
+        }
+
+        // intersection point (in world space)
+        (*hit_record).p = (cuboid.txi * vec4<f32>((ro + (rd * tN)), 1.0)).xyz;
+
+        // distance to intersection point (in world space)
+        (*hit_record).t = tN;
+        (*hit_record).t_out = tF;
     } else {
-        (*hit_record).normal = cuboid.txi[2].xyz * s.z * 1.0;
+        // Ray originates from inside cuboid
+        // check hit is in allowed range 
+        if (tF < t_min || tF > t_max) {
+            return false;
+        }
+
+        // compute normal (in world space)
+        // if (t1.x > t1.y && t1.x > t1.z) {
+        //     (*hit_record).normal = cuboid.txi[0].xyz * s.x * -1.0;
+        // } else if (t1.y > t1.z) {
+        //     (*hit_record).normal = cuboid.txi[1].xyz * s.y * -1.0;
+        // } else {
+        //     (*hit_record).normal = cuboid.txi[2].xyz * s.z * -1.0;
+        // }
+        // (*hit_record).normal = vec3<f32>(0.0, 0.0, 1.0);
+
+
+        if (t1.x < t1.y || t1.x < t1.z) {
+            (*hit_record).normal = cuboid.txi[0].xyz * s.x * 1.0;
+        } else if (t1.y < t1.z) {
+            (*hit_record).normal = cuboid.txi[1].xyz * s.y * 1.0;
+        } else {
+            (*hit_record).normal = cuboid.txi[2].xyz * s.z * 1.0;
+        }
+
+        // intersection point (in world space)
+        (*hit_record).p = (cuboid.txi * vec4<f32>((ro + (rd * tF)), 1.0)).xyz;
+
+        // distance to intersection point (in world space)
+        (*hit_record).t = tF;
     }
-
-    // intersection point (in world space)
-    (*hit_record).p = (cuboid.txi * vec4<f32>((ro + (rd * tN)), 1.0)).xyz;
-
-    // distance to intersection point (in world space)
-    (*hit_record).t = tN;
-    (*hit_record).t_out = tF;
 
     set_material_data(hit_record, &material);
 

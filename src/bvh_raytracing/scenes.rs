@@ -48,13 +48,12 @@ pub fn test_scene() -> LinearSceneBvh {
                 density: 1.5,
             }),
             HittablePrimitive::Cuboid(Cuboid::new(
-                Matrix4::identity()
-                    * Matrix4::from_translation(Vector3::new(5.0, 2.0, 5.0))
-                    * Matrix4::from_angle_x(Deg(45.0))
-                    * Matrix4::from_angle_y(Deg(45.0))
-                    * Matrix4::from_angle_z(Deg(45.0)),
-                Vector3::new(0.5, 1.0, 1.5),
-                1,
+                Matrix4::identity() * Matrix4::from_translation(Vector3::new(0.0, 0.0, 0.0)),
+                // * Matrix4::from_angle_x(Deg(45.0))
+                // * Matrix4::from_angle_y(Deg(45.0))
+                // * Matrix4::from_angle_z(Deg(45.0)),
+                Vector3::new(0.25, 0.5, 0.25),
+                5,
             )),
         ],
     )
