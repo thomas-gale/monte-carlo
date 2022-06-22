@@ -62,6 +62,7 @@ pub struct Camera {
     window: window::Window,
     aperture: f32,
     focus_dist: f32,
+    zoom_speed: f32,
 
     view_matrix: Matrix4<f32>,
 
@@ -81,6 +82,7 @@ impl Camera {
         window: window::Window,
         aperture: f32,
         focus_dist: f32,
+        zoom_speed: f32,
     ) -> Self {
         let raw = Self::generate_raw(
             &look_from, &look_at, &v_up, v_fov, window, aperture, focus_dist,
@@ -101,6 +103,7 @@ impl Camera {
             window,
             aperture,
             focus_dist,
+            zoom_speed,
 
             view_matrix: Matrix4::identity(),
 
@@ -167,6 +170,29 @@ impl Camera {
         );
         self.raw = raw;
         queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.raw]));
+    }
+
+    ///
+    /// Simple zoom modification to the look_from of the camera
+    ///
+    pub fn zoom(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        result: &mut result::Result,
+        size: winit::dpi::PhysicalSize<u32>,
+        mouse_wheel_y: f32,
+    ) {
+        self.set_camera_view(
+            self.look_from + self.zoom_speed * mouse_wheel_y * (self.look_at - self.look_from),
+            self.look_at,
+            self.v_up,
+        );
+
+        // Push the changes to the GPU
+        self.update(queue);
+        // Reset the accumulation ray color result texture
+        result.reset_texture(device, queue, size);
     }
 
     ///

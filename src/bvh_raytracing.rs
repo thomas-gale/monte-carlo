@@ -97,6 +97,7 @@ impl BvhRaytracing {
             window,
             0.0,
             4.0,
+            0.1,
         );
 
         // Scene
@@ -217,6 +218,18 @@ impl BvhRaytracing {
             } => {
                 self.mouse_down = false;
                 self.current_mouse_pos = winit::dpi::PhysicalPosition::new(0.0, 0.0);
+            }
+            WindowEvent::MouseWheel {
+                delta: winit::event::MouseScrollDelta::LineDelta(_, pos_y),
+                ..
+            } => {
+                self.camera.zoom(
+                    &self.device,
+                    &self.queue,
+                    &mut self.result,
+                    self.size,
+                    *pos_y,
+                );
             }
             WindowEvent::CursorMoved { position: pos, .. } => {
                 if self.mouse_down {
