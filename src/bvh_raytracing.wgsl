@@ -329,7 +329,6 @@ struct HitRecord {
     p: vec3<f32>;
     normal: vec3<f32>;
     t: f32; // ray length until intersection
-    t_out: f32; // ray length after intersection
     front_face: bool;
 
     material_type: u32; // 0 = lambertian, 1 = metal, 2 = dielectric
@@ -344,7 +343,6 @@ fn new_hit_record() -> HitRecord {
     return HitRecord(
         vec3<f32>(0.0, 0.0, 0.0),
         vec3<f32>(0.0, 0.0, 0.0),
-        0.0,
         0.0,
         false,
         0u,
@@ -389,17 +387,14 @@ fn sphere_hit(sphere_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
  
     // Find the nearest root that lies in acceptable range
     var root = (-half_b - sqrtd) / a;
-    var root_far = (-half_b + sqrtd) / a;
     if (root < t_min || root > t_max) {
         root = (-half_b + sqrtd) / a;
-        root_far = (-half_b - sqrtd) / a;
         if (root < t_min || root > t_max) {
             return false;
         }
     }
 
     (*hit_record).t = root;
-    (*hit_record).t_out = root_far;
     (*hit_record).p = ray_at(ray, (*hit_record).t);
     var outward_normal = ((*hit_record).p - sphere.center) / sphere.radius;
     set_face_normal(hit_record, ray, outward_normal);
@@ -443,22 +438,15 @@ fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
     var tN = max(max(t1.x, t1.y), t1.z);
     var tF = min(min(t2.x, t2.y), t2.z);
 
-    // check hit is in allowed range 
-    // if (tN > t_max || tF < t_min) {
-    //     return false;
-    // }
-
     // check for hit with cuboid
     if (tN > tF || tF < 0.0) {
         return false;
     }
-    // if (tF < 0.0) {
-    //     return false;
-    // }
 
-    if (tN > 0.0) {
+    if (tN >= constants.epsilon) {
         // Ray originates from outside cuboid
-        // check hit is in allowed range 
+
+        // check hit is in allowed range
         if (tN > t_max || tF < t_min) {
             return false;
         }
@@ -477,28 +465,18 @@ fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
 
         // distance to intersection point (in world space)
         (*hit_record).t = tN;
-        (*hit_record).t_out = tF;
     } else {
         // Ray originates from inside cuboid
+
         // check hit is in allowed range 
         if (tF < t_min || tF > t_max) {
             return false;
         }
 
         // compute normal (in world space)
-        // if (t1.x > t1.y && t1.x > t1.z) {
-        //     (*hit_record).normal = cuboid.txi[0].xyz * s.x * -1.0;
-        // } else if (t1.y > t1.z) {
-        //     (*hit_record).normal = cuboid.txi[1].xyz * s.y * -1.0;
-        // } else {
-        //     (*hit_record).normal = cuboid.txi[2].xyz * s.z * -1.0;
-        // }
-        // (*hit_record).normal = vec3<f32>(0.0, 0.0, 1.0);
-
-
-        if (t1.x < t1.y || t1.x < t1.z) {
+        if (t2.x < t2.y && t2.x < t2.z) {
             (*hit_record).normal = cuboid.txi[0].xyz * s.x * 1.0;
-        } else if (t1.y < t1.z) {
+        } else if (t2.y < t2.z) {
             (*hit_record).normal = cuboid.txi[1].xyz * s.y * 1.0;
         } else {
             (*hit_record).normal = cuboid.txi[2].xyz * s.z * 1.0;
