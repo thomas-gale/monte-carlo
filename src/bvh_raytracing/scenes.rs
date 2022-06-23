@@ -55,6 +55,18 @@ pub fn test_scene() -> LinearSceneBvh {
                 Vector3::new(0.25, 0.5, 0.25),
                 5,
             )),
+            // HittablePrimitive::ConstantMedium(ConstantMedium {
+            //     boundary_hittable: Box::new(HittablePrimitive::Cuboid(Cuboid::new(
+            //         Matrix4::identity() * Matrix4::from_translation(Vector3::new(0.0, 0.01, 0.0)),
+            //         // * Matrix4::from_angle_x(Deg(45.0))
+            //         // * Matrix4::from_angle_y(Deg(45.0))
+            //         // * Matrix4::from_angle_z(Deg(45.0)),
+            //         Vector3::new(0.25, 0.5, 0.25),
+            //         5,
+            //     ))),
+            //     material_index: 6,
+            //     density: 100.0,
+            // }),
             HittablePrimitive::Cuboid(Cuboid::new(
                 Matrix4::identity() * Matrix4::from_translation(Vector3::new(-2.0, 0.0, 2.0)),
                 // * Matrix4::from_angle_x(Deg(45.0))

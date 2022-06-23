@@ -445,7 +445,6 @@ fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
 
     if (tN >= constants.epsilon) {
         // Ray originates from outside cuboid
-
         // check hit is in allowed range
         if (tN > t_max || tF < t_min) {
             return false;
@@ -467,16 +466,16 @@ fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
         (*hit_record).t = tN;
     } else {
         // Ray originates from inside cuboid
-
         // check hit is in allowed range 
         if (tF < t_min || tF > t_max) {
             return false;
         }
 
         // compute normal (in world space)
-        if (t2.x < t2.y && t2.x < t2.z) {
+        // WIP *****
+        if (t2.x <= t2.y && t2.x <= t2.z) {
             (*hit_record).normal = cuboid.txi[0].xyz * s.x * 1.0;
-        } else if (t2.y < t2.z) {
+        } else if (t2.y <= t2.z) {
             (*hit_record).normal = cuboid.txi[1].xyz * s.y * 1.0;
         } else {
             (*hit_record).normal = cuboid.txi[2].xyz * s.z * 1.0;
