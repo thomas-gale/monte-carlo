@@ -1,3 +1,5 @@
+use std::cmp::{max, min};
+
 use cgmath::{
     EuclideanSpace, InnerSpace, Matrix3, Matrix4, Point3, SquareMatrix, Vector3, Vector4,
 };
@@ -47,7 +49,7 @@ impl Cuboid {
     }
 
     /// Returns the bounding box of the cuboid.
-    /// TODO - some tidying to reduce line count can be done as highlighted in comments within function
+    /// Assumes transformation matrix basis vectors are orthogonal to one another (no skews)
     pub fn bounding_box(&self) -> Aabb {
         // the cuboids transformation matrix from local to world space
         let mut rotation = Matrix3::from_cols(
@@ -66,71 +68,36 @@ impl Cuboid {
             rotation.z.normalize(),
         );
 
-        // TODO - remove duplicate code and use a simple 3 bit mask on a loop (much more elegant)
+        // Compute all 8 corners of the cuboid in world space.
+        let corners: Vec<Vector3<f32>> = (0..8)
+            .map(|i| {
+                let x_sgn: f32 = if i & (1 << 2) > 0 { 1.0 } else { -1.0 };
+                let y_sgn: f32 = if i & (1 << 1) > 0 { 1.0 } else { -1.0 };
+                let z_sgn: f32 = if i & (1 << 0) > 0 { 1.0 } else { -1.0 };
+                rotation * Vector3::new(x_sgn * scale.x, y_sgn * scale.y, z_sgn * scale.z)
+            })
+            .collect();
 
-        // Naive, compute all 8 corners of the cuboid in world space.
-        let c_0: Vector3<f32> = rotation * Vector3::new(-scale.x, -scale.y, -scale.z);
-        let c_1 = rotation * Vector3::new(-scale.x, -scale.y, scale.z);
-        let c_2 = rotation * Vector3::new(-scale.x, scale.y, -scale.z);
-        let c_3 = rotation * Vector3::new(-scale.x, scale.y, scale.z);
-        let c_4 = rotation * Vector3::new(scale.x, -scale.y, -scale.z);
-        let c_5 = rotation * Vector3::new(scale.x, -scale.y, scale.z);
-        let c_6 = rotation * Vector3::new(scale.x, scale.y, -scale.z);
-        let c_7 = rotation * Vector3::new(scale.x, scale.y, scale.z);
-
-        // The min and max possible corner coordinates.
-        let min = Point3::new(
-            c_0.x
-                .min(c_1.x)
-                .min(c_2.x)
-                .min(c_3.x)
-                .min(c_4.x)
-                .min(c_5.x)
-                .min(c_6.x)
-                .min(c_7.x),
-            c_0.y
-                .min(c_1.y)
-                .min(c_2.y)
-                .min(c_3.y)
-                .min(c_4.y)
-                .min(c_5.y)
-                .min(c_6.y)
-                .min(c_7.y),
-            c_0.z
-                .min(c_1.z)
-                .min(c_2.z)
-                .min(c_3.z)
-                .min(c_4.z)
-                .min(c_5.z)
-                .min(c_6.z)
-                .min(c_7.z),
-        );
-
-        let max = Point3::new(
-            c_0.x
-                .max(c_1.x)
-                .max(c_2.x)
-                .max(c_3.x)
-                .max(c_4.x)
-                .max(c_5.x)
-                .max(c_6.x)
-                .max(c_7.x),
-            c_0.y
-                .max(c_1.y)
-                .max(c_2.y)
-                .max(c_3.y)
-                .max(c_4.y)
-                .max(c_5.y)
-                .max(c_6.y)
-                .max(c_7.y),
-            c_0.z
-                .max(c_1.z)
-                .max(c_2.z)
-                .max(c_3.z)
-                .max(c_4.z)
-                .max(c_5.z)
-                .max(c_6.z)
-                .max(c_7.z),
+        // Find the min and max corner
+        let (min, max) = corners.iter().fold(
+            (
+                Point3::new(f32::MAX, f32::MAX, f32::MAX),
+                Point3::new(f32::MIN, f32::MIN, f32::MIN),
+            ),
+            |(cur_min, cur_max), corner| {
+                (
+                    Point3::new(
+                        f32::min(cur_min.x, corner.x),
+                        f32::min(cur_min.y, corner.y),
+                        f32::min(cur_min.z, corner.z),
+                    ),
+                    Point3::new(
+                        f32::max(cur_max.x, corner.x),
+                        f32::max(cur_max.y, corner.y),
+                        f32::max(cur_max.z, corner.z),
+                    ),
+                )
+            },
         );
 
         // vector version of centroid of the cuboid in world space.

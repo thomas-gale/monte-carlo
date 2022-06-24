@@ -219,8 +219,6 @@ struct Sphere {
 };
 
 struct Cuboid {
-    /// Axis aligned 'radius' (half edge length) of the cuboid
-    // radius: vec3<f32>;
     /// Reference to the material index in the scene materials
     material_index: u32; 
     /// World to object space transform
