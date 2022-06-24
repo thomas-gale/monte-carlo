@@ -1,4 +1,6 @@
-use cgmath::{EuclideanSpace, Matrix3, Matrix4, Point3, SquareMatrix, Vector3, Vector4};
+use cgmath::{
+    EuclideanSpace, InnerSpace, Matrix3, Matrix4, Point3, SquareMatrix, Vector3, Vector4,
+};
 
 use super::{aabb::Aabb, linear_scene_bvh::LinearSceneBvh};
 
@@ -6,26 +8,28 @@ use super::{aabb::Aabb, linear_scene_bvh::LinearSceneBvh};
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Cuboid {
-    /// Axis aligned 'radius' (half edge length) of the cuboid
-    pub radius: [f32; 3],
     /// Index of the material in the linear scene bvh
     pub material_index: u32,
+    _pad1: u32,
+    _pad2: u32,
+    _pad3: u32,
     /// World to object space transform (computed automatically as inverse of txi)
     pub txx: [[f32; 4]; 4],
-    /// Object to world space transform
+    /// Object to world space transform (place translations/scales/rotations into this matrix)
     pub txi: [[f32; 4]; 4],
 }
 
 impl Cuboid {
     ///
     /// Construct a new cuboid
-    /// * `txi` - Object to world space transform ()
-    /// * `radius` - Axis aligned 'radius' (half edge length) of the cuboid
+    /// * `txi` - Object to world space transform (place translations/scales/rotations into this matrix)
     /// * `material_index` - Index of the material in the linear scene bvh
-    pub fn new(txi: Matrix4<f32>, radius: Vector3<f32>, material_index: u32) -> Self {
+    pub fn new(txi: Matrix4<f32>, material_index: u32) -> Self {
         Cuboid {
-            radius: radius.into(),
             material_index,
+            _pad1: 0,
+            _pad2: 0,
+            _pad3: 0,
             txx: txi.invert().unwrap().into(),
             txi: txi.into(),
         }
@@ -33,8 +37,10 @@ impl Cuboid {
 
     pub fn empty() -> Self {
         Cuboid {
-            radius: [0.0; 3],
             material_index: LinearSceneBvh::null_index_ptr(),
+            _pad1: 0,
+            _pad2: 0,
+            _pad3: 0,
             txx: [[0.0; 4]; 4],
             txi: [[0.0; 4]; 4],
         }
@@ -44,24 +50,33 @@ impl Cuboid {
     /// TODO - some tidying to reduce line count can be done as highlighted in comments within function
     pub fn bounding_box(&self) -> Aabb {
         // the cuboids transformation matrix from local to world space
-        let rotation = Matrix3::from_cols(
+        let mut rotation = Matrix3::from_cols(
             Vector4::from(self.txi[0]).truncate(),
             Vector4::from(self.txi[1]).truncate(),
             Vector4::from(self.txi[2]).truncate(),
+        );
+        let scale = Vector3::new(
+            rotation.x.magnitude(),
+            rotation.y.magnitude(),
+            rotation.z.magnitude(),
+        );
+        rotation = Matrix3::from_cols(
+            rotation.x.normalize(),
+            rotation.y.normalize(),
+            rotation.z.normalize(),
         );
 
         // TODO - remove duplicate code and use a simple 3 bit mask on a loop (much more elegant)
 
         // Naive, compute all 8 corners of the cuboid in world space.
-        let c_0: Vector3<f32> =
-            rotation * Vector3::new(-self.radius[0], -self.radius[1], -self.radius[2]);
-        let c_1 = rotation * Vector3::new(-self.radius[0], -self.radius[1], self.radius[2]);
-        let c_2 = rotation * Vector3::new(-self.radius[0], self.radius[1], -self.radius[2]);
-        let c_3 = rotation * Vector3::new(-self.radius[0], self.radius[1], self.radius[2]);
-        let c_4 = rotation * Vector3::new(self.radius[0], -self.radius[1], -self.radius[2]);
-        let c_5 = rotation * Vector3::new(self.radius[0], -self.radius[1], self.radius[2]);
-        let c_6 = rotation * Vector3::new(self.radius[0], self.radius[1], -self.radius[2]);
-        let c_7 = rotation * Vector3::new(self.radius[0], self.radius[1], self.radius[2]);
+        let c_0: Vector3<f32> = rotation * Vector3::new(-scale.x, -scale.y, -scale.z);
+        let c_1 = rotation * Vector3::new(-scale.x, -scale.y, scale.z);
+        let c_2 = rotation * Vector3::new(-scale.x, scale.y, -scale.z);
+        let c_3 = rotation * Vector3::new(-scale.x, scale.y, scale.z);
+        let c_4 = rotation * Vector3::new(scale.x, -scale.y, -scale.z);
+        let c_5 = rotation * Vector3::new(scale.x, -scale.y, scale.z);
+        let c_6 = rotation * Vector3::new(scale.x, scale.y, -scale.z);
+        let c_7 = rotation * Vector3::new(scale.x, scale.y, scale.z);
 
         // The min and max possible corner coordinates.
         let min = Point3::new(

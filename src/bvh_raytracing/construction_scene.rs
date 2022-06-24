@@ -1,8 +1,7 @@
 use super::{
-    constant_medium,
     construction_scene_bvh_node::SceneBvhConstructionNode,
     hittable_primitive::HittablePrimitive,
-    linear_constant_medium::{self, LinearConstantMedium},
+    linear_constant_medium::LinearConstantMedium,
     linear_hittable::LinearHittable,
     linear_scene_bvh::LinearSceneBvh,
     material::Material,
@@ -96,7 +95,7 @@ pub fn build_from_hittable_primitives(
     scene.check_pad_empty_arrays();
 
     // Debug - pretty print the flattened scene bvh
-    // scene.debug_print();
+    scene.debug_print();
 
     // Return the constructed scene
     scene

@@ -21,7 +21,7 @@ impl Constants {
     pub fn new() -> Self {
         Constants {
             infinity: f32::INFINITY,
-            epsilon: 1.0e-4,
+            epsilon: 1.0e-5,
             pi: std::f32::consts::PI,
             pass_samples_per_pixel: 1,
             max_depth: 64,

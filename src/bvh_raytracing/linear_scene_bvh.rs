@@ -9,6 +9,7 @@ use super::{
 #[derive(Debug)]
 pub struct LinearSceneBvh {
     pub background: Material,
+    pub slice_plane: Cuboid,
     pub materials: Vec<Material>,
     pub hittables: Vec<LinearHittable>,
     pub bvh_nodes: Vec<BvhNode>,
@@ -26,6 +27,7 @@ impl LinearSceneBvh {
     pub fn new() -> Self {
         LinearSceneBvh {
             background: Material::empty(),
+            slice_plane: Cuboid::empty(),
             materials: vec![],
             hittables: vec![],
             bvh_nodes: vec![],
@@ -85,7 +87,7 @@ impl LinearSceneBvh {
         device: &wgpu::Device,
     ) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
         // Create bind group layout.
-        let bind_group_entries: Vec<wgpu::BindGroupLayoutEntry> = (0..7)
+        let bind_group_entries: Vec<wgpu::BindGroupLayoutEntry> = (0..8)
             .map(|i| wgpu::BindGroupLayoutEntry {
                 binding: i,
                 count: None,
@@ -108,6 +110,11 @@ impl LinearSceneBvh {
         let background = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
             contents: bytemuck::cast_slice(&[self.background]),
+            usage: buffer_usage,
+        });
+        let slice_plane = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: None,
+            contents: bytemuck::cast_slice(&[self.slice_plane]),
             usage: buffer_usage,
         });
         let materials = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -151,26 +158,30 @@ impl LinearSceneBvh {
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: materials.as_entire_binding(),
+                    resource: slice_plane.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 2,
-                    resource: hittables_buffer.as_entire_binding(),
+                    resource: materials.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 3,
-                    resource: bvh_nodes_buffer.as_entire_binding(),
+                    resource: hittables_buffer.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 4,
-                    resource: spheres.as_entire_binding(),
+                    resource: bvh_nodes_buffer.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 5,
-                    resource: cuboids.as_entire_binding(),
+                    resource: spheres.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 6,
+                    resource: cuboids.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 7,
                     resource: constant_mediums.as_entire_binding(),
                 },
             ],

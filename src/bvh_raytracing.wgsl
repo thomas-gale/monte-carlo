@@ -72,6 +72,38 @@ fn vec3_schlick_reflectance(cosine: f32, ref_idx: f32) -> f32 {
     return r0 + (1.0 - r0) * pow(1.0 - cosine, 5.0);
 }
 
+fn safe_inf_mult(a: f32, b: f32) -> f32 {
+    if (a == constants.infinity || b == constants.infinity) {
+        return constants.infinity;
+    } else {
+        return a * b;
+    }
+}
+
+fn safe_inf_vec3_mult(a: vec3<f32>, b: vec3<f32>) -> vec3<f32> {
+    return vec3<f32>(
+        safe_inf_mult(a.x, b.x),
+        safe_inf_mult(a.y, b.y),
+        safe_inf_mult(a.z, b.z),
+    );
+}
+
+fn safe_inf_div(a: f32, b: f32) -> f32 {
+    if (b == 0.0) {
+        return constants.infinity;
+    } else {
+        return a / b;
+    }
+}
+
+fn safe_inf_vec3_div(a: vec3<f32>, b: vec3<f32>) -> vec3<f32> {
+    return vec3<f32>(
+        safe_inf_div(a.x, b.x),
+        safe_inf_div(a.y, b.y),
+        safe_inf_div(a.z, b.z),
+    );
+}
+
 // Window
 struct Window {
     width_pixels: u32;
@@ -188,7 +220,7 @@ struct Sphere {
 
 struct Cuboid {
     /// Axis aligned 'radius' (half edge length) of the cuboid
-    radius: vec3<f32>;
+    // radius: vec3<f32>;
     /// Reference to the material index in the scene materials
     material_index: u32; 
     /// World to object space transform
@@ -263,21 +295,24 @@ struct SceneConstantMediums {
 var<storage, read> scene_background: Material;
 
 [[group(2), binding(1)]]
-var<storage, read> scene_materials: SceneLinearMaterials;
+var<storage, read> scene_slice_plane: Cuboid;
 
 [[group(2), binding(2)]]
-var<storage, read> scene_hittables: SceneLinearHittables;
+var<storage, read> scene_materials: SceneLinearMaterials;
 
 [[group(2), binding(3)]]
-var<storage, read> scene_bvh_nodes: SceneLinearBvhNodes;
+var<storage, read> scene_hittables: SceneLinearHittables;
 
 [[group(2), binding(4)]]
-var<storage, read> scene_spheres: SceneLinearSpheres;
+var<storage, read> scene_bvh_nodes: SceneLinearBvhNodes;
 
 [[group(2), binding(5)]]
-var<storage, read> scene_cuboids: SceneLinearCuboids;
+var<storage, read> scene_spheres: SceneLinearSpheres;
 
 [[group(2), binding(6)]]
+var<storage, read> scene_cuboids: SceneLinearCuboids;
+
+[[group(2), binding(7)]]
 var<storage, read> scene_constant_mediums: SceneConstantMediums;
 
 // Ray
@@ -331,7 +366,8 @@ struct HitRecord {
     t: f32; // ray length until intersection
     front_face: bool;
 
-    material_type: u32; // 0 = lambertian, 1 = metal, 2 = dielectric
+    /// 0: lambertian, 1: metal, 2: dielectric, 3: emissive, 4: isotropic medium
+    material_type: u32;
     albedo: vec3<f32>; // Ray bounce coloring
     fuzz: f32; // Roughness for metals
     refraction_index: f32; // Refraction index for dielectrics
@@ -406,7 +442,7 @@ fn sphere_hit(sphere_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
 
 /// Attribution: https://iquilezles.org/articles/boxfunctions/
 /// WIP: Need to fix the issues with dielectric exit normals.
-////     - Essentially, this hit function doesn't work if the ray starts inside the cuboid.
+////     - Essentially, this hit function doesn't *appear* to work if the ray starts inside the cuboid.
 fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
     var cuboid = scene_cuboids.vals[cuboid_index];
     var material = scene_materials.vals[cuboid.material_index];
@@ -416,7 +452,7 @@ fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
     var ro = (cuboid.txx * vec4<f32>((*ray).origin, 1.0)).xyz;
 
     // ray-box intersection in box space
-    var m = 1.0 / rd;
+    var m = safe_inf_vec3_div(vec3<f32>(1.0), rd);
 
     var s_x = -1.0;
     if (rd.x < 0.0) {
@@ -432,8 +468,12 @@ fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
     }
     var s = vec3<f32>(s_x, s_y, s_z);
 
-    var t1 = m * (-ro + s * cuboid.radius);
-    var t2 = m * (-ro - s * cuboid.radius);
+    // Prevent overflow
+    // var t1 = safe_inf_vec3_mult(m, -ro + s * cuboid.radius);
+    // var t2 = safe_inf_vec3_mult(m, -ro - s * cuboid.radius);
+
+    var t1 = safe_inf_vec3_mult(m, -ro + s);
+    var t2 = safe_inf_vec3_mult(m, -ro - s);
 
     var tN = max(max(t1.x, t1.y), t1.z);
     var tF = min(min(t2.x, t2.y), t2.z);
@@ -443,12 +483,13 @@ fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
         return false;
     }
 
-    if (tN >= constants.epsilon) {
+    if (tN > -constants.epsilon) {
         // Ray originates from outside cuboid
         // check hit is in allowed range
-        if (tN > t_max || tF < t_min) {
+        if (tN < t_min || tN > t_max) {
             return false;
         }
+     
 
         // compute normal (in world space)
         if (t1.x > t1.y && t1.x > t1.z) {
@@ -464,21 +505,21 @@ fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
 
         // distance to intersection point (in world space)
         (*hit_record).t = tN;
-    } else {
-        // Ray originates from inside cuboid
+    } else if (tF > constants.epsilon) { 
+        // Ray originates from inside cuboid - ** THIS IS NOT WORKING **
         // check hit is in allowed range 
         if (tF < t_min || tF > t_max) {
             return false;
         }
 
         // compute normal (in world space)
-        // WIP *****
-        if (t2.x <= t2.y && t2.x <= t2.z) {
-            (*hit_record).normal = cuboid.txi[0].xyz * s.x * 1.0;
-        } else if (t2.y <= t2.z) {
-            (*hit_record).normal = cuboid.txi[1].xyz * s.y * 1.0;
+        // WHY IS THING WRONG?! - verifyed on paper to be correct.
+         if (t2.x < t2.y && t2.x < t2.z) {
+            (*hit_record).normal = cuboid.txi[0].xyz * s.x * -1.0;
+        } else if (t2.y < t2.z) {
+            (*hit_record).normal = cuboid.txi[1].xyz * s.y * -1.0;
         } else {
-            (*hit_record).normal = cuboid.txi[2].xyz * s.z * 1.0;
+            (*hit_record).normal = cuboid.txi[2].xyz * s.z * -1.0;
         }
 
         // intersection point (in world space)
@@ -486,6 +527,8 @@ fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
 
         // distance to intersection point (in world space)
         (*hit_record).t = tF;
+    } else {
+        return false;
     }
 
     set_material_data(hit_record, &material);
