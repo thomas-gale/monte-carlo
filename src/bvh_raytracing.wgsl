@@ -412,7 +412,8 @@ fn sphere_sd(sphere_index: u32, point: vec3<f32>, hit_record: ptr<function, HitR
     }
 
     set_material_data(hit_record, &material);
-    return length(point - sphere.center) - sphere.radius;
+    // TODO - why this 0.9 offset to test (e.g. 1.0 offset needed?)
+    return (length(point - sphere.center) - sphere.radius);
 }
 
 fn cuboid_sd(cuboid_index: u32, point: vec3<f32>, hit_record: ptr<function, HitRecord>) -> f32 {
@@ -517,7 +518,7 @@ fn scene_sd(point: vec3<f32>, rec: ptr<function, HitRecord>) -> f32 {
             if (dist < closest_so_far) {
                 // If this is the closest so far, update the closest measure and hit record
                 closest_so_far = dist;
-                *rec = temp_hit_record;
+                (*rec).albedo = temp_hit_record.albedo;
             }
             continue;
         }
@@ -962,6 +963,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
 
                 // DEBUG - a few hardcoded wos steps
                 var mat_sample_rec = new_hit_record();
+                mat_sample_rec.albedo = vec3<f32>(1.0);
                 var closest_dist = scene_sd(hit_record.p, &mat_sample_rec);
                 var new_p = hit_record.p + closest_dist * normalize(random_in_unit_sphere(entropy * u32(i + 5)));
                 var closest_dist2 = scene_sd(new_p, &mat_sample_rec);
@@ -969,6 +971,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
                 var closest_dist3 = scene_sd(new_p1, &mat_sample_rec);
 
                 current_ray_color = current_ray_color * mat_sample_rec.albedo;
+                // current_ray_color = current_ray_color * vec3<f32>(closest_dist);
                 // current_ray_color = current_ray_color * vec3<f32>(closest_dist2);
             }
         } else {
