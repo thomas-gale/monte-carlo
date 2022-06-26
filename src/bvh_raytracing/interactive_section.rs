@@ -2,23 +2,18 @@ use cgmath::{Matrix4, Vector2, Vector3};
 
 use crate::bvh_raytracing::construction_scene::recompute_bvh;
 
-use super::{linear_scene_bvh::LinearSceneBvh, result};
+use super::{linear_hittable::LinearHittable, linear_scene_bvh::LinearSceneBvh, result};
 
 pub struct InteractiveSection {
-    /// 0: BvhNode, 1: Sphere, 2: Cuboid, 3: ConstantMedium
-    // geometry_type: u32,
-    /// Given the geometry type, the actual data is stored at the following index in the linear_scene_bvh vector (for the appropriate type).
-    // scene_index: u32,
-    /// Linear Hittable Index
-    linear_hittable_index: u32,
+    hittable: LinearHittable,
     /// Transformation applied interactively to this section
     transform: Matrix4<f32>,
 }
 
 impl InteractiveSection {
-    pub fn new(linear_hittable_index: u32, transform: Matrix4<f32>) -> Self {
+    pub fn new(hittable: LinearHittable, transform: Matrix4<f32>) -> Self {
         InteractiveSection {
-            linear_hittable_index,
+            hittable,
             transform,
         }
     }
@@ -49,13 +44,7 @@ impl InteractiveSection {
         println!("{:?}", self.transform);
 
         // Update the scene
-        scene.transform_hittable_by(device, queue, self.linear_hittable_index, self.transform);
-
-        // Recompute the BVH
-        recompute_bvh(scene);
-
-        // Push changes to device
-        scene.update_buffers(queue);
+        scene.transform_hittable_by(queue, &self.hittable, self.transform);
 
         // Reset the accumulation ray color result texture
         result.reset_texture(device, queue, size);

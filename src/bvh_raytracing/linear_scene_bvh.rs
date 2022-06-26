@@ -274,13 +274,17 @@ impl LinearSceneBvh {
     /// This will internally recompute the bvh and update all scene data in buffers that are bound to GPU
     pub fn transform_hittable_by(
         &mut self,
-        device: &wgpu::Device,
         queue: &wgpu::Queue,
-        hittable_index: u32,
+        hittable: &LinearHittable,
         transform: Matrix4<f32>,
     ) {
-        // Update the transform of the associated hittable
-        let hittables = self.hittables.clone();
-        hittables[hittable_index as usize].transform_by(self, transform);
+        println!("{:?}", hittable);
+        hittable.transform_by(self, transform);
+
+        // Recompute the BVH
+        recompute_bvh(self);
+
+        // Push changes to device
+        self.update_buffers(queue);
     }
 }

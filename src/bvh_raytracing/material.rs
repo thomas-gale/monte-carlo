@@ -19,7 +19,7 @@ pub struct Material {
 }
 
 impl Material {
-    /// - *material_type* 0: lambertian, 1: metal, 2: dielectric, 3: emissive, 4: isotropic medium, 5, wos albedo blend
+    /// - *material_type* 0: lambertian, 1: metal, 2: dielectric, 3: emissive, 4: isotropic medium, 5, wos albedo blend (interactive)
     /// - *fuzz* - Roughness for metals
     /// - *refraction_index* - Refraction index for dielectrics
     /// - *albedo* - Coloration of the ray bounce

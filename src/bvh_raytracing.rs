@@ -25,7 +25,7 @@ mod window;
 use cgmath::{Matrix4, Point3, Vector2, Vector3};
 use winit::{event::WindowEvent, window::Window};
 
-use self::linear_scene_bvh::LinearSceneBvh;
+use self::{linear_hittable::LinearHittable, linear_scene_bvh::LinearSceneBvh};
 
 // Some bits need to be tidied into more granular structs.
 pub struct BvhRaytracing {
@@ -117,7 +117,10 @@ impl BvhRaytracing {
 
         // Interactive Section
         let interactive_section = interactive_section::InteractiveSection::new(
-            0, // First Cuboid
+            LinearHittable {
+                geometry_type: 2,
+                scene_index: 0,
+            }, // First Cuboid
             Matrix4::from_nonuniform_scale(2.0, 2.0, 0.1),
         );
 
