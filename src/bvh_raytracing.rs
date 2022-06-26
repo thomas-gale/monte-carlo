@@ -121,7 +121,6 @@ impl BvhRaytracing {
                 geometry_type: 2,
                 scene_index: 0,
             }, // First Cuboid
-            Matrix4::from_nonuniform_scale(2.0, 2.0, 0.1),
         );
 
         // Create basic quad to render fragments onto.

@@ -279,6 +279,7 @@ impl LinearSceneBvh {
         transform: Matrix4<f32>,
     ) {
         println!("{:?}", hittable);
+        println!("{:?}", transform);
         hittable.transform_by(self, transform);
 
         // Recompute the BVH
