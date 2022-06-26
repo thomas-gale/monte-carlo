@@ -15,6 +15,8 @@ pub struct Constants {
     draw_bvh: u32,
     /// Fraction of light attenuated by each bvh traversed - bit hacky (larger scenes will need values like 0.999 and small scenes 0.9)
     draw_bvh_attenuation: f32,
+    /// WoS Tolerance Distance
+    wos_tolerance: f32,
 }
 
 impl Constants {
@@ -29,6 +31,7 @@ impl Constants {
             draw_vertical_render_slice_region: 0,
             draw_bvh: 0,
             draw_bvh_attenuation: 0.8,
+            wos_tolerance: 1.0,
         }
     }
 }

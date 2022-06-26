@@ -41,6 +41,8 @@ struct Constants {
     draw_bvh: u32;
     /// Fraction of light attenuated by each bvh traversed - bit hacky (larger scenes will need values like 0.999 and small scenes 0.9)
     draw_bvh_attenuation: f32;
+    /// WoS Tolerance Distance
+    wos_tolerance: f32;
 };
 
 [[group(0), binding(0)]]
@@ -403,6 +405,12 @@ fn aabb_sd(hittables_bvh_node_index: u32, point: vec3<f32>) -> f32 {
 fn sphere_sd(sphere_index: u32, point: vec3<f32>, hit_record: ptr<function, HitRecord>) -> f32 {
     var sphere = scene_spheres.vals[sphere_index];
     var material = scene_materials.vals[sphere.material_index];
+
+    // Quick hack - don't check with materials that are the wos albedo blend material
+    if (material.material_type == 5u) {
+        return constants.infinity;
+    }
+
     set_material_data(hit_record, &material);
     return length(point - sphere.center) - sphere.radius;
 }
@@ -410,6 +418,12 @@ fn sphere_sd(sphere_index: u32, point: vec3<f32>, hit_record: ptr<function, HitR
 fn cuboid_sd(cuboid_index: u32, point: vec3<f32>, hit_record: ptr<function, HitRecord>) -> f32 {
     var cuboid = scene_cuboids.vals[cuboid_index];
     var material = scene_materials.vals[cuboid.material_index];
+
+    // Quick hack - don't check with materials that are the wos albedo blend material
+    if (material.material_type == 5u) {
+        return constants.infinity;
+    }
+
     set_material_data(hit_record, &material);
 
     // TODO - test - this is very similar to aabb - except that we use the cuboid.txi to support arbitary rotations/tranlsations
@@ -478,7 +492,7 @@ fn scene_sd(point: vec3<f32>, rec: ptr<function, HitRecord>) -> f32 {
             // Pop the stack (aabb hit check done).
             stack_top = stack_top - 1;
 
-            if (abs(dist) < closest_so_far) {
+            if (dist < closest_so_far) {
                 // Push the left and right children onto the stack (if they exist)
                 if (bvh.left_hittable != bvh_node_null_ptr) {
                     stack_top = stack_top + 1;
@@ -500,7 +514,7 @@ fn scene_sd(point: vec3<f32>, rec: ptr<function, HitRecord>) -> f32 {
 
             // Pop the stack primitive hit check done.
             stack_top = stack_top - 1;
-            if (abs(dist) < closest_so_far) {
+            if (dist < closest_so_far) {
                 // If this is the closest so far, update the closest measure and hit record
                 closest_so_far = dist;
                 *rec = temp_hit_record;
@@ -524,6 +538,23 @@ fn scene_sd(point: vec3<f32>, rec: ptr<function, HitRecord>) -> f32 {
 
     return closest_so_far;
 }
+
+/// Walk on Spheres
+/// Recusively walk on spheres sampled from the test point and return a hitrecord which contains the boundary surface data. 
+fn wos(point: vec3<f32>, entropy: u32) -> HitRecord {
+    var dist = constants.infinity;
+    var curr_point = point;
+    var hr = new_hit_record();
+    for (var i = 0; i < 32; i = i + 1) {
+        dist = scene_sd(curr_point, &hr);
+        if (dist < constants.wos_tolerance) {
+            break;
+        }
+        curr_point = curr_point + dist * normalize(random_in_unit_sphere(hash(entropy + u32(i))));
+    }
+
+    return hr;
+} 
 
 // Ray Hit/Intersection Functions 
 
@@ -927,9 +958,15 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
                 // WoS blend material
 
                 // TODO call WOS algorithm (which in turn will sample nearest signed distance functions
+                // var mat_sample_rec = new_hit_record();
+                // var closest_dist = scene_sd(hit_record.p, &mat_sample_rec);
+                // var new_p = hit_record.p + closest_dist * normalize(random_in_unit_sphere(entropy * u32(i + 5)));
+                // var closest_dist2 = scene_sd(new_p, &mat_sample_rec);
+
+                var mat_sample_rec = wos(hit_record.p, entropy * u32(i + 5));
 
                 // DEBUG colour
-                current_ray_color = current_ray_color * vec3<f32>(0.0, 1.0, 0.0);
+                current_ray_color = current_ray_color * mat_sample_rec.albedo;
             }
         } else {
             // No hit, return background / sky color gradient

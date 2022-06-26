@@ -27,9 +27,9 @@ pub fn test_scene() -> LinearSceneBvh {
         &vec![
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.4, 0.4, 0.8)), // 0
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.1, 0.2, 0.5)),
-            Material::new(1, 0.0, 0.0, Vector3::<f32>::new(1.0, 0.0, 0.0)), // 2
-            Material::new(1, 0.0, 0.0, Vector3::<f32>::new(0.0, 1.0, 0.0)),
-            Material::new(1, 0.0, 0.0, Vector3::<f32>::new(0.0, 0.0, 1.0)), // 4
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(1.0, 0.0, 0.0)), // 2
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.0, 1.0, 0.0)),
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.0, 0.0, 1.0)), // 4
             Material::new(2, 0.0, 1.5, Vector3::<f32>::new(0.0, 0.0, 0.0)),
             Material::new(4, 0.0, 0.0, Vector3::<f32>::new(1.0, 1.0, 0.2)), // 6
             Material::new(3, 0.0, 0.0, Vector3::<f32>::new(1.0, 1.0, 8.0)),
@@ -43,40 +43,40 @@ pub fn test_scene() -> LinearSceneBvh {
                     * Matrix4::from_nonuniform_scale(5.0, 5.0, 0.1),
                 9,
             )),
-            HittablePrimitive::Cuboid(Cuboid::new(
-                Matrix4::identity()
-                    * Matrix4::from_translation(Vector3::new(0.0, -1.0, 0.0))
-                    * Matrix4::from_nonuniform_scale(100.0, 0.5, 100.0),
-                0,
-            )),
+            // HittablePrimitive::Cuboid(Cuboid::new(
+            //     Matrix4::identity()
+            //         * Matrix4::from_translation(Vector3::new(0.0, -1.0, 0.0))
+            //         * Matrix4::from_nonuniform_scale(100.0, 0.5, 100.0),
+            //     0,
+            // )),
             HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(2.0, 0.0, 0.0), 0.5, 2)),
             HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(-2.0, 0.0, 0.0), 0.5, 3)),
-            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, 2.0), 0.5, 5)),
-            HittablePrimitive::ConstantMedium(ConstantMedium {
-                boundary_hittable: Box::new(HittablePrimitive::Sphere(Sphere::new(
-                    Vector3::<f32>::new(0.0, 0.0, -2.5),
-                    0.5,
-                    LinearSceneBvh::null_index_ptr(),
-                ))),
-                material_index: 6,
-                density: 2.0,
-            }),
-            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, -2.5), 0.1, 7)),
-            HittablePrimitive::Cuboid(Cuboid::new(
-                Matrix4::identity()
-                    * Matrix4::from_angle_y(Deg(20.0))
-                    * Matrix4::from_nonuniform_scale(0.5, 0.5, 0.5),
-                8,
-            )),
-            HittablePrimitive::Cuboid(Cuboid::new(
-                Matrix4::identity()
-                    * Matrix4::from_translation(Vector3::new(-1.5, 1.0, -2.0))
-                    * Matrix4::from_angle_x(Deg(10.0))
-                    * Matrix4::from_angle_y(Deg(20.0))
-                    * Matrix4::from_angle_z(Deg(40.0))
-                    * Matrix4::from_nonuniform_scale(0.5, 0.75, 1.0),
-                1,
-            )),
+            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, 2.0), 0.5, 4)),
+            // HittablePrimitive::ConstantMedium(ConstantMedium {
+            //     boundary_hittable: Box::new(HittablePrimitive::Sphere(Sphere::new(
+            //         Vector3::<f32>::new(0.0, 0.0, -2.5),
+            //         0.5,
+            //         LinearSceneBvh::null_index_ptr(),
+            //     ))),
+            //     material_index: 6,
+            //     density: 2.0,
+            // }),
+            // HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, -2.5), 0.1, 7)),
+            // HittablePrimitive::Cuboid(Cuboid::new(
+            //     Matrix4::identity()
+            //         * Matrix4::from_angle_y(Deg(20.0))
+            //         * Matrix4::from_nonuniform_scale(0.5, 0.5, 0.5),
+            //     8,
+            // )),
+            // HittablePrimitive::Cuboid(Cuboid::new(
+            //     Matrix4::identity()
+            //         * Matrix4::from_translation(Vector3::new(-1.5, 1.0, -2.0))
+            //         * Matrix4::from_angle_x(Deg(10.0))
+            //         * Matrix4::from_angle_y(Deg(20.0))
+            //         * Matrix4::from_angle_z(Deg(40.0))
+            //         * Matrix4::from_nonuniform_scale(0.5, 0.75, 1.0),
+            //     1,
+            // )),
         ],
     )
 }
