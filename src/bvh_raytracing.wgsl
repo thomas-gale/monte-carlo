@@ -227,6 +227,8 @@ struct Cuboid {
     txi: mat4x4<f32>;
 };
 
+
+
 struct ConstantMedium {
     /// 0: BvhNode, 1: Sphere, 2: Cuboid, 3: ConstantMedium
     boundary_geometry_type: u32;
@@ -260,6 +262,11 @@ struct LinearHittable {
     /// Given the geometry type, the actual data is stored at the following index in the linear_scene_bvh vector (for the appropriate type).
     scene_index: u32;
 };
+
+/// Check if the linear hittables is a primitive
+fn is_primitive(geometry_type: u32) -> bool {
+    return geometry_type == 1u || geometry_type == 2u;
+}
 
 // Releated to Hittable
 let bvh_node_null_ptr: u32 = 4294967295u;
@@ -327,40 +334,6 @@ fn ray_at(ray: ptr<function,Ray>, t: f32) -> vec3<f32> {
     return (*ray).origin + (*ray).direction * t;
 }
 
-// Bvh helpers
-
-// Attribution: https://gamedev.stackexchange.com/a/18459
-// t is length of ray until intersection
-fn aabb_hit(hittables_bvh_node_index: u32, ray: ptr<function, Ray>, t: ptr<function, f32>) -> bool {
-    var aabb = scene_bvh_nodes.vals[ scene_hittables.vals[hittables_bvh_node_index].scene_index ].aabb;
-
-    var dir_frac = vec3<f32>(1.0 / (*ray).direction.x, 1.0 / (*ray).direction.y, 1.0 / (*ray).direction.z);
-    var t_1 = (aabb.min.x - (*ray).origin.x) * dir_frac.x;
-    var t_2 = (aabb.max.x - (*ray).origin.x) * dir_frac.x;
-    var t_3 = (aabb.min.y - (*ray).origin.y) * dir_frac.y;
-    var t_4 = (aabb.max.y - (*ray).origin.y) * dir_frac.y;
-    var t_5 = (aabb.min.z - (*ray).origin.z) * dir_frac.z;
-    var t_6 = (aabb.max.z - (*ray).origin.z) * dir_frac.z;
-
-    var t_min = max(max((min(t_1, t_2)), (min(t_3, t_4))), (min(t_5, t_6)));
-    var t_max = min(min((max(t_1, t_2)), (max(t_3, t_4))), (max(t_5, t_6)));
-
-    // If tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us.
-    if (t_max < 0.0) {
-        (*t) = t_max;
-        return false;
-    }
-
-    // If tmin > tmax, ray doesn't intersect AABB.
-    if (t_min > t_max) {
-        (*t) = t_max;
-        return false;
-    }
-
-    (*t) = t_min;
-    return true;
-}
-
 // Hittable
 struct HitRecord {
     p: vec3<f32>;
@@ -411,7 +384,181 @@ fn set_material_data(hit_record: ptr<function, HitRecord>, material: ptr<functio
     (*hit_record).refraction_index = (*material).refraction_index;
 }
 
-// Sphere Helpers
+// Signed distance Functions
+
+/// Signed distance from point to aabb.
+/// Attribution: https://iquilezles.org/articles/distfunctions/
+fn aabb_sd(hittables_bvh_node_index: u32, point: vec3<f32>) -> f32 {
+    var aabb = scene_bvh_nodes.vals[ scene_hittables.vals[hittables_bvh_node_index].scene_index ].aabb;
+
+    // Box is defined by half lengths.
+    var b = (aabb.max - aabb.min) / 2.0; 
+    // Set point relative to center of aabb.
+    var p = point - b - aabb.min;
+
+    var q = abs(p) - b;
+    return length(max(q, vec3<f32>(0.0))) + min(max(q.x, max(q.y, q.z)), 0.0);
+}
+
+fn sphere_sd(sphere_index: u32, point: vec3<f32>, hit_record: ptr<function, HitRecord>) -> f32 {
+    var sphere = scene_spheres.vals[sphere_index];
+    var material = scene_materials.vals[sphere.material_index];
+    set_material_data(hit_record, &material);
+    return length(point - sphere.center) - sphere.radius;
+}
+
+fn cuboid_sd(cuboid_index: u32, point: vec3<f32>, hit_record: ptr<function, HitRecord>) -> f32 {
+    var cuboid = scene_cuboids.vals[cuboid_index];
+    var material = scene_materials.vals[cuboid.material_index];
+    set_material_data(hit_record, &material);
+
+    // TODO - test - this is very similar to aabb - except that we use the cuboid.txi to support arbitary rotations/tranlsations
+    var p_c = (cuboid.txi * vec4<f32>(point, 0.0)).xyz;
+    var b = 0.5;
+    var p = point - b;
+
+    var q = abs(p) - b;
+    return length(max(q, vec3<f32>(0.0))) + min(max(q.x, max(q.y, q.z)), 0.0);
+}
+
+fn primitive_sd(primitive_geometry_type: u32, primitive_scene_index: u32, point: vec3<f32>, hit_record: ptr<function, HitRecord>) -> f32 {
+    switch (primitive_geometry_type) {
+        case 1u: {
+            // Sphere
+            return sphere_sd(primitive_scene_index, point, hit_record);
+        }
+        case 2u: {
+            // Cuboid
+            return cuboid_sd(primitive_scene_index, point, hit_record);
+        }
+        default: {
+            return -0.0; // Non-primitive geometry type
+        }
+    }
+}
+
+/// Global signed distance function for all scene primatives (using bvh stack traversal)
+/// Uses the hitRecord to store domain boundary data.
+/// Return the signed distance from the point to the closest primitive.
+fn scene_sd(point: vec3<f32>, rec: ptr<function, HitRecord>) -> f32 {
+    var closest_so_far = constants.infinity;
+
+    // Precondition, return early if scene is empty
+    if (arrayLength(&scene_hittables.vals) == 0u) {
+        return closest_so_far;
+    }
+
+    // Use a basic stack data structure frfom a fixed array (the stack value is the index of the scene hittable)
+    // Max depth is 32 (which means the scene can contain maximum of approximatly 2^32 hittables)
+    var stack: array<u32, 32>;
+
+    // Track the top of the stack
+    var stack_top = 0;
+
+    // Push the root node index onto the stack (which is the first value in the scene array)
+    stack[stack_top] = 0u;
+
+    // While the stack is not empty
+    for (;stack_top >= 0;) {
+        // Check for stack depth exceeded
+        if (stack_top >= 32) {
+            return constants.infinity; // TODO - add better error signal
+        }
+
+        // Get hittable from top of stack 
+        var current_hittable = scene_hittables.vals[ stack[stack_top] ];
+
+        // If BVH 
+        if (current_hittable.geometry_type == 0u) {
+            var bvh = scene_bvh_nodes.vals[ current_hittable.scene_index ];
+
+            // What is the distance to this bvh node?
+            var dist = aabb_sd(stack[stack_top], point);
+
+            // Pop the stack (aabb hit check done).
+            stack_top = stack_top - 1;
+
+            if (abs(dist) < closest_so_far) {
+                // Push the left and right children onto the stack (if they exist)
+                if (bvh.left_hittable != bvh_node_null_ptr) {
+                    stack_top = stack_top + 1;
+                    stack[stack_top] = bvh.left_hittable;
+                }
+                if (bvh.right_hittable != bvh_node_null_ptr) {
+                    stack_top = stack_top + 1;
+                    stack[stack_top] = bvh.right_hittable;
+                }
+            }
+            continue;
+        } 
+
+        // Is this a primitive
+        if (is_primitive(current_hittable.geometry_type)) {
+            // Primitive
+            var temp_hit_record = new_hit_record();
+            var dist = primitive_sd(current_hittable.geometry_type, scene_hittables.vals[ stack[stack_top] ].scene_index, point, &temp_hit_record);
+
+            // Pop the stack primitive hit check done.
+            stack_top = stack_top - 1;
+            if (abs(dist) < closest_so_far) {
+                // If this is the closest so far, update the closest measure and hit record
+                closest_so_far = dist;
+                *rec = temp_hit_record;
+            }
+            continue;
+        }
+
+        // Is this a constant medium
+        if (current_hittable.geometry_type == 3u) {
+            // Constant Medium
+            // TODO - not sure if this should/could be implemented logically
+
+            // Pop the stack (constant medium hit check done).
+            stack_top = stack_top - 1;
+            continue;
+        }
+
+        // Should never get here
+        return constants.infinity; // TODO - better error signal :(
+    }
+
+    return closest_so_far;
+}
+
+// Ray Hit/Intersection Functions 
+
+// Attribution: https://gamedev.stackexchange.com/a/18459
+// t is length of ray until intersection
+fn aabb_hit(hittables_bvh_node_index: u32, ray: ptr<function, Ray>, t: ptr<function, f32>) -> bool {
+    var aabb = scene_bvh_nodes.vals[ scene_hittables.vals[hittables_bvh_node_index].scene_index ].aabb;
+
+    var dir_frac = vec3<f32>(1.0 / (*ray).direction.x, 1.0 / (*ray).direction.y, 1.0 / (*ray).direction.z);
+    var t_1 = (aabb.min.x - (*ray).origin.x) * dir_frac.x;
+    var t_2 = (aabb.max.x - (*ray).origin.x) * dir_frac.x;
+    var t_3 = (aabb.min.y - (*ray).origin.y) * dir_frac.y;
+    var t_4 = (aabb.max.y - (*ray).origin.y) * dir_frac.y;
+    var t_5 = (aabb.min.z - (*ray).origin.z) * dir_frac.z;
+    var t_6 = (aabb.max.z - (*ray).origin.z) * dir_frac.z;
+
+    var t_min = max(max((min(t_1, t_2)), (min(t_3, t_4))), (min(t_5, t_6)));
+    var t_max = min(min((max(t_1, t_2)), (max(t_3, t_4))), (max(t_5, t_6)));
+
+    // If tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us.
+    if (t_max < 0.0) {
+        (*t) = t_max;
+        return false;
+    }
+
+    // If tmin > tmax, ray doesn't intersect AABB.
+    if (t_min > t_max) {
+        (*t) = t_max;
+        return false;
+    }
+
+    (*t) = t_min;
+    return true;
+}
+
 fn sphere_hit(sphere_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
     var sphere = scene_spheres.vals[sphere_index];
     var material = scene_materials.vals[sphere.material_index];
@@ -538,10 +685,6 @@ fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
     return true;
 }
 
-fn is_primitive(geometry_type: u32) -> bool {
-    return geometry_type == 1u || geometry_type == 2u;
-}
-
 fn primitive_hit(primitive_geometry_type: u32, primitive_scene_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
     switch (primitive_geometry_type) {
         case 1u: {
@@ -604,6 +747,9 @@ fn constant_medium_hit(constant_medium_index: u32, ray: ptr<function, Ray>, t_mi
     return true;
 }
 
+
+
+/// Global ray hit function for all scene primitives (using bvh stack traversal).
 fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function, HitRecord>, entropy: u32) -> bool {
     var hit_anything = false;
     var closest_so_far = t_max;
