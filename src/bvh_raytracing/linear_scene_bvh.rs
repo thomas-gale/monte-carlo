@@ -16,6 +16,8 @@ pub struct LinearSceneBvh {
     pub spheres: Vec<Sphere>,
     pub cuboids: Vec<Cuboid>,
     pub constant_mediums: Vec<LinearConstantMedium>,
+
+    pub slice_plane_buffer: Option<wgpu::Buffer>,
 }
 
 impl LinearSceneBvh {
@@ -24,6 +26,7 @@ impl LinearSceneBvh {
     }
 
     /// Creates an empty scene
+    /// TODO refactor away this 'partially' constructed object workflow - it's bug prone.
     pub fn new() -> Self {
         LinearSceneBvh {
             background: Material::empty(),
@@ -34,6 +37,8 @@ impl LinearSceneBvh {
             spheres: vec![],
             cuboids: vec![],
             constant_mediums: vec![],
+
+            slice_plane_buffer: None,
         }
     }
 
@@ -83,7 +88,7 @@ impl LinearSceneBvh {
     }
 
     pub fn create_device_buffer_binding(
-        &self,
+        &mut self,
         device: &wgpu::Device,
     ) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
         // Create bind group layout.
@@ -112,10 +117,10 @@ impl LinearSceneBvh {
             contents: bytemuck::cast_slice(&[self.background]),
             usage: buffer_usage,
         });
-        let slice_plane = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        let slice_plane_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
             contents: bytemuck::cast_slice(&[self.slice_plane]),
-            usage: buffer_usage,
+            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
         });
         let materials = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
@@ -158,7 +163,7 @@ impl LinearSceneBvh {
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: slice_plane.as_entire_binding(),
+                    resource: slice_plane_buffer.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 2,
@@ -187,6 +192,9 @@ impl LinearSceneBvh {
             ],
             label: None,
         });
+
+        // Update internal buffers
+        self.slice_plane_buffer = Some(slice_plane_buffer);
 
         // Return data
         (bind_group_layout, bind_group)

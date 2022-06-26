@@ -1,5 +1,3 @@
-use std::cmp::{max, min};
-
 use cgmath::{
     EuclideanSpace, InnerSpace, Matrix3, Matrix4, Point3, SquareMatrix, Vector3, Vector4,
 };

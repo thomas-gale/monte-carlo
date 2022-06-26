@@ -8,6 +8,7 @@ mod construction_scene;
 mod construction_scene_bvh_node;
 mod cuboid;
 mod hittable_primitive;
+mod interactive_section;
 mod linear_constant_medium;
 mod linear_hittable;
 mod linear_scene_bvh;
@@ -21,23 +22,25 @@ mod util;
 mod vertex;
 mod window;
 
-use cgmath::{Point3, Vector2, Vector3};
+use cgmath::{Matrix4, Point3, SquareMatrix, Vector2, Vector3};
 use winit::{event::WindowEvent, window::Window};
 
 // Some bits need to be tidied into more granular structs.
 pub struct BvhRaytracing {
-    mouse_down: bool,                                     // TODO: tidy
-    current_mouse_pos: winit::dpi::PhysicalPosition<f64>, // TODO: tidy
+    input_mouse_down: bool,                                     // TODO: tidy
+    current_input_mouse_pos: winit::dpi::PhysicalPosition<f64>, // TODO: tidy
+    rot_mouse_down: bool,                                       // TODO: tidy
+    current_rot_mouse_pos: winit::dpi::PhysicalPosition<f64>,   // TODO: tidy
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
-    // config: wgpu::SurfaceConfiguration,
     size: winit::dpi::PhysicalSize<u32>,
     quad: quad::Quad,
     render_pipeline: wgpu::RenderPipeline,
     uniforms_bindings: uniforms_bindings::UniformsBindings,
     camera: camera::Camera,
-    bvh_bind_group: wgpu::BindGroup,
+    interactive_section: interactive_section::InteractiveSection,
+    scene_bvh_bind_group: wgpu::BindGroup,
     result: result::Result,
 }
 
@@ -104,10 +107,17 @@ impl BvhRaytracing {
         // let scene_bvh = scenes::stress_test_scene();
         // let scene_bvh = scenes::final_scene();
         // let scene_bvh = scenes::cornell_box();
-        let scene_bvh = scenes::test_scene();
+        let mut scene_bvh = scenes::test_scene();
         // let scene_bvh = scenes::simple_scene();
         let (scene_bvh_bind_group_layout, scene_bvh_bind_group) =
             scene_bvh.create_device_buffer_binding(&device);
+
+        // Interactive Section
+        let interactive_section = interactive_section::InteractiveSection::new(
+            &device,
+            Matrix4::from_nonuniform_scale(2.0, 2.0, 0.1),
+            scene_bvh.slice_plane_buffer.unwrap(),
+        );
 
         // Create basic quad to render fragments onto.
         let quad = quad::Quad::new(&device);
@@ -166,58 +176,96 @@ impl BvhRaytracing {
         });
 
         Self {
-            mouse_down: false,
-            current_mouse_pos: winit::dpi::PhysicalPosition::new(0.0, 0.0),
+            input_mouse_down: false,
+            current_input_mouse_pos: winit::dpi::PhysicalPosition::new(0.0, 0.0),
+            rot_mouse_down: false,
+            current_rot_mouse_pos: winit::dpi::PhysicalPosition::new(0.0, 0.0),
             surface,
             device,
             queue,
-            // config,
             size,
             quad,
             render_pipeline,
             uniforms_bindings,
             camera,
-            bvh_bind_group: scene_bvh_bind_group,
+            interactive_section,
+            scene_bvh_bind_group,
             result,
         }
     }
 
-    // pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-    //     if new_size.width > 0 && new_size.height > 0 {
-    //         self.size = new_size;
-    //         self.config.width = new_size.width;
-    //         self.config.height = new_size.height;
-
-    //         self.surface.configure(&self.device, &self.config);
-
-    //         let window = window::Window::new(&self.size);
-    //         self.uniforms_bindings
-    //             .update_window_buffer(&self.queue, &[window]);
-
-    //         self.camera.set_window(window);
-    //         self.camera.update(&self.queue);
-    //     }
-    // }
-
-    // pub fn get_size(&self) -> winit::dpi::PhysicalSize<u32> {
-    //     self.size
-    // }
-
     pub fn input(&mut self, event: &WindowEvent) -> bool {
         match event {
-            // Movement events for arcball camera
+            // Movements events for interactive drag
             WindowEvent::MouseInput {
                 state: winit::event::ElementState::Pressed,
+                button: winit::event::MouseButton::Left,
                 ..
             } => {
-                self.mouse_down = true;
+                self.input_mouse_down = true;
             }
             WindowEvent::MouseInput {
                 state: winit::event::ElementState::Released,
+                button: winit::event::MouseButton::Left,
                 ..
             } => {
-                self.mouse_down = false;
-                self.current_mouse_pos = winit::dpi::PhysicalPosition::new(0.0, 0.0);
+                self.input_mouse_down = false;
+                self.current_input_mouse_pos = winit::dpi::PhysicalPosition::new(0.0, 0.0);
+            }
+            // Movement events for arcball camera
+            WindowEvent::MouseInput {
+                state: winit::event::ElementState::Pressed,
+                button: winit::event::MouseButton::Right,
+                ..
+            } => {
+                self.rot_mouse_down = true;
+            }
+            WindowEvent::MouseInput {
+                state: winit::event::ElementState::Released,
+                button: winit::event::MouseButton::Right,
+                ..
+            } => {
+                self.rot_mouse_down = false;
+                self.current_rot_mouse_pos = winit::dpi::PhysicalPosition::new(0.0, 0.0);
+            }
+
+            WindowEvent::CursorMoved { position: pos, .. } => {
+                // If currently rotating
+                if self.rot_mouse_down {
+                    if self.current_rot_mouse_pos.x > 0.001 && self.current_rot_mouse_pos.y > 0.001
+                    {
+                        self.camera.rotate(
+                            &self.device,
+                            &self.queue,
+                            &mut self.result,
+                            self.size,
+                            Vector2::<f32>::new(
+                                self.current_rot_mouse_pos.x as f32,
+                                self.current_rot_mouse_pos.y as f32,
+                            ),
+                            Vector2::<f32>::new(pos.x as f32, pos.y as f32),
+                        );
+                    }
+                    self.current_rot_mouse_pos = *pos;
+                } else if self.input_mouse_down {
+                    // Else if we are dragging an input command (e.g. moving the interactive section)
+                    if self.current_input_mouse_pos.x > 0.001
+                        && self.current_input_mouse_pos.y > 0.001
+                    {
+                        self.interactive_section.translate(
+                            &self.device,
+                            &self.queue,
+                            &mut self.result,
+                            self.size,
+                            Vector2::<f32>::new(
+                                self.current_input_mouse_pos.x as f32,
+                                self.current_input_mouse_pos.y as f32,
+                            ),
+                            Vector2::<f32>::new(pos.x as f32, pos.y as f32),
+                        );
+                    }
+                    self.current_input_mouse_pos = *pos;
+                }
             }
             WindowEvent::MouseWheel {
                 delta: winit::event::MouseScrollDelta::LineDelta(_, pos_y),
@@ -230,24 +278,6 @@ impl BvhRaytracing {
                     self.size,
                     *pos_y,
                 );
-            }
-            WindowEvent::CursorMoved { position: pos, .. } => {
-                if self.mouse_down {
-                    if self.current_mouse_pos.x > 0.001 && self.current_mouse_pos.y > 0.001 {
-                        self.camera.rotate(
-                            &self.device,
-                            &self.queue,
-                            &mut self.result,
-                            self.size,
-                            Vector2::<f32>::new(
-                                self.current_mouse_pos.x as f32,
-                                self.current_mouse_pos.y as f32,
-                            ),
-                            Vector2::<f32>::new(pos.x as f32, pos.y as f32),
-                        );
-                    }
-                    self.current_mouse_pos = *pos;
-                }
             }
             _ => {}
         }
@@ -289,8 +319,8 @@ impl BvhRaytracing {
             render_pass.set_index_buffer(self.quad.indices.slice(..), wgpu::IndexFormat::Uint16);
             render_pass.set_bind_group(0, &self.uniforms_bindings.get_bind_group(), &[]);
             render_pass.set_bind_group(1, &self.camera.get_bind_group(), &[]);
-            render_pass.set_bind_group(2, &self.bvh_bind_group, &[]);
-            render_pass.set_bind_group(3, &self.result.get_bind_group(), &[]);
+            render_pass.set_bind_group(2, &self.scene_bvh_bind_group, &[]);
+            render_pass.set_bind_group(3, &self.result.get_bind_group(), &[]); // We are limited to 4 bind groups
             render_pass.draw_indexed(0..self.quad.num_indices, 0, 0..1);
         }
 
