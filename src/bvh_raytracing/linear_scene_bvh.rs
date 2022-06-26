@@ -278,8 +278,7 @@ impl LinearSceneBvh {
         hittable: &LinearHittable,
         transform: Matrix4<f32>,
     ) {
-        println!("{:?}", hittable);
-        println!("{:?}", transform);
+        // Request the referenced hittable to update the underlying data in the scene.
         hittable.transform_by(self, transform);
 
         // Recompute the BVH

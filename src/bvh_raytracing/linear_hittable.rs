@@ -36,11 +36,21 @@ impl LinearHittable {
         }
     }
 
+    /// Used by the interactive tooling
     pub fn transform_by(&self, scene: &mut LinearSceneBvh, transform: Matrix4<f32>) {
         match self.geometry_type {
+            // Sphere
+            1 => {
+                scene.spheres[self.get_scene_index()].center =
+                    (Matrix4::from_translation(scene.spheres[self.get_scene_index()].center.into())
+                        * transform)
+                        .w
+                        .truncate()
+                        .into()
+            }
             // Cuboid
             2 => scene.cuboids[self.get_scene_index()].transform_txi_by(transform),
-            // Everthing else not supported
+            // Everything else not supported
             _ => panic!("Unsupported geometry type"),
         }
     }
