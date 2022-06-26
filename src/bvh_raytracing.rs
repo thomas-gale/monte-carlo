@@ -22,8 +22,10 @@ mod util;
 mod vertex;
 mod window;
 
-use cgmath::{Matrix4, Point3, SquareMatrix, Vector2, Vector3};
+use cgmath::{Matrix4, Point3, Vector2, Vector3};
 use winit::{event::WindowEvent, window::Window};
+
+use self::linear_scene_bvh::LinearSceneBvh;
 
 // Some bits need to be tidied into more granular structs.
 pub struct BvhRaytracing {
@@ -40,6 +42,7 @@ pub struct BvhRaytracing {
     uniforms_bindings: uniforms_bindings::UniformsBindings,
     camera: camera::Camera,
     interactive_section: interactive_section::InteractiveSection,
+    scene_bvh: LinearSceneBvh,
     scene_bvh_bind_group: wgpu::BindGroup,
     result: result::Result,
 }
@@ -114,9 +117,8 @@ impl BvhRaytracing {
 
         // Interactive Section
         let interactive_section = interactive_section::InteractiveSection::new(
-            &device,
             Matrix4::from_nonuniform_scale(2.0, 2.0, 0.1),
-            scene_bvh.slice_plane_buffer.unwrap(),
+            // scene_bvh.slice_plane_buffer.unwrap(),
         );
 
         // Create basic quad to render fragments onto.
@@ -189,6 +191,7 @@ impl BvhRaytracing {
             uniforms_bindings,
             camera,
             interactive_section,
+            scene_bvh,
             scene_bvh_bind_group,
             result,
         }
@@ -255,6 +258,7 @@ impl BvhRaytracing {
                         self.interactive_section.translate(
                             &self.device,
                             &self.queue,
+                            self.scene_bvh.interactive_transform_buffer.as_ref().unwrap(),
                             &mut self.result,
                             self.size,
                             Vector2::<f32>::new(

@@ -1,12 +1,28 @@
 use super::{
-    construction_scene_bvh_node::SceneBvhConstructionNode,
-    hittable_primitive::HittablePrimitive,
-    linear_constant_medium::LinearConstantMedium,
-    linear_hittable::LinearHittable,
-    linear_scene_bvh::LinearSceneBvh,
-    material::Material,
-    sphere::Sphere,
+    construction_scene_bvh_node::SceneBvhConstructionNode, hittable_primitive::HittablePrimitive,
+    linear_constant_medium::LinearConstantMedium, linear_hittable::LinearHittable,
+    linear_scene_bvh::LinearSceneBvh, material::Material, sphere::Sphere,
 };
+
+pub fn recompute_bvh(scene: &mut LinearSceneBvh) {
+    // Clear existing scene bvh nodes (and hittables reference)
+    scene.bvh_nodes.clear();
+    scene.hittables = scene
+        .hittables
+        .iter()
+        .cloned()
+        .filter(|h| h.geometry_type != 0)
+        .collect();
+
+    // Source objects are cloned at the array slice is used within the following recursive bvh construction function
+    let source_objects = scene.hittables.clone();
+
+    // Build a referenced structure bvh tree from the scene
+    let bvh_construction = SceneBvhConstructionNode::new(scene, &source_objects[..]);
+
+    // Flatten the bvh tree into a linearized structure and update the scene accordingly
+    bvh_construction.flatten(scene);
+}
 
 /// Primary scene construction function
 pub fn build_from_hittable_primitives(
@@ -82,14 +98,16 @@ pub fn build_from_hittable_primitives(
         }
     }
 
-    // Source objects are cloned at the array slice is used within the following recursive bvh construction function
-    let source_objects = scene.hittables.clone();
+    // // Source objects are cloned at the array slice is used within the following recursive bvh construction function
+    // let source_objects = scene.hittables.clone();
 
-    // Build a referenced structure bvh tree from the scene
-    let bvh_construction = SceneBvhConstructionNode::new(&mut scene, &source_objects[..]);
+    // // Build a referenced structure bvh tree from the scene
+    // let bvh_construction = SceneBvhConstructionNode::new(&mut scene, &source_objects[..]);
 
-    // Flatten the bvh tree into a linearized structure and update the scene accordingly
-    bvh_construction.flatten(&mut scene);
+    // // Flatten the bvh tree into a linearized structure and update the scene accordingly
+    // bvh_construction.flatten(&mut scene);
+
+    recompute_bvh(&mut scene);
 
     // Finally, validate the scene and ensure that it has no empty arrays (otherwise throws error in the wgpu binding)
     scene.check_pad_empty_arrays();

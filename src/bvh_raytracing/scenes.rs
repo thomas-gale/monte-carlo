@@ -34,8 +34,15 @@ pub fn test_scene() -> LinearSceneBvh {
             Material::new(4, 0.0, 0.0, Vector3::<f32>::new(1.0, 1.0, 0.2)), // 6
             Material::new(3, 0.0, 0.0, Vector3::<f32>::new(1.0, 1.0, 8.0)),
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.8, 0.3, 0.5)), // 8
+            Material::new(5, 0.0, 0.0, Vector3::<f32>::new(0.0, 0.0, 0.0)),
         ],
         &vec![
+            HittablePrimitive::Cuboid(Cuboid::new(
+                Matrix4::identity()
+                    * Matrix4::from_translation(Vector3::new(0.0, 1.0, 0.0))
+                    * Matrix4::from_nonuniform_scale(5.0, 5.0, 0.1),
+                9,
+            )),
             HittablePrimitive::Cuboid(Cuboid::new(
                 Matrix4::identity()
                     * Matrix4::from_translation(Vector3::new(0.0, -1.0, 0.0))

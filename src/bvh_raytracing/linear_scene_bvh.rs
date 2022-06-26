@@ -1,3 +1,4 @@
+use cgmath::{Matrix4, SquareMatrix};
 use wgpu::util::DeviceExt;
 
 use super::{
@@ -9,7 +10,7 @@ use super::{
 #[derive(Debug)]
 pub struct LinearSceneBvh {
     pub background: Material,
-    pub slice_plane: Cuboid,
+    pub interactive_transform: [[f32; 4]; 4],
     pub materials: Vec<Material>,
     pub hittables: Vec<LinearHittable>,
     pub bvh_nodes: Vec<BvhNode>,
@@ -17,7 +18,7 @@ pub struct LinearSceneBvh {
     pub cuboids: Vec<Cuboid>,
     pub constant_mediums: Vec<LinearConstantMedium>,
 
-    pub slice_plane_buffer: Option<wgpu::Buffer>,
+    pub interactive_transform_buffer: Option<wgpu::Buffer>,
 }
 
 impl LinearSceneBvh {
@@ -30,7 +31,7 @@ impl LinearSceneBvh {
     pub fn new() -> Self {
         LinearSceneBvh {
             background: Material::empty(),
-            slice_plane: Cuboid::empty(),
+            interactive_transform: Matrix4::<f32>::identity().into(),
             materials: vec![],
             hittables: vec![],
             bvh_nodes: vec![],
@@ -38,7 +39,7 @@ impl LinearSceneBvh {
             cuboids: vec![],
             constant_mediums: vec![],
 
-            slice_plane_buffer: None,
+            interactive_transform_buffer: None,
         }
     }
 
@@ -119,7 +120,7 @@ impl LinearSceneBvh {
         });
         let slice_plane_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
-            contents: bytemuck::cast_slice(&[self.slice_plane]),
+            contents: bytemuck::cast_slice(&[self.interactive_transform]),
             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
         });
         let materials = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -194,7 +195,7 @@ impl LinearSceneBvh {
         });
 
         // Update internal buffers
-        self.slice_plane_buffer = Some(slice_plane_buffer);
+        self.interactive_transform_buffer = Some(slice_plane_buffer);
 
         // Return data
         (bind_group_layout, bind_group)

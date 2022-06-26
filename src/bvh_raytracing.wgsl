@@ -201,7 +201,7 @@ var<uniform> camera: Camera;
 
 // Scene
 struct Material {
-    /// 0: lambertian, 1: metal, 2: dielectric, 3: emissive, 4: isotropic medium
+    /// 0: lambertian, 1: metal, 2: dielectric, 3: emissive, 4: isotropic medium, 5, wos albedo blend
     material_type: u32; 
     /// Roughness for metals
     fuzz: f32; 
@@ -265,6 +265,10 @@ struct LinearHittable {
 let bvh_node_null_ptr: u32 = 4294967295u;
 
 // Scene Linear Arrays
+struct SceneInteractiveTransform {
+    val: mat4x4<f32>;
+};
+
 struct SceneLinearMaterials {
     vals: array<Material>;
 };
@@ -293,7 +297,7 @@ struct SceneConstantMediums {
 var<storage, read> scene_background: Material;
 
 [[group(2), binding(1)]]
-var<storage, read> scene_slice_plane: Cuboid;
+var<storage, read> scene_interactive_transform: SceneInteractiveTransform;
 
 [[group(2), binding(2)]]
 var<storage, read> scene_materials: SceneLinearMaterials;
@@ -364,13 +368,17 @@ struct HitRecord {
     t: f32; // ray length until intersection
     front_face: bool;
 
-    /// 0: lambertian, 1: metal, 2: dielectric, 3: emissive, 4: isotropic medium
+    /// 0: lambertian, 1: metal, 2: dielectric, 3: emissive, 4: isotropic medium, 5, wos albedo blend
     material_type: u32;
-    albedo: vec3<f32>; // Ray bounce coloring
-    fuzz: f32; // Roughness for metals
-    refraction_index: f32; // Refraction index for dielectrics
+    /// Ray bounce coloring
+    albedo: vec3<f32>;
+    /// Roughness for metals
+    fuzz: f32;
+    /// Refraction index for dielectrics
+    refraction_index: f32;
 
-    number_bvh_hits: u32; // Track the number of bvh hits this ray has made
+    /// Track the number of bvh hits this ray has made
+    number_bvh_hits: u32;
 };
 
 fn new_hit_record() -> HitRecord {
@@ -467,9 +475,6 @@ fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
     var s = vec3<f32>(s_x, s_y, s_z);
 
     // Prevent overflow
-    // var t1 = safe_inf_vec3_mult(m, -ro + s * cuboid.radius);
-    // var t2 = safe_inf_vec3_mult(m, -ro - s * cuboid.radius);
-
     var t1 = safe_inf_vec3_mult(m, -ro + s);
     var t2 = safe_inf_vec3_mult(m, -ro - s);
 
@@ -487,7 +492,6 @@ fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
         if (tN < t_min || tN > t_max) {
             return false;
         }
-     
 
         // compute normal (in world space)
         if (t1.x > t1.y && t1.x > t1.z) {
@@ -512,7 +516,7 @@ fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
 
         // compute normal (in world space)
         // WHY IS THING WRONG?! - verifyed on paper to be correct.
-         if (t2.x < t2.y && t2.x < t2.z) {
+        if (t2.x < t2.y && t2.x < t2.z) {
             (*hit_record).normal = cuboid.txi[0].xyz * s.x * -1.0;
         } else if (t2.y < t2.z) {
             (*hit_record).normal = cuboid.txi[1].xyz * s.y * -1.0;
@@ -773,6 +777,13 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
 
                 current_ray = Ray(hit_record.p, scattered - hit_record.p);
                 current_ray_color = current_ray_color * hit_record.albedo;
+            } else if (hit_record.material_type == 5u) {
+                // WoS blend material
+
+                // TODO call WOS algorithm (which in turn will sample nearest signed distance functions
+
+                // DEBUG colour
+                current_ray_color = current_ray_color * vec3<f32>(0.0, 1.0, 0.0);
             }
         } else {
             // No hit, return background / sky color gradient
