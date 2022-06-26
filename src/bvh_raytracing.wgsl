@@ -446,7 +446,7 @@ fn primitive_sd(primitive_geometry_type: u32, primitive_scene_index: u32, point:
             return cuboid_sd(primitive_scene_index, point, hit_record);
         }
         default: {
-            return -0.0; // Non-primitive geometry type
+            return constants.infinity; // Non-primitive geometry type - TODO - better error.
         }
     }
 }
@@ -958,15 +958,18 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
                 // WoS blend material
 
                 // TODO call WOS algorithm (which in turn will sample nearest signed distance functions
-                // var mat_sample_rec = new_hit_record();
-                // var closest_dist = scene_sd(hit_record.p, &mat_sample_rec);
-                // var new_p = hit_record.p + closest_dist * normalize(random_in_unit_sphere(entropy * u32(i + 5)));
-                // var closest_dist2 = scene_sd(new_p, &mat_sample_rec);
+                // var mat_sample_rec = wos(hit_record.p, entropy * u32(i + 5));
 
-                var mat_sample_rec = wos(hit_record.p, entropy * u32(i + 5));
+                // DEBUG - a few hardcoded wos steps
+                var mat_sample_rec = new_hit_record();
+                var closest_dist = scene_sd(hit_record.p, &mat_sample_rec);
+                var new_p = hit_record.p + closest_dist * normalize(random_in_unit_sphere(entropy * u32(i + 5)));
+                var closest_dist2 = scene_sd(new_p, &mat_sample_rec);
+                var new_p1 = hit_record.p + closest_dist2 * normalize(random_in_unit_sphere(entropy * u32(i + 5)));
+                var closest_dist3 = scene_sd(new_p1, &mat_sample_rec);
 
-                // DEBUG colour
                 current_ray_color = current_ray_color * mat_sample_rec.albedo;
+                // current_ray_color = current_ray_color * vec3<f32>(closest_dist2);
             }
         } else {
             // No hit, return background / sky color gradient
