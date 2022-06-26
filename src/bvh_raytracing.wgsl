@@ -296,25 +296,25 @@ struct SceneConstantMediums {
 [[group(2), binding(0)]]
 var<storage, read> scene_background: Material;
 
-[[group(2), binding(1)]]
-var<storage, read> scene_interactive_transform: SceneInteractiveTransform;
+// [[group(2), binding(1)]]
+// var<storage, read> scene_interactive_transform: SceneInteractiveTransform;
 
-[[group(2), binding(2)]]
+[[group(2), binding(1)]]
 var<storage, read> scene_materials: SceneLinearMaterials;
 
-[[group(2), binding(3)]]
+[[group(2), binding(2)]]
 var<storage, read> scene_hittables: SceneLinearHittables;
 
-[[group(2), binding(4)]]
+[[group(2), binding(3)]]
 var<storage, read> scene_bvh_nodes: SceneLinearBvhNodes;
 
-[[group(2), binding(5)]]
+[[group(2), binding(4)]]
 var<storage, read> scene_spheres: SceneLinearSpheres;
 
-[[group(2), binding(6)]]
+[[group(2), binding(5)]]
 var<storage, read> scene_cuboids: SceneLinearCuboids;
 
-[[group(2), binding(7)]]
+[[group(2), binding(6)]]
 var<storage, read> scene_constant_mediums: SceneConstantMediums;
 
 // Ray

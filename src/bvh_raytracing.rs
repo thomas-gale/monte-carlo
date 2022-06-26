@@ -113,12 +113,12 @@ impl BvhRaytracing {
         let mut scene_bvh = scenes::test_scene();
         // let scene_bvh = scenes::simple_scene();
         let (scene_bvh_bind_group_layout, scene_bvh_bind_group) =
-            scene_bvh.create_device_buffer_binding(&device);
+            scene_bvh.create_device_buffers(&device);
 
         // Interactive Section
         let interactive_section = interactive_section::InteractiveSection::new(
+            0, // First Cuboid
             Matrix4::from_nonuniform_scale(2.0, 2.0, 0.1),
-            // scene_bvh.slice_plane_buffer.unwrap(),
         );
 
         // Create basic quad to render fragments onto.
@@ -258,7 +258,7 @@ impl BvhRaytracing {
                         self.interactive_section.translate(
                             &self.device,
                             &self.queue,
-                            self.scene_bvh.interactive_transform_buffer.as_ref().unwrap(),
+                            &mut self.scene_bvh,
                             &mut self.result,
                             self.size,
                             Vector2::<f32>::new(

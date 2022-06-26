@@ -46,6 +46,13 @@ impl Cuboid {
         }
     }
 
+    /// Transform the object to world space transform (and update the inverse also)
+    pub fn transform_txi_by(&mut self, transform: Matrix4<f32>) {
+        let new_txi = Matrix4::from(self.txi) * transform;
+        self.txi = new_txi.into();
+        self.txx = new_txi.invert().unwrap().into();
+    }
+
     /// Returns the bounding box of the cuboid.
     /// Assumes transformation matrix basis vectors are orthogonal to one another (no skews)
     pub fn bounding_box(&self) -> Aabb {

@@ -1,3 +1,5 @@
+use cgmath::Matrix4;
+
 use super::{aabb::Aabb, linear_scene_bvh::LinearSceneBvh};
 
 ///
@@ -30,6 +32,15 @@ impl LinearHittable {
             2 => scene.cuboids[self.get_scene_index()].bounding_box(),
             // ConstantMedium
             3 => scene.constant_mediums[self.get_scene_index()].bounding_box(scene),
+            _ => panic!("Unsupported geometry type"),
+        }
+    }
+
+    pub fn transform_by(&self, scene: &mut LinearSceneBvh, transform: Matrix4<f32>) {
+        match self.geometry_type {
+            // Cuboid
+            2 => scene.cuboids[self.get_scene_index()].transform_txi_by(transform),
+            // Everthing else not supported
             _ => panic!("Unsupported geometry type"),
         }
     }
