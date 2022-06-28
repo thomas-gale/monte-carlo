@@ -949,7 +949,16 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
                 // WoS blend material
                 var mat_sample_rec = wos(hit_record.p, entropy * u32(i + 5));
                 current_ray_color = current_ray_color * mat_sample_rec.albedo;
-                break; // Stop ray bounces
+
+                // Lambertian material
+                var scattered = hit_record.p + random_in_hemisphere(hit_record.normal, (entropy * u32(i + 1)));
+                // Check for degenerate target scatter
+                if (vec3_near_zero(scattered)) {
+                    scattered = hit_record.normal;
+                }
+
+                current_ray = Ray(hit_record.p, scattered - hit_record.p);
+                // break; // Stop ray bounces
             }
         } else {
             // No hit, return background / sky color gradient
