@@ -118,9 +118,9 @@ impl BvhRaytracing {
         // Interactive Section
         let interactive_section = interactive_section::InteractiveSection::new(
             LinearHittable {
-                geometry_type: 2,
+                geometry_type: 1,
                 scene_index: 0,
-            }, // First Cuboid
+            }, // First Sphere
         );
 
         // Create basic quad to render fragments onto.

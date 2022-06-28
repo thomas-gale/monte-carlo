@@ -37,20 +37,21 @@ pub fn test_scene() -> LinearSceneBvh {
             Material::new(5, 0.0, 0.0, Vector3::<f32>::new(0.0, 0.0, 0.0)),
         ],
         &vec![
-            HittablePrimitive::Cuboid(Cuboid::new(
-                Matrix4::identity()
-                    * Matrix4::from_translation(Vector3::new(0.0, 1.0, 0.0))
-                    * Matrix4::from_nonuniform_scale(5.0, 5.0, 0.1),
-                9,
-            )),
+            // HittablePrimitive::Cuboid(Cuboid::new(
+            //     Matrix4::identity()
+            //         * Matrix4::from_translation(Vector3::new(0.0, 1.0, 0.0))
+            //         * Matrix4::from_nonuniform_scale(5.0, 5.0, 0.1),
+            //     9,
+            // )),
+            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, -5.0), 5.0, 9)),
             // HittablePrimitive::Cuboid(Cuboid::new(
             //     Matrix4::identity()
             //         * Matrix4::from_translation(Vector3::new(0.0, -1.0, 0.0))
             //         * Matrix4::from_nonuniform_scale(100.0, 0.5, 100.0),
             //     0,
             // )),
-            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(2.0, 0.0, 0.0), 0.5, 2)),
-            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(-2.0, 0.0, 0.0), 0.5, 3)),
+            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(2.0, 0.0, 0.0), 0.75, 2)),
+            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(-2.0, 0.0, 0.0), 1.25, 3)),
             HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, 2.0), 0.5, 4)),
             // HittablePrimitive::ConstantMedium(ConstantMedium {
             //     boundary_hittable: Box::new(HittablePrimitive::Sphere(Sphere::new(
