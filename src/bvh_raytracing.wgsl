@@ -229,8 +229,6 @@ struct Cuboid {
     txi: mat4x4<f32>;
 };
 
-
-
 struct ConstantMedium {
     /// 0: BvhNode, 1: Sphere, 2: Cuboid, 3: ConstantMedium
     boundary_geometry_type: u32;
@@ -273,7 +271,7 @@ fn is_primitive(geometry_type: u32) -> bool {
 // Releated to Hittable
 let bvh_node_null_ptr: u32 = 4294967295u;
 
-// Scene Linear Arrays
+// Scene Linear Arrays - these are the data structures that are sent from cpu to the gpu.
 struct SceneInteractiveTransform {
     val: mat4x4<f32>;
 };
@@ -304,9 +302,6 @@ struct SceneConstantMediums {
 
 [[group(2), binding(0)]]
 var<storage, read> scene_background: Material;
-
-// [[group(2), binding(1)]]
-// var<storage, read> scene_interactive_transform: SceneInteractiveTransform;
 
 [[group(2), binding(1)]]
 var<storage, read> scene_materials: SceneLinearMaterials;
@@ -413,10 +408,6 @@ fn sphere_sd(sphere_index: u32, point: vec3<f32>, hit_record: ptr<function, HitR
 
     set_material_data(hit_record, &material);
     return (length(point - sphere.center) - sphere.radius);
-    // return (length(point - sphere.center) - sphere.radius / 2.0);
-    // return (length(sphere.center - point) - sphere.radius);
-    // return (length(point - sphere.center) - 1.5);
-    // return length(point - sphere.center) - 0.5;
 }
 
 fn cuboid_sd(cuboid_index: u32, point: vec3<f32>, hit_record: ptr<function, HitRecord>) -> f32 {
@@ -431,11 +422,28 @@ fn cuboid_sd(cuboid_index: u32, point: vec3<f32>, hit_record: ptr<function, HitR
     set_material_data(hit_record, &material);
 
     // TODO - test - this is very similar to aabb - except that we use the cuboid.txi to support arbitary rotations/tranlsations
-    var p_c = (cuboid.txi * vec4<f32>(point, 0.0)).xyz;
-    var b = 0.5;
-    var p = point - b;
 
-    var q = abs(p) - b;
+    var p = (cuboid.txx * vec4<f32>(point, 1.0)).xyz;
+    var scale_back = mat3x3<f32>(cuboid.txi[0].xyz, cuboid.txi[1].xyz, cuboid.txi[2].xyz);
+    // var b = 1.0;
+    // var b = 1.0;
+    // var p = point - b - cuboid.txi[3].xyz;
+    // var p = p_c - b;
+    // var p = p_c - b - cuboid.txi[3].xyz;
+    // var p = p_c - vec3<f32>(b) - cuboid.txx[3].xyz;
+    // var p = p_c;
+    // var p = p_c - vec3<f32>(b) - 0.5;
+    // var p = p_c - vec3<f32>(b);
+    // var p = p_c - cuboid.txi[3].xyz;
+    // var p = point - cuboid.txi[3].xyz;
+
+    var q = (abs(p) - vec3<f32>(1.0)) * vec3<f32>(length(scale_back[0]), length(scale_back[1]), length(scale_back[2]));
+    // var q = (abs(p) - vec3<f32>(scale_back));
+    // var q = abs(p);
+
+    // var scale_back = determinant(mat3x3<f32>(cuboid.txi[0].xyz, cuboid.txi[1].xyz, cuboid.txi[2].xyz));
+    // return length(max(q, vec3<f32>(0.0))) + min(max(q.x, max(q.y, q.z)), 0.0) * scale_back;
+
     return length(max(q, vec3<f32>(0.0))) + min(max(q.x, max(q.y, q.z)), 0.0);
 }
 
@@ -548,7 +556,7 @@ fn scene_sd(point: vec3<f32>, rec: ptr<function, HitRecord>) -> f32 {
 fn wos(point: vec3<f32>, entropy: u32) -> HitRecord {
     var dist = constants.infinity;
     var curr_point = point;
-    var hr = new_hit_record();
+    var hr = new_hit_record(); // Used to store the boundary surface data
     for (var i = 0; i < 32; i = i + 1) {
         dist = scene_sd(curr_point, &hr);
         if (dist < constants.wos_tolerance) {
@@ -556,7 +564,6 @@ fn wos(point: vec3<f32>, entropy: u32) -> HitRecord {
         }
         curr_point = curr_point + dist * normalize(random_in_unit_sphere(hash(entropy + u32(i))));
     }
-
     return hr;
 } 
 
@@ -873,7 +880,7 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
         }
 
         // Should never get here
-        return false; // :(
+        return false;
     }
 
     return hit_anything;

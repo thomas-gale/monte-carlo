@@ -1,9 +1,8 @@
 use cgmath::{prelude::*, Deg, Matrix4, Vector3};
 
 use super::{
-    constant_medium::ConstantMedium, construction_scene, cuboid::Cuboid,
-    hittable_primitive::HittablePrimitive, linear_scene_bvh::LinearSceneBvh, material::Material,
-    sphere::Sphere,
+    construction_scene, cuboid::Cuboid, hittable_primitive::HittablePrimitive,
+    linear_scene_bvh::LinearSceneBvh, material::Material, sphere::Sphere,
 };
 
 #[allow(dead_code)]
@@ -29,7 +28,6 @@ pub fn test_scene_wos() -> LinearSceneBvh {
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(1.0, 0.0, 0.0)),
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.0, 1.0, 0.0)),
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.0, 0.0, 1.0)),
-            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(1.0, 1.0, 0.0)),
         ],
         &vec![
             HittablePrimitive::Cuboid(Cuboid::new(
@@ -38,10 +36,17 @@ pub fn test_scene_wos() -> LinearSceneBvh {
                     * Matrix4::from_nonuniform_scale(5.0, 5.0, 0.1),
                 0,
             )),
-            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(2.0, 0.0, 0.0), 0.75, 1)),
-            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(-2.0, 0.0, 0.0), 1.5, 2)),
-            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, -2.0), 1.75, 3)),
-            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, 2.0), 0.25, 4)),
+            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(4.0, 0.0, 0.0), 0.5, 1)),
+            // HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(-2.0, 0.0, 0.0), 1.0, 2)),
+            // HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, 2.0), 0.55, 3)),
+            HittablePrimitive::Cuboid(Cuboid::new(
+                Matrix4::identity() 
+                // * Matrix4::from_translation(Vector3::new(0.0, 1.0, -1.0)),
+                * Matrix4::from_angle_x(Deg(20.0))
+                * Matrix4::from_angle_y(Deg(30.0))
+                * Matrix4::from_nonuniform_scale(0.5, 1.0, 0.5),
+                3,
+            )),
         ],
     )
 }
