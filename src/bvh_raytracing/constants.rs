@@ -29,9 +29,9 @@ impl Constants {
             max_depth: 64,
             vertical_render_slices: 1,
             draw_vertical_render_slice_region: 0,
-            draw_bvh: 1,
+            draw_bvh: 0,
             draw_bvh_attenuation: 0.8,
-            wos_tolerance: 1.0,
+            wos_tolerance: 0.01,
         }
     }
 }

@@ -413,6 +413,7 @@ fn sphere_sd(sphere_index: u32, point: vec3<f32>, hit_record: ptr<function, HitR
 
     set_material_data(hit_record, &material);
     return (length(point - sphere.center) - sphere.radius);
+    // return (length(point - sphere.center) - sphere.radius / 2.0);
     // return (length(sphere.center - point) - sphere.radius);
     // return (length(point - sphere.center) - 1.5);
     // return length(point - sphere.center) - 0.5;
@@ -950,7 +951,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
             } else if (hit_record.material_type == 3u) {
                 // Emmisive material
                 current_ray_color = current_ray_color * hit_record.albedo;
-                break;
+                break; // Stop ray bounces
             } else if (hit_record.material_type == 4u) {
                 // Isotropic medium
                 var scattered = hit_record.p + random_in_unit_sphere(entropy * u32(i + 4));
@@ -959,25 +960,9 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
                 current_ray_color = current_ray_color * hit_record.albedo;
             } else if (hit_record.material_type == 5u) {
                 // WoS blend material
-
-                // TODO call WOS algorithm (which in turn will sample nearest signed distance functions
-                // var mat_sample_rec = wos(hit_record.p, entropy * u32(i + 5));
-
-                // DEBUG - a few hardcoded wos steps
-                var mat_sample_rec = new_hit_record();
-                // mat_sample_rec.albedo = vec3<f32>(1.0);
-                // sphere_index: u32, point: vec3<f32>, hit_record: ptr<function, HitRecord>
-                var test_sphere_dist = sphere_sd(u32(2), hit_record.p, &mat_sample_rec);
-                // var closest_dist = scene_sd(hit_record.p, &mat_sample_rec);
-                // var new_p = hit_record.p + closest_dist * normalize(random_in_unit_sphere(entropy * u32(i + 5)));
-                // var closest_dist2 = scene_sd(new_p, &mat_sample_rec);
-                // var new_p1 = hit_record.p + closest_dist2 * normalize(random_in_unit_sphere(entropy * u32(i + 5)));
-                // var closest_dist3 = scene_sd(new_p1, &mat_sample_rec);
-
-                // current_ray_color = current_ray_color * mat_sample_rec.albedo;
-                current_ray_color = current_ray_color * vec3<f32>(test_sphere_dist);
-                // current_ray_color = current_ray_color * vec3<f32>(closest_dist);
-                // current_ray_color = current_ray_color * vec3<f32>(closest_dist2);
+                var mat_sample_rec = wos(hit_record.p, entropy * u32(i + 5));
+                current_ray_color = current_ray_color * mat_sample_rec.albedo;
+                break; // Stop ray bounces
             }
         } else {
             // No hit, return background / sky color gradient
