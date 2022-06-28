@@ -96,8 +96,8 @@ impl BvhRaytracing {
         // Camera
         let camera = camera::Camera::new(
             &device,
-            Point3::<f32>::new(0.0, 3.0, 4.0),
-            Point3::<f32>::new(0.0, 1.0, 0.0),
+            Point3::<f32>::new(0.0, 0.5, 4.0),
+            Point3::<f32>::new(0.0, 0.5, 0.0),
             Vector3::<f32>::new(0.0, 1.0, 0.0),
             25.0,
             window,
@@ -107,6 +107,7 @@ impl BvhRaytracing {
         );
 
         // Scene
+        // let mut scene_bvh = scenes::cornell_box();
         let mut scene_bvh = scenes::test_scene_wos();
         let (scene_bvh_bind_group_layout, scene_bvh_bind_group) =
             scene_bvh.create_device_buffers(&device);
