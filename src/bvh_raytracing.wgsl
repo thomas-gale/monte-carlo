@@ -421,29 +421,9 @@ fn cuboid_sd(cuboid_index: u32, point: vec3<f32>, hit_record: ptr<function, HitR
 
     set_material_data(hit_record, &material);
 
-    // TODO - test - this is very similar to aabb - except that we use the cuboid.txi to support arbitary rotations/tranlsations
-
     var p = (cuboid.txx * vec4<f32>(point, 1.0)).xyz;
     var scale_back = mat3x3<f32>(cuboid.txi[0].xyz, cuboid.txi[1].xyz, cuboid.txi[2].xyz);
-    // var b = 1.0;
-    // var b = 1.0;
-    // var p = point - b - cuboid.txi[3].xyz;
-    // var p = p_c - b;
-    // var p = p_c - b - cuboid.txi[3].xyz;
-    // var p = p_c - vec3<f32>(b) - cuboid.txx[3].xyz;
-    // var p = p_c;
-    // var p = p_c - vec3<f32>(b) - 0.5;
-    // var p = p_c - vec3<f32>(b);
-    // var p = p_c - cuboid.txi[3].xyz;
-    // var p = point - cuboid.txi[3].xyz;
-
     var q = (abs(p) - vec3<f32>(1.0)) * vec3<f32>(length(scale_back[0]), length(scale_back[1]), length(scale_back[2]));
-    // var q = (abs(p) - vec3<f32>(scale_back));
-    // var q = abs(p);
-
-    // var scale_back = determinant(mat3x3<f32>(cuboid.txi[0].xyz, cuboid.txi[1].xyz, cuboid.txi[2].xyz));
-    // return length(max(q, vec3<f32>(0.0))) + min(max(q.x, max(q.y, q.z)), 0.0) * scale_back;
-
     return length(max(q, vec3<f32>(0.0))) + min(max(q.x, max(q.y, q.z)), 0.0);
 }
 
@@ -545,7 +525,7 @@ fn scene_sd(point: vec3<f32>, rec: ptr<function, HitRecord>) -> f32 {
         }
 
         // Should never get here
-        // return constants.infinity; // TODO - better error signal :(
+        return constants.infinity; // TODO - better error signal :(
     }
 
     return closest_so_far;

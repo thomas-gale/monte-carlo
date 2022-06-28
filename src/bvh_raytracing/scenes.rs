@@ -32,19 +32,18 @@ pub fn test_scene_wos() -> LinearSceneBvh {
         &vec![
             HittablePrimitive::Cuboid(Cuboid::new(
                 Matrix4::identity()
-                    * Matrix4::from_translation(Vector3::new(0.0, 1.0, 0.0))
+                    * Matrix4::from_translation(Vector3::new(0.0, 0.0, 0.0))
                     * Matrix4::from_nonuniform_scale(5.0, 5.0, 0.1),
                 0,
             )),
-            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(4.0, 0.0, 0.0), 0.5, 1)),
-            // HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(-2.0, 0.0, 0.0), 1.0, 2)),
-            // HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.0, 0.0, 2.0), 0.55, 3)),
+            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(2.0, 0.0, 0.4), 0.75, 1)),
+            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(-2.0, 0.0, -0.4), 1.0, 2)),
             HittablePrimitive::Cuboid(Cuboid::new(
-                Matrix4::identity() 
-                // * Matrix4::from_translation(Vector3::new(0.0, 1.0, -1.0)),
-                * Matrix4::from_angle_x(Deg(20.0))
-                * Matrix4::from_angle_y(Deg(30.0))
-                * Matrix4::from_nonuniform_scale(0.5, 1.0, 0.5),
+                Matrix4::identity()
+                    * Matrix4::from_translation(Vector3::new(0.0, 0.2, 0.2))
+                    * Matrix4::from_angle_x(Deg(20.0))
+                    * Matrix4::from_angle_y(Deg(30.0))
+                    * Matrix4::from_nonuniform_scale(0.5, 1.0, 0.5),
                 3,
             )),
         ],
