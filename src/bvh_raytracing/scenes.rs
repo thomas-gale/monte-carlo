@@ -6,6 +6,10 @@ use super::{
     sphere::Sphere,
 };
 
+// pub fn test_mesh() -> LinearSceneBvh {
+
+// }
+
 #[allow(dead_code)]
 pub fn simple_scene() -> LinearSceneBvh {
     construction_scene::build_from_spheres(
@@ -61,7 +65,7 @@ pub fn test_scene_wos() -> LinearSceneBvh {
     )
 }
 
-// #[allow(dead_code)]
+#[allow(dead_code)]
 pub fn cornell_box() -> LinearSceneBvh {
     construction_scene::build_from_hittable_primitives(
         Material::new(0, 0.0, 0.0, Vector3::new(0.0, 0.0, 0.0)),

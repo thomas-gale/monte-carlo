@@ -16,6 +16,7 @@ cgmath = "0.18"
 env_logger = "0.9"
 image = { version = "0.24", default-features = false, features = ["png", "jpeg"]}
 log = "0.4"
+obj-rs = "0.7"
 pollster = "0.2"
 rand = "0.8.5"
 winit = "0.26"
