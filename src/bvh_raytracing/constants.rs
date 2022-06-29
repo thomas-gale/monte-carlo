@@ -15,7 +15,7 @@ pub struct Constants {
     draw_bvh: u32,
     /// Fraction of light attenuated by each bvh traversed - bit hacky (larger scenes will need values like 0.999 and small scenes 0.9)
     draw_bvh_attenuation: f32,
-    /// WoS Tolerance Distance
+    /// WoS Tolerance Distance (e.g. distance to surface before the walk is halted and surface sampled)
     wos_tolerance: f32,
 }
 
