@@ -1,7 +1,4 @@
-// Code to support features for 'ray tracing in a weekend'
-// mod basic_raytracing;
-// Code to support (a few) features for 'ray tracing the next week'
-mod bvh_raytracing;
+mod monte_carlo;
 
 use winit::{
     dpi::PhysicalSize,
@@ -24,7 +21,7 @@ async fn run() {
 
     // Create the renderers
     // let mut renderer = basic_raytracing::BasicRaytracing::new(&window).await;
-    let mut renderer = bvh_raytracing::BvhRaytracing::new(&window).await;
+    let mut renderer = monte_carlo::BvhRaytracing::new(&window).await;
 
     // println!("Press 'return' to render the scene to the window!");
     event_loop.run(move |event, _, control_flow| match event {

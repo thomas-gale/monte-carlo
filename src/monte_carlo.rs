@@ -127,7 +127,7 @@ impl BvhRaytracing {
         let result = result::Result::new(&device, &queue, window);
 
         // Load shader
-        let shader = device.create_shader_module(&wgpu::include_wgsl!("bvh_raytracing.wgsl"));
+        let shader = device.create_shader_module(&wgpu::include_wgsl!("monte_carlo.wgsl"));
 
         // Create the render pipeline
         let render_pipeline_layout =
