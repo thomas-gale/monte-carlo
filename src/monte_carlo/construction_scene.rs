@@ -1,7 +1,9 @@
+use obj::Obj;
+
 use super::{
     construction_scene_bvh_node::SceneBvhConstructionNode, hittable_primitive::HittablePrimitive,
     linear_constant_medium::LinearConstantMedium, linear_hittable::LinearHittable,
-    linear_scene_bvh::LinearSceneBvh, material::Material, sphere::Sphere,
+    linear_scene_bvh::LinearSceneBvh, material::Material, mesh::Mesh, sphere::Sphere,
 };
 
 pub fn recompute_bvh(scene: &mut LinearSceneBvh) {
@@ -130,5 +132,17 @@ pub fn build_from_spheres(
         .map(|sphere| HittablePrimitive::Sphere(*sphere))
         .collect();
 
+    self::build_from_hittable_primitives(background, materials, &hittables[..])
+}
+
+pub fn build_from_meshes(
+    background: Material,
+    materials: &[Material],
+    meshes: &[Mesh],
+) -> LinearSceneBvh {
+    let hittables: Vec<HittablePrimitive> = meshes
+        .iter()
+        .map(|mesh| HittablePrimitive::Mesh(mesh.clone()))
+        .collect();
     self::build_from_hittable_primitives(background, materials, &hittables[..])
 }
