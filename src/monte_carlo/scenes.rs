@@ -9,10 +9,11 @@ use super::{
 
 #[allow(dead_code)]
 pub fn test_mesh_scene() -> LinearSceneBvh {
-    println!("Loading bunny");
-    let bunny_obj: Obj = Obj::load("src/monte_carlo/resources/bunny.obj").expect("Unable to load bunny obj");
-    println!("Loaded bunny");
-    let bunny = Mesh::new(bunny_obj);
+    println!("Loading obj");
+    // let obj: Obj = Obj::load("src/monte_carlo/resources/bunny.obj").expect("Unable to load obj");
+    let obj: Obj = Obj::load("src/monte_carlo/resources/cube.obj").expect("Unable to load obj");
+    println!("Loaded obj");
+    let mesh = Mesh::new(obj);
 
     construction_scene::build_from_meshes(
         &vec![Material::new(
@@ -21,7 +22,7 @@ pub fn test_mesh_scene() -> LinearSceneBvh {
             0.0,
             Vector3::<f32>::new(1.0, 0.0, 0.0),
         )],
-        &vec![bunny],
+        &vec![mesh],
     )
 }
 
