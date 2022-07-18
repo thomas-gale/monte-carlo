@@ -1,3 +1,5 @@
+use cgmath::Point3;
+
 use super::{aabb::Aabb, linear_scene_bvh::LinearSceneBvh};
 
 /// POD plain triangle vertex ready to ship to GPU
@@ -41,9 +43,22 @@ impl Triangle {
     }
     /// Returns the bounding box of the constant medium
     pub fn bounding_box(&self, scene: &LinearSceneBvh) -> Aabb {
-        // TODO
-
         // Grab the triangle vertices from the scene and compute a Aabb
-        Aabb::empty()
+        let v_1: Point3<f32> = scene.tri_verts[self.indices[0] as usize].position.into();
+        let v_2: Point3<f32> = scene.tri_verts[self.indices[1] as usize].position.into();
+        let v_3: Point3<f32> = scene.tri_verts[self.indices[2] as usize].position.into();
+
+        Aabb::new(
+            Point3::new(
+                v_1.x.min(v_2.x).min(v_3.x),
+                v_1.y.min(v_2.y).min(v_3.y),
+                v_1.z.min(v_2.z).min(v_3.z),
+            ),
+            Point3::new(
+                v_1.x.max(v_2.x).max(v_3.x),
+                v_1.y.max(v_2.y).max(v_3.y),
+                v_1.z.max(v_2.z).max(v_3.z),
+            ),
+        )
     }
 }

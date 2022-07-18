@@ -80,14 +80,14 @@ impl LinearSceneBvh {
         if self.cuboids.len() == 0 {
             self.cuboids.push(Cuboid::empty());
         }
+        if self.constant_mediums.len() == 0 {
+            self.constant_mediums.push(LinearConstantMedium::empty());
+        }
         if self.tri_verts.len() == 0 {
             self.tri_verts.push(TriangleVertex::empty());
         }
         if self.tris.len() == 0 {
             self.tris.push(Triangle::empty());
-        }
-        if self.constant_mediums.len() == 0 {
-            self.constant_mediums.push(LinearConstantMedium::empty());
         }
     }
 
