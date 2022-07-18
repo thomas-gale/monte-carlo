@@ -28,17 +28,21 @@ impl TriangleVertex {
 pub struct Triangle {
     /// This is the scene index in the Triangle Vertex buffer/array
     pub indices: [u32; 3],
-    _pad1: u32,
+    /// Index of the material in the linear scene bvh
+    pub material_index: u32,
 }
 
 impl Triangle {
-    pub fn new(indices: [u32; 3]) -> Self {
-        Triangle { indices, _pad1: 0 }
+    pub fn new(material_index: u32, indices: [u32; 3]) -> Self {
+        Triangle {
+            indices,
+            material_index,
+        }
     }
     pub fn empty() -> Self {
         Triangle {
             indices: [0, 0, 0],
-            _pad1: 0,
+            material_index: LinearSceneBvh::null_index_ptr(),
         }
     }
     /// Returns the bounding box of the constant medium

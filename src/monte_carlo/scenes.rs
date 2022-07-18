@@ -13,7 +13,7 @@ pub fn test_mesh_scene() -> LinearSceneBvh {
     // let obj: Obj = Obj::load("src/monte_carlo/resources/bunny.obj").expect("Unable to load obj");
     let obj: Obj = Obj::load("src/monte_carlo/resources/cube.obj").expect("Unable to load obj");
     println!("Loaded obj");
-    let mesh = Mesh::new(obj);
+    let mesh = Mesh::new(obj, 0);
 
     construction_scene::build_from_meshes(
         &vec![Material::new(

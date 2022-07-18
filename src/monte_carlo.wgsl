@@ -249,6 +249,7 @@ struct TriangleVertex {
 
 struct Triangle {
     indicies: vec3<u32>;
+    material_index: u32; 
 };
 
 /// Axis aligned bounding box.

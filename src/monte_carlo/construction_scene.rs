@@ -100,7 +100,8 @@ pub fn build_from_hittable_primitives(
 
                 // Append the mesh tri ints the scene tri indices
                 for tri in mesh_tris {
-                    scene.tris.push(Triangle::new([
+                    scene.tris.push(Triangle::new(
+                        mesh.material_index,[
                         tri.indices[0] + offset,
                         tri.indices[1] + offset,
                         tri.indices[2] + offset,
