@@ -1,33 +1,37 @@
-use cgmath::{Matrix4, SquareMatrix};
-use image::buffer;
+use cgmath::Matrix4;
 use wgpu::util::DeviceExt;
 
 use super::{
-    bvh_node::BvhNode, construction_scene::recompute_bvh, cuboid::Cuboid,
-    linear_constant_medium::LinearConstantMedium, linear_hittable::*, material::Material,
+    bvh_node::BvhNode,
+    construction_scene::recompute_bvh,
+    cuboid::Cuboid,
+    linear_constant_medium::LinearConstantMedium,
+    linear_hittable::*,
+    material::Material,
     sphere::Sphere,
+    triangle::{Triangle, TriangleVertex},
 };
 
 /// The basic linearized version of the scene, each vector is separately bound to a different bind group entry in the scene layout group (due to their dynamic nature in length)
 #[derive(Debug)]
 pub struct LinearSceneBvh {
-    pub background: Material,
-    // pub interactive_transform: [[f32; 4]; 4],
     pub materials: Vec<Material>,
     pub hittables: Vec<LinearHittable>,
     pub bvh_nodes: Vec<BvhNode>,
     pub spheres: Vec<Sphere>,
     pub cuboids: Vec<Cuboid>,
     pub constant_mediums: Vec<LinearConstantMedium>,
+    pub tri_verts: Vec<TriangleVertex>,
+    pub tris: Vec<Triangle>,
 
-    pub background_buffer: Option<wgpu::Buffer>,
-    // pub interactive_transform_buffer: Option<wgpu::Buffer>,
     pub materials_buffer: Option<wgpu::Buffer>,
     pub hittables_buffer: Option<wgpu::Buffer>,
     pub bvh_nodes_buffer: Option<wgpu::Buffer>,
     pub spheres_buffer: Option<wgpu::Buffer>,
     pub cuboids_buffer: Option<wgpu::Buffer>,
     pub constant_mediums_buffer: Option<wgpu::Buffer>,
+    pub mesh_tri_verts_buffer: Option<wgpu::Buffer>,
+    pub mesh_tris_buffer: Option<wgpu::Buffer>,
 }
 
 impl LinearSceneBvh {
@@ -39,23 +43,23 @@ impl LinearSceneBvh {
     /// TODO refactor away this 'partially' constructed object workflow - it's bug prone.
     pub fn new() -> Self {
         LinearSceneBvh {
-            background: Material::empty(),
-            // interactive_transform: Matrix4::<f32>::identity().into(),
             materials: vec![],
             hittables: vec![],
             bvh_nodes: vec![],
             spheres: vec![],
             cuboids: vec![],
             constant_mediums: vec![],
+            tri_verts: vec![],
+            tris: vec![],
 
-            background_buffer: None,
-            // interactive_transform_buffer: None,
             materials_buffer: None,
             hittables_buffer: None,
             bvh_nodes_buffer: None,
             spheres_buffer: None,
             cuboids_buffer: None,
             constant_mediums_buffer: None,
+            mesh_tri_verts_buffer: None,
+            mesh_tris_buffer: None,
         }
     }
 
@@ -76,6 +80,12 @@ impl LinearSceneBvh {
         if self.cuboids.len() == 0 {
             self.cuboids.push(Cuboid::empty());
         }
+        if self.tri_verts.len() == 0 {
+            self.tri_verts.push(TriangleVertex::empty());
+        }
+        if self.tris.len() == 0 {
+            self.tris.push(Triangle::empty());
+        }
         if self.constant_mediums.len() == 0 {
             self.constant_mediums.push(LinearConstantMedium::empty());
         }
@@ -83,7 +93,6 @@ impl LinearSceneBvh {
 
     pub fn debug_print(&self) {
         println!("LinearSceneBvh:");
-        println!("background: {:?}", self.background);
         println!("materials: {:?}", self.materials);
         for hittable in self.hittables.iter() {
             if hittable.geometry_type == 0 {
@@ -100,6 +109,8 @@ impl LinearSceneBvh {
                     "\n Constant Medium (volume): {:?}",
                     self.constant_mediums[hittable.get_scene_index()]
                 );
+            } else if hittable.geometry_type == 4 {
+                println!("\n Triangle: {:?}", self.tris[hittable.get_scene_index()]);
             }
         }
     }
@@ -109,8 +120,8 @@ impl LinearSceneBvh {
         &mut self,
         device: &wgpu::Device,
     ) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
-        // Create bind group layout.
-        let bind_group_entries: Vec<wgpu::BindGroupLayoutEntry> = (0..7)
+        // Create bind group layout. (This (8) is the maximum number of bindings for a group)
+        let bind_group_entries: Vec<wgpu::BindGroupLayoutEntry> = (0..8)
             .map(|i| wgpu::BindGroupLayoutEntry {
                 binding: i,
                 count: None,
@@ -130,17 +141,6 @@ impl LinearSceneBvh {
 
         // Create buffers
         let buffer_usage = wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST;
-        let background_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: None,
-            contents: bytemuck::cast_slice(&[self.background]),
-            usage: buffer_usage,
-        });
-        // let interactive_transform_buffer =
-        //     device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        //         label: None,
-        //         contents: bytemuck::cast_slice(&[self.interactive_transform]),
-        //         usage: buffer_usage,
-        //     });
         let materials_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
             contents: bytemuck::cast_slice(&self.materials[..]),
@@ -172,6 +172,17 @@ impl LinearSceneBvh {
                 contents: bytemuck::cast_slice(&self.constant_mediums[..]),
                 usage: buffer_usage,
             });
+        let triangle_vertices_buffer =
+            device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: None,
+                contents: bytemuck::cast_slice(&self.tri_verts[..]),
+                usage: buffer_usage,
+            });
+        let triangles_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: None,
+            contents: bytemuck::cast_slice(&self.tris[..]),
+            usage: buffer_usage,
+        });
 
         // Finally create bind group
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -179,65 +190,55 @@ impl LinearSceneBvh {
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: background_buffer.as_entire_binding(),
-                },
-                // wgpu::BindGroupEntry {
-                //     binding: 1,
-                //     resource: interactive_transform_buffer.as_entire_binding(),
-                // },
-                wgpu::BindGroupEntry {
-                    binding: 1,
                     resource: materials_buffer.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
-                    binding: 2,
+                    binding: 1,
                     resource: hittables_buffer.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
-                    binding: 3,
+                    binding: 2,
                     resource: bvh_nodes_buffer.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
-                    binding: 4,
+                    binding: 3,
                     resource: spheres_buffer.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
-                    binding: 5,
+                    binding: 4,
                     resource: cuboids_buffer.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
-                    binding: 6,
+                    binding: 5,
                     resource: constant_mediums_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 6,
+                    resource: triangle_vertices_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 7,
+                    resource: triangles_buffer.as_entire_binding(),
                 },
             ],
             label: None,
         });
 
         // Assign internal buffers
-        self.background_buffer = Some(background_buffer);
-        // self.interactive_transform_buffer = Some(interactive_transform_buffer);
         self.materials_buffer = Some(materials_buffer);
         self.hittables_buffer = Some(hittables_buffer);
         self.bvh_nodes_buffer = Some(bvh_nodes_buffer);
         self.spheres_buffer = Some(spheres_buffer);
         self.cuboids_buffer = Some(cuboids_buffer);
         self.constant_mediums_buffer = Some(constant_mediums_buffer);
+        self.mesh_tri_verts_buffer = Some(triangle_vertices_buffer);
+        self.mesh_tris_buffer = Some(triangles_buffer);
 
         // Return data
         (bind_group_layout, bind_group)
     }
 
     pub fn update_buffers(&self, queue: &wgpu::Queue) {
-        queue.write_buffer(
-            self.background_buffer.as_ref().unwrap(),
-            0,
-            bytemuck::cast_slice(&[self.background]),
-        );
-        // queue.write_buffer(
-        //     &self.interactive_transform_buffer.as_ref().unwrap(),
-        //     0,
-        //     bytemuck::cast_slice(&[self.interactive_transform]),
-        // );
         queue.write_buffer(
             &self.materials_buffer.as_ref().unwrap(),
             0,
@@ -267,6 +268,16 @@ impl LinearSceneBvh {
             &self.constant_mediums_buffer.as_ref().unwrap(),
             0,
             bytemuck::cast_slice(&self.constant_mediums[..]),
+        );
+        queue.write_buffer(
+            &self.mesh_tri_verts_buffer.as_ref().unwrap(),
+            0,
+            bytemuck::cast_slice(&self.tri_verts[..]),
+        );
+        queue.write_buffer(
+            &self.mesh_tris_buffer.as_ref().unwrap(),
+            0,
+            bytemuck::cast_slice(&self.tris[..]),
         );
     }
 

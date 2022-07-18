@@ -1,12 +1,42 @@
+use super::triangle::{Triangle, TriangleVertex};
 use obj::Obj;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Mesh {
     obj: Obj,
 }
 
 impl Mesh {
     pub fn new(obj: Obj) -> Self {
+        println!("Len Positions: {:?}", obj.data.position.len());
+        println!("Position 0: {:?}", obj.data.position[0]);
+        println!(
+            "Len Objects 0 Group 0 polys: {:?}",
+            obj.data.objects[0].groups[0].polys.len()
+        );
+        println!(
+            "Len Objects 0 Group 0 poly 0: {:?}",
+            obj.data.objects[0].groups[0].polys[0]
+        );
         Mesh { obj }
+    }
+
+    /// Rather hacky code pulling the first mesh/object group out from the obj file.
+    pub fn get_default_first_mesh(&self) -> (Vec<TriangleVertex>, Vec<Triangle>) {
+        let verts: Vec<TriangleVertex> = self
+            .obj
+            .data
+            .position
+            .iter()
+            .map(|pos| TriangleVertex::new(pos.clone()))
+            .collect();
+
+        let tris: Vec<Triangle> = self.obj.data.objects[0].groups[0]
+            .polys
+            .iter()
+            .map(|poly| Triangle::new([poly.0[0].0 as u32, poly.0[1].0 as u32, poly.0[2].0 as u32]))
+            .collect();
+
+        (verts, tris)
     }
 }

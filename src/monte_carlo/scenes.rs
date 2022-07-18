@@ -1,5 +1,3 @@
-use std::{fs::File, io::BufReader};
-
 use cgmath::{prelude::*, Deg, Matrix4, Vector3};
 use obj::Obj;
 
@@ -11,18 +9,12 @@ use super::{
 
 #[allow(dead_code)]
 pub fn test_mesh_scene() -> LinearSceneBvh {
-    // let bunny_raw = BufReader::new(
-    //     File::open("src/monte_carlo/resources/bunny.obj").expect("Unable to open bunny file"),
-    // );
-    // let bunny_obj: Obj = load_obj(bunny_raw).expect("Unable to load bunny obj");
-    // let bunny_obj: Obj = Obj::load("src/load_obj(bunny_raw).expect("Unable to load bunny obj");
     println!("Loading bunny");
     let bunny_obj: Obj = Obj::load("src/monte_carlo/resources/bunny.obj").expect("Unable to load bunny obj");
     println!("Loaded bunny");
     let bunny = Mesh::new(bunny_obj);
 
     construction_scene::build_from_meshes(
-        Material::new(0, 0.0, 0.0, Vector3::new(0.70, 0.80, 1.00)),
         &vec![Material::new(
             0,
             0.0,
@@ -50,7 +42,6 @@ pub fn simple_scene() -> LinearSceneBvh {
 #[allow(dead_code)]
 pub fn test_scene_wos() -> LinearSceneBvh {
     construction_scene::build_from_hittable_primitives(
-        Material::new(0, 0.0, 0.0, Vector3::new(0.70, 0.80, 1.00)),
         &vec![
             Material::new(5, 0.0, 0.0, Vector3::<f32>::new(0.0, 0.0, 0.0)),
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.7, 0.6, 0.7)),
@@ -91,7 +82,6 @@ pub fn test_scene_wos() -> LinearSceneBvh {
 #[allow(dead_code)]
 pub fn cornell_box() -> LinearSceneBvh {
     construction_scene::build_from_hittable_primitives(
-        Material::new(0, 0.0, 0.0, Vector3::new(0.0, 0.0, 0.0)),
         &vec![
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(1.0, 1.0, 1.0)),
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(1.0, 0.0, 0.0)),

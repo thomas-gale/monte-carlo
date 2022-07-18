@@ -18,6 +18,7 @@ mod quad;
 mod result;
 mod scenes;
 mod sphere;
+mod triangle;
 mod uniforms_bindings;
 mod util;
 mod vertex;

@@ -25,6 +25,18 @@ fn vs_main(
 // Implementing https://raytracing.github.io/books/RayTracingInOneWeekend.html
 // Attribution of assitance from https://www.shadertoy.com/view/lssBD7
 
+// Core Structs
+struct Material {
+    /// 0: lambertian, 1: metal, 2: dielectric, 3: emissive, 4: isotropic medium, 5, wos albedo blend
+    material_type: u32; 
+    /// Roughness for metals
+    fuzz: f32; 
+    /// Refraction index for dielectrics
+    refraction_index: f32; 
+    /// Ray bounce color
+    albedo: vec3<f32>;
+};
+
 // Constants
 struct Constants {
     infinity: f32;
@@ -43,6 +55,8 @@ struct Constants {
     draw_bvh_attenuation: f32;
     /// WoS Tolerance Distance
     wos_tolerance: f32;
+    /// Material for the background
+    background: Material;
 };
 
 [[group(0), binding(0)]]
@@ -201,18 +215,7 @@ struct Camera {
 [[group(1), binding(0)]]
 var<uniform> camera: Camera;
 
-// Scene
-struct Material {
-    /// 0: lambertian, 1: metal, 2: dielectric, 3: emissive, 4: isotropic medium, 5, wos albedo blend
-    material_type: u32; 
-    /// Roughness for metals
-    fuzz: f32; 
-    /// Refraction index for dielectrics
-    refraction_index: f32; 
-    /// Ray bounce color
-    albedo: vec3<f32>;
-};
-
+// Scene/Geometry
 struct Sphere {
     center: vec3<f32>;
     radius: f32;
@@ -238,6 +241,14 @@ struct ConstantMedium {
     material_index: u32;
     /// Negative inverse of the density of the medium
     neg_inv_density: f32;
+};
+
+struct TriangleVertex {
+    position: vec3<f32>;
+};
+
+struct Triangle {
+    indicies: vec3<u32>;
 };
 
 /// Axis aligned bounding box.
@@ -272,10 +283,6 @@ fn is_primitive(geometry_type: u32) -> bool {
 let bvh_node_null_ptr: u32 = 4294967295u;
 
 // Scene Linear Arrays - these are the data structures that are sent from cpu to the gpu.
-struct SceneInteractiveTransform {
-    val: mat4x4<f32>;
-};
-
 struct SceneLinearMaterials {
     vals: array<Material>;
 };
@@ -300,26 +307,37 @@ struct SceneConstantMediums {
     vals: array<ConstantMedium>;
 };
 
-[[group(2), binding(0)]]
-var<storage, read> scene_background: Material;
+struct SceneTriangleVertices {
+    vals: array<TriangleVertex>;
+};
 
-[[group(2), binding(1)]]
+struct SceneTriangles {
+    vals: array<Triangle>;
+};
+
+[[group(2), binding(0)]]
 var<storage, read> scene_materials: SceneLinearMaterials;
 
-[[group(2), binding(2)]]
+[[group(2), binding(1)]]
 var<storage, read> scene_hittables: SceneLinearHittables;
 
-[[group(2), binding(3)]]
+[[group(2), binding(2)]]
 var<storage, read> scene_bvh_nodes: SceneLinearBvhNodes;
 
-[[group(2), binding(4)]]
+[[group(2), binding(3)]]
 var<storage, read> scene_spheres: SceneLinearSpheres;
 
-[[group(2), binding(5)]]
+[[group(2), binding(4)]]
 var<storage, read> scene_cuboids: SceneLinearCuboids;
 
-[[group(2), binding(6)]]
+[[group(2), binding(5)]]
 var<storage, read> scene_constant_mediums: SceneConstantMediums;
+
+[[group(2), binding(6)]]
+var<storage, read> scene_triangle_verticies: SceneTriangleVertices;
+
+[[group(2), binding(7)]]
+var<storage, read> scene_triangles: SceneTriangles;
 
 // Ray
 struct Ray {
@@ -962,7 +980,7 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
             }
         } else {
             // No hit, return background / sky color gradient
-            current_ray_color = current_ray_color * scene_background.albedo;
+            current_ray_color = current_ray_color * constants.background.albedo;
             break;
         }
     }
