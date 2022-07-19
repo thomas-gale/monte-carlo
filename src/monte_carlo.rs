@@ -43,7 +43,7 @@ pub struct BvhRaytracing {
     render_pipeline: wgpu::RenderPipeline,
     uniforms_bindings: uniforms_bindings::UniformsBindings,
     camera: camera::Camera,
-    interactive_section: interactive_section::InteractiveSection,
+    interactive_section: Option<interactive_section::InteractiveSection>,
     scene_bvh: LinearSceneBvh,
     scene_bvh_bind_group: wgpu::BindGroup,
     result: result::Result,
@@ -109,19 +109,21 @@ impl BvhRaytracing {
         );
 
         // Scene
+        // let mut scene_bvh = scenes::simple_scene();
         let mut scene_bvh = scenes::test_mesh_scene();
         // let mut scene_bvh = scenes::cornell_box();
         // let mut scene_bvh = scenes::test_scene_wos();
         let (scene_bvh_bind_group_layout, scene_bvh_bind_group) =
             scene_bvh.create_device_buffers(&device);
 
-        // Interactive Section
-        let interactive_section = interactive_section::InteractiveSection::new(
-            LinearHittable {
-                geometry_type: 2,
-                scene_index: 0,
-            }, // First Cuboid (check scene_bvh above)
-        );
+        // Interactive Section (optional)
+        // let interactive_section = Some(interactive_section::InteractiveSection::new(
+        //     LinearHittable {
+        //         geometry_type: 2,
+        //         scene_index: 0,
+        //     }, // First Cuboid (check scene_bvh above)
+        // ));
+        let interactive_section = None;
 
         // Create basic quad to render fragments onto.
         let quad = quad::Quad::new(&device);
@@ -256,8 +258,9 @@ impl BvhRaytracing {
                     // Else if we are dragging an input command (e.g. moving the interactive section)
                     if self.current_input_mouse_pos.x > 0.001
                         && self.current_input_mouse_pos.y > 0.001
+                        && self.interactive_section.is_some()
                     {
-                        self.interactive_section.translate(
+                        self.interactive_section.as_mut().unwrap().translate(
                             &self.device,
                             &self.queue,
                             &mut self.scene_bvh,

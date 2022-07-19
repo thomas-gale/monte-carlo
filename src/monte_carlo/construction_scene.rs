@@ -101,32 +101,24 @@ pub fn build_from_hittable_primitives(
                 // Append the mesh tri ints the scene tri indices
                 for tri in mesh_tris {
                     scene.tris.push(Triangle::new(
-                        mesh.material_index,[
-                        tri.indices[0] + offset,
-                        tri.indices[1] + offset,
-                        tri.indices[2] + offset,
-                    ]));
+                        mesh.material_index,
+                        [
+                            tri.indices[0] + offset,
+                            tri.indices[1] + offset,
+                            tri.indices[2] + offset,
+                        ],
+                    ));
                     scene.hittables.push(LinearHittable {
                         geometry_type: 4,
                         scene_index: (scene.tris.len() - 1) as u32,
                     });
                 }
             }
-            // Other hittable primitives will be added in due course.
             _ => {
                 panic!("Can't build, unsupported hittable primitive type");
             }
         }
     }
-
-    // // Source objects are cloned at the array slice is used within the following recursive bvh construction function
-    // let source_objects = scene.hittables.clone();
-
-    // // Build a referenced structure bvh tree from the scene
-    // let bvh_construction = SceneBvhConstructionNode::new(&mut scene, &source_objects[..]);
-
-    // // Flatten the bvh tree into a linearized structure and update the scene accordingly
-    // bvh_construction.flatten(&mut scene);
 
     recompute_bvh(&mut scene);
 
@@ -134,7 +126,7 @@ pub fn build_from_hittable_primitives(
     scene.check_pad_empty_arrays();
 
     // Debug - pretty print the flattened scene bvh
-    // scene.debug_print();
+    scene.debug_print();
 
     // Return the constructed scene
     scene
@@ -154,10 +146,7 @@ pub fn build_from_spheres(
     self::build_from_hittable_primitives(materials, &hittables[..])
 }
 
-pub fn build_from_meshes(
-    materials: &[Material],
-    meshes: &[Mesh],
-) -> LinearSceneBvh {
+pub fn build_from_meshes(materials: &[Material], meshes: &[Mesh]) -> LinearSceneBvh {
     let hittables: Vec<HittablePrimitive> = meshes
         .iter()
         .map(|mesh| HittablePrimitive::Mesh(mesh.clone()))

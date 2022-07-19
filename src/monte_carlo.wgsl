@@ -453,6 +453,10 @@ fn cuboid_sd(cuboid_index: u32, point: vec3<f32>, hit_record: ptr<function, HitR
 /// Attribution: https://iquilezles.org/articles/triangledistance/
 fn triange_ud(triangle_index: u32, point: vec3<f32>, hit_record: ptr<function, HitRecord>) -> f32 {
     var triangle = scene_triangles.vals[triangle_index];
+
+    var material = scene_materials.vals[triangle.material_index];
+    set_material_data(hit_record, &material);
+
     var v1 = scene_triangle_verticies.vals[triangle.indicies.x].position;
     var v2 = scene_triangle_verticies.vals[triangle.indicies.y].position;
     var v3 = scene_triangle_verticies.vals[triangle.indicies.z].position;
@@ -465,13 +469,13 @@ fn triange_ud(triangle_index: u32, point: vec3<f32>, hit_record: ptr<function, H
     // Inside/outside test
     if (sign(dot(cross(v21, nor), p1)) + sign(dot(cross(v32, nor), p2)) + sign(dot(cross(v13, nor), p3)) < 2.0) {
         // 3 edges 
-        return sqrt(min( min( 
-                  dot2(v21*clamp(dot(v21,p1)/dot2(v21),0.0,1.0)-p1), 
-                  dot2(v32*clamp(dot(v32,p2)/dot2(v32),0.0,1.0)-p2)), 
-                  dot2(v13*clamp(dot(v13,p3)/dot2(v13),0.0,1.0)-p3)));
+        return sqrt(min(min(
+            dot2(v21 * clamp(dot(v21, p1) / dot2(v21), 0.0, 1.0) - p1),
+            dot2(v32 * clamp(dot(v32, p2) / dot2(v32), 0.0, 1.0) - p2)
+        ), dot2(v13 * clamp(dot(v13, p3) / dot2(v13), 0.0, 1.0) - p3)));
     } else {
         // 1 face
-        return sqrt(dot(nor,p1)*dot(nor,p1)/dot2(nor));
+        return sqrt(dot(nor, p1) * dot(nor, p1) / dot2(nor));
     }
 }
 
@@ -759,6 +763,46 @@ fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
     return true;
 }
 
+/// Attribution: https://iquilezles.org/articles/intersectors/ (triIntersect)
+fn triangle_hit(triangle_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
+    var triangle = scene_triangles.vals[triangle_index];
+    var material = scene_materials.vals[triangle.material_index];
+
+    var v0 = scene_triangle_verticies.vals[triangle.indicies.x].position;
+    var v1 = scene_triangle_verticies.vals[triangle.indicies.y].position;
+    var v2 = scene_triangle_verticies.vals[triangle.indicies.z].position;
+
+    var v1v0 = v1 - v0;
+    var v2v0 = v2 - v0;
+    var rov0 = (*ray).origin - v0;
+    var  n = cross(v1v0, v2v0);
+    // var  n = cross(v2v0, v1v0);
+    var  q = cross(rov0, (*ray).direction);
+    var d = 1.0 / dot((*ray).direction, n);
+    var u = d * dot(-q, v2v0);
+    var v = d * dot(q, v1v0);
+    var t = d * dot(-n, rov0);
+
+    // Within range
+    if (t < t_min || t > t_max) {
+        return false;
+    }
+
+    // Within triangle
+    if (u < 0.0 || v < 0.0 || (u + v) > 1.0) {
+        return false;
+    }
+
+    (*hit_record).normal = n;
+    (*hit_record).t = t;
+    (*hit_record).p = ray_at(ray, (*hit_record).t);
+    // (*hit_record).p = (*ray).origin + (*ray).direction * t;
+
+    set_material_data(hit_record, &material);
+
+    return true;
+}
+
 fn primitive_hit(primitive_geometry_type: u32, primitive_scene_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
     switch (primitive_geometry_type) {
         case 1u: {
@@ -768,6 +812,10 @@ fn primitive_hit(primitive_geometry_type: u32, primitive_scene_index: u32, ray: 
         case 2u: {
             // Cuboid
             return cuboid_hit(primitive_scene_index, ray, t_min, t_max, hit_record);
+        }
+        case 4u: {
+            // Triangle
+            return triangle_hit(primitive_scene_index, ray, t_min, t_max, hit_record);
         }
         default: {
             return false; // Non-primitive geometry type
@@ -859,14 +907,13 @@ fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function
 
             // Does this BVH node intersect the ray?
             var t = 0.0;
-            // var hit = aabb_hit(stack[stack_top], ray, t_min, closest_so_far, &t);
             var hit = aabb_hit(stack[stack_top], ray, &t);
 
             // Pop the stack (aabb hit check done).
             stack_top = stack_top - 1;
 
             if (hit) {
-                    // Track the number of bvh hits for bvh debug rendering purposes
+                // Track the number of bvh hits for bvh debug rendering purposes
                 (*rec).number_bvh_hits = (*rec).number_bvh_hits + 1u;
 
                     // Push the left and right children onto the stack (if they exist)
