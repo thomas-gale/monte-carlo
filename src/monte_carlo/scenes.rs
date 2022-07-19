@@ -14,10 +14,10 @@ pub fn test_wos_bunny_mesh_scene() -> LinearSceneBvh {
     construction_scene::build_from_hittable_primitives(
         &vec![
             Material::new(5, 0.0, 0.0, Vector3::<f32>::new(0.0, 0.0, 0.0)),
-            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.7, 0.6, 0.7)),
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.8, 0.8, 0.3)),
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.9, 0.2, 0.2)),
-            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.0, 1.0, 0.0)),
-            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.0, 0.0, 1.0)),
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.2, 0.9, 0.2)),
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.2, 0.2, 0.9)),
         ],
         &vec![
             HittablePrimitive::Cuboid(Cuboid::new(
@@ -28,8 +28,8 @@ pub fn test_wos_bunny_mesh_scene() -> LinearSceneBvh {
             )),
             HittablePrimitive::Cuboid(Cuboid::new(
                 Matrix4::identity()
-                    * Matrix4::from_translation(Vector3::new(0.0, -0.97, 0.0))
-                    * Matrix4::from_nonuniform_scale(100.0, 1.0, 100.0),
+                    * Matrix4::from_translation(Vector3::new(0.0, -0.05, 0.0))
+                    * Matrix4::from_nonuniform_scale(0.2, 0.005, 0.1),
                 1,
             )),
             HittablePrimitive::Mesh(Mesh::new(obj, 2)),
