@@ -11,6 +11,7 @@ opt-level = 3
 
 [dependencies]
 anyhow = "1.0"
+bmp = "0.5"
 bytemuck = { version = "1.4", features = [ "derive" ] }
 cgmath = "0.18"
 env_logger = "0.9"

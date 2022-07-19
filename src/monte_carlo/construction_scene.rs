@@ -1,8 +1,7 @@
 use super::{
     construction_scene_bvh_node::SceneBvhConstructionNode, hittable_primitive::HittablePrimitive,
     linear_constant_medium::LinearConstantMedium, linear_hittable::LinearHittable,
-    linear_scene_bvh::LinearSceneBvh, material::Material, mesh::Mesh, sphere::Sphere,
-    triangle::Triangle,
+    linear_scene_bvh::LinearSceneBvh, material::Material, sphere::Sphere, triangle::Triangle,
 };
 
 pub fn recompute_bvh(scene: &mut LinearSceneBvh) {
@@ -114,9 +113,6 @@ pub fn build_from_hittable_primitives(
                     });
                 }
             }
-            _ => {
-                panic!("Can't build, unsupported hittable primitive type");
-            }
         }
     }
 
@@ -133,10 +129,7 @@ pub fn build_from_hittable_primitives(
 }
 
 /// Build a LinearSceneBvh from just materials and spheres
-pub fn build_from_spheres(
-    materials: &[Material],
-    spheres: &[Sphere],
-) -> LinearSceneBvh {
+pub fn build_from_spheres(materials: &[Material], spheres: &[Sphere]) -> LinearSceneBvh {
     let hittables: Vec<HittablePrimitive> = spheres
         .iter()
         .map(|sphere| HittablePrimitive::Sphere(*sphere))
@@ -145,10 +138,10 @@ pub fn build_from_spheres(
     self::build_from_hittable_primitives(materials, &hittables[..])
 }
 
-pub fn build_from_meshes(materials: &[Material], meshes: &[Mesh]) -> LinearSceneBvh {
-    let hittables: Vec<HittablePrimitive> = meshes
-        .iter()
-        .map(|mesh| HittablePrimitive::Mesh(mesh.clone()))
-        .collect();
-    self::build_from_hittable_primitives(materials, &hittables[..])
-}
+// pub fn build_from_meshes(materials: &[Material], meshes: &[Mesh]) -> LinearSceneBvh {
+//     let hittables: Vec<HittablePrimitive> = meshes
+//         .iter()
+//         .map(|mesh| HittablePrimitive::Mesh(mesh.clone()))
+//         .collect();
+//     self::build_from_hittable_primitives(materials, &hittables[..])
+// }

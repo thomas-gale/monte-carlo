@@ -293,7 +293,10 @@ impl BvhRaytracing {
                     },
                 ..
             } => {
-                self.result.write_texture_to_working_dir();
+                // self.result
+                // .write_texture_to_working_dir(&self.device, &self.queue, self.size);
+                self.result
+                    .write_texture_to_working_dir(&self.device, self.size);
             }
             _ => {}
         }

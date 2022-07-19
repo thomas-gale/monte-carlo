@@ -32,15 +32,16 @@ impl Result {
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Rgba32Float,
             usage: wgpu::TextureUsages::COPY_DST
+                | wgpu::TextureUsages::COPY_SRC
                 | wgpu::TextureUsages::STORAGE_BINDING
                 | wgpu::TextureUsages::TEXTURE_BINDING,
             label: None,
         });
 
-        let inital_data: Vec<u8> =
+        let initial_data: Vec<u8> =
             vec![0; texture_size.width as usize * texture_size.height as usize * 4 * 4];
 
-        Self::update_texture(device, queue, &texture, &inital_data[..], texture_size);
+        Self::update_texture(device, queue, &texture, &initial_data[..], texture_size);
 
         // Initialize the uniforms buffer (to keep track of things like pass index)
         let uniforms = ResultUniforms { pass_index: 0 };
@@ -97,7 +98,6 @@ impl Result {
         });
 
         Result {
-            // texture_size,
             texture,
             bind_group_layout,
             bind_group,
@@ -183,7 +183,53 @@ impl Result {
         queue.submit(std::iter::once(encoder.finish()));
     }
 
-    pub fn write_texture_to_working_dir(&self) {
-        println!("Writing texture to working directory");
+    pub fn write_texture_to_working_dir(
+        &self,
+        device: &wgpu::Device,
+        // queue: &wgpu::Queue,
+        size: winit::dpi::PhysicalSize<u32>,
+    ) {
+        // Copy GPU texture to Buffer
+
+        // Using 32bit float texture in shader
+        let buffer_size = (size.width * size.height * 32) as u64;
+        let texture_size = wgpu::Extent3d {
+            width: size.width,
+            height: size.height,
+            depth_or_array_layers: 1,
+        };
+
+        let output_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: None,
+            mapped_at_creation: true,
+            size: buffer_size,
+            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+        });
+
+        let mut encoder =
+            device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
+        encoder.copy_texture_to_buffer(
+            self.texture.as_image_copy(),
+            wgpu::ImageCopyBuffer {
+                buffer: &output_buffer,
+                layout: wgpu::ImageDataLayout {
+                    offset: 0,
+                    bytes_per_row: std::num::NonZeroU32::new(size.width * 16),
+                    rows_per_image: std::num::NonZeroU32::new(size.height),
+                },
+            },
+            texture_size,
+        );
+
+        // Read texture to CPU
+        // let = output_buffer.slice(..).map_async(wgpu::MapMode::Read);
+
+        // Create bmp
+        // let mut img = Image::new(size.width, size.height);
+        // for (x, y) in img.coordinates() {
+        // img.set_pixel(x, y, output_buffer[0])
+        // }
+        println!("WIP. MAP ASYNC todo.")
     }
 }

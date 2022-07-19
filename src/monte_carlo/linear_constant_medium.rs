@@ -1,4 +1,4 @@
-use super::{aabb::Aabb, hittable_primitive::HittablePrimitive, linear_scene_bvh::LinearSceneBvh};
+use super::{aabb::Aabb, linear_scene_bvh::LinearSceneBvh};
 
 ///
 /// POD ConstantMedium ready to ship to GPU

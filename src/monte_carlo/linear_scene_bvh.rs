@@ -91,6 +91,7 @@ impl LinearSceneBvh {
         }
     }
 
+    #[allow(dead_code)]
     pub fn debug_print(&self) {
         println!("LinearSceneBvh:");
         println!("materials: {:?}", self.materials);
