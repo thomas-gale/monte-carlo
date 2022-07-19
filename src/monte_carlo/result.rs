@@ -182,4 +182,8 @@ impl Result {
 
         queue.submit(std::iter::once(encoder.finish()));
     }
+
+    pub fn write_texture_to_working_dir(&self) {
+        println!("Writing texture to working directory");
+    }
 }

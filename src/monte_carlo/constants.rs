@@ -35,7 +35,7 @@ impl Constants {
             pi: std::f32::consts::PI,
             pass_samples_per_pixel: 1,
             max_depth: 64,
-            vertical_render_slices: 32,
+            vertical_render_slices: 64,
             draw_vertical_render_slice_region: 0,
             draw_bvh: 0,
             draw_bvh_attenuation: 0.8,

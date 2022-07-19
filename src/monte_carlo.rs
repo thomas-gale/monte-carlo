@@ -232,7 +232,6 @@ impl BvhRaytracing {
                 self.rot_mouse_down = false;
                 self.current_rot_mouse_pos = winit::dpi::PhysicalPosition::new(0.0, 0.0);
             }
-
             WindowEvent::CursorMoved { position: pos, .. } => {
                 // If currently rotating
                 if self.rot_mouse_down {
@@ -284,6 +283,17 @@ impl BvhRaytracing {
                     self.size,
                     *pos_y,
                 );
+            }
+            WindowEvent::KeyboardInput {
+                input:
+                    winit::event::KeyboardInput {
+                        virtual_keycode: Some(winit::event::VirtualKeyCode::S),
+                        state: winit::event::ElementState::Pressed,
+                        ..
+                    },
+                ..
+            } => {
+                self.result.write_texture_to_working_dir();
             }
             _ => {}
         }
