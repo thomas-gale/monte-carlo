@@ -39,3 +39,4 @@ https://github.com/thomas-gale/monte-carlo/blob/main/src/bvh_raytracing/constant
 ![bvh preview in final scene](https://user-images.githubusercontent.com/11990706/173129836-4b0307c2-5652-423a-9786-6d6bf775c618.png)
 ![volume sphere in cornel box](https://user-images.githubusercontent.com/11990706/175810986-34269991-fbdd-437d-9a3c-ae0a062833f4.png)
 ![wos laplace sample plane](https://user-images.githubusercontent.com/11990706/176406605-579a46f0-e3e3-4bc0-9c83-afd09d81474d.png)
+![wos laplace sample plane bunny mesh](https://user-images.githubusercontent.com/11990706/179814785-3677cd1a-4cde-43c3-9d6f-5a35ee94d80a.png)
