@@ -767,8 +767,6 @@ fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
 fn triangle_hit(triangle_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
     var triangle = scene_triangles.vals[triangle_index];
     var material = scene_materials.vals[triangle.material_index];
-    
-    
 
     var v0 = scene_triangle_verticies.vals[triangle.indicies.x].position;
     var v1 = scene_triangle_verticies.vals[triangle.indicies.y].position;
@@ -1047,15 +1045,15 @@ fn ray_color(ray: ptr<function, Ray>, depth: i32, entropy: u32) -> vec3<f32> {
                 var mat_sample_rec = wos(hit_record.p, entropy * u32(i + 5));
                 current_ray_color = current_ray_color * mat_sample_rec.albedo;
 
-                // Lambertian material
+                // Lambertian material (much more expensive than breaking to simulate emissive material)
                 var scattered = hit_record.p + random_in_hemisphere(hit_record.normal, (entropy * u32(i + 1)));
                 // Check for degenerate target scatter
                 if (vec3_near_zero(scattered)) {
                     scattered = hit_record.normal;
                 }
-
                 current_ray = Ray(hit_record.p, scattered - hit_record.p);
-                // break; // Stop ray bounces
+
+                // break; // Stop ray bounces (cheaper than lambertian scattering)
             }
         } else {
             // No hit, return background / sky color gradient

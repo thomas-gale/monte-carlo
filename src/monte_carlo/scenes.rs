@@ -8,10 +8,8 @@ use super::{
 };
 
 #[allow(dead_code)]
-pub fn test_mesh_scene() -> LinearSceneBvh {
+pub fn test_wos_bunny_mesh_scene() -> LinearSceneBvh {
     let obj: Obj = Obj::load("src/monte_carlo/resources/bunny.obj").expect("Unable to load obj");
-    // let obj: Obj = Obj::load("src/monte_carlo/resources/cube.obj").expect("Unable to load obj");
-    // let obj: Obj = Obj::load("src/monte_carlo/resources/triangle.obj").expect("Unable to load obj");
 
     construction_scene::build_from_hittable_primitives(
         &vec![
@@ -22,12 +20,12 @@ pub fn test_mesh_scene() -> LinearSceneBvh {
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.0, 0.0, 1.0)),
         ],
         &vec![
-            // HittablePrimitive::Cuboid(Cuboid::new(
-            //     Matrix4::identity()
-            //         * Matrix4::from_translation(Vector3::new(0.0, 0.0, 0.0))
-            //         * Matrix4::from_nonuniform_scale(5.0, 5.0, 0.1),
-            //     0,
-            // )),
+            HittablePrimitive::Cuboid(Cuboid::new(
+                Matrix4::identity()
+                    * Matrix4::from_translation(Vector3::new(0.0, 0.0, 0.0))
+                    * Matrix4::from_nonuniform_scale(5.0, 5.0, 0.001),
+                0,
+            )),
             HittablePrimitive::Cuboid(Cuboid::new(
                 Matrix4::identity()
                     * Matrix4::from_translation(Vector3::new(0.0, -0.97, 0.0))
@@ -35,8 +33,8 @@ pub fn test_mesh_scene() -> LinearSceneBvh {
                 1,
             )),
             HittablePrimitive::Mesh(Mesh::new(obj, 2)),
-            // HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(3.0, 0.0, 0.0), 0.5, 2)),
-            // HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(-3.0, 0.0, 0.0), 0.5, 3)),
+            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.2, 0.1, 0.0), 0.05, 3)),
+            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(-0.2, 0.1, 0.0), 0.05, 4)),
         ],
     )
 }

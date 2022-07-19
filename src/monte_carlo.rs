@@ -98,7 +98,7 @@ impl BvhRaytracing {
         // Camera
         let camera = camera::Camera::new(
             &device,
-            Point3::<f32>::new(0.0, 0.5, 4.0),
+            Point3::<f32>::new(0.2, 0.5, 0.8),
             Point3::<f32>::new(0.0, 0.1, 0.0),
             Vector3::<f32>::new(0.0, 1.0, 0.0),
             25.0,
@@ -109,21 +109,18 @@ impl BvhRaytracing {
         );
 
         // Scene
-        // let mut scene_bvh = scenes::simple_scene();
-        let mut scene_bvh = scenes::test_mesh_scene();
-        // let mut scene_bvh = scenes::cornell_box();
-        // let mut scene_bvh = scenes::test_scene_wos();
+        let mut scene_bvh = scenes::test_wos_bunny_mesh_scene();
         let (scene_bvh_bind_group_layout, scene_bvh_bind_group) =
             scene_bvh.create_device_buffers(&device);
 
         // Interactive Section (optional)
-        // let interactive_section = Some(interactive_section::InteractiveSection::new(
-        //     LinearHittable {
-        //         geometry_type: 2,
-        //         scene_index: 0,
-        //     }, // First Cuboid (check scene_bvh above)
-        // ));
-        let interactive_section = None;
+        let interactive_section = Some(interactive_section::InteractiveSection::new(
+            LinearHittable {
+                geometry_type: 2,
+                scene_index: 0,
+            }, // Use first cuboid (check scene_bvh above)
+        ));
+        // let interactive_section = None;
 
         // Create basic quad to render fragments onto.
         let quad = quad::Quad::new(&device);

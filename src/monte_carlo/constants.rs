@@ -39,7 +39,7 @@ impl Constants {
             draw_vertical_render_slice_region: 0,
             draw_bvh: 0,
             draw_bvh_attenuation: 0.8,
-            wos_tolerance: 0.01,
+            wos_tolerance: 0.005,
             _pad1: 0,
             _pad2: 0,
             background: Material::new(0, 0.0, 0.0, Vector3::new(0.70, 0.80, 1.00)),
