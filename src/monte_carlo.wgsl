@@ -279,9 +279,9 @@ struct LinearHittable {
     scene_index: u32;
 };
 
-/// Check if the linear hittables is a primitive
+/// Check if the linear hittables is a primitive (sphere, cuboid, triangle)
 fn is_primitive(geometry_type: u32) -> bool {
-    return geometry_type == 1u || geometry_type == 2u;
+    return geometry_type == 1u || geometry_type == 2u || geometry_type == 4u;
 }
 
 // Releated to Hittable
@@ -767,6 +767,8 @@ fn cuboid_hit(cuboid_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32
 fn triangle_hit(triangle_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max: f32, hit_record: ptr<function, HitRecord>) -> bool {
     var triangle = scene_triangles.vals[triangle_index];
     var material = scene_materials.vals[triangle.material_index];
+    
+    
 
     var v0 = scene_triangle_verticies.vals[triangle.indicies.x].position;
     var v1 = scene_triangle_verticies.vals[triangle.indicies.y].position;
@@ -776,7 +778,6 @@ fn triangle_hit(triangle_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max:
     var v2v0 = v2 - v0;
     var rov0 = (*ray).origin - v0;
     var  n = cross(v1v0, v2v0);
-    // var  n = cross(v2v0, v1v0);
     var  q = cross(rov0, (*ray).direction);
     var d = 1.0 / dot((*ray).direction, n);
     var u = d * dot(-q, v2v0);
@@ -796,7 +797,6 @@ fn triangle_hit(triangle_index: u32, ray: ptr<function, Ray>, t_min: f32, t_max:
     (*hit_record).normal = n;
     (*hit_record).t = t;
     (*hit_record).p = ray_at(ray, (*hit_record).t);
-    // (*hit_record).p = (*ray).origin + (*ray).direction * t;
 
     set_material_data(hit_record, &material);
 
@@ -868,8 +868,6 @@ fn constant_medium_hit(constant_medium_index: u32, ray: ptr<function, Ray>, t_mi
 
     return true;
 }
-
-
 
 /// Global ray hit function for all scene primitives (using bvh stack traversal).
 fn scene_hits(ray: ptr<function, Ray>, t_min: f32, t_max: f32, rec: ptr<function, HitRecord>, entropy: u32) -> bool {

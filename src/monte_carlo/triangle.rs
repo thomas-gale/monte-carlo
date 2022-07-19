@@ -13,6 +13,7 @@ pub struct TriangleVertex {
 impl TriangleVertex {
     pub fn new(position: [f32; 3]) -> Self {
         TriangleVertex { position, _pad1: 0 }
+        // TriangleVertex { position }
     }
     pub fn empty() -> Self {
         TriangleVertex {

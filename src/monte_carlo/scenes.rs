@@ -9,27 +9,41 @@ use super::{
 
 #[allow(dead_code)]
 pub fn test_mesh_scene() -> LinearSceneBvh {
-    println!("Loading obj");
-    // let obj: Obj = Obj::load("src/monte_carlo/resources/bunny.obj").expect("Unable to load obj");
-    let obj: Obj = Obj::load("src/monte_carlo/resources/cube.obj").expect("Unable to load obj");
-    println!("Loaded obj");
-    let mesh = Mesh::new(obj, 0);
+    let obj: Obj = Obj::load("src/monte_carlo/resources/bunny.obj").expect("Unable to load obj");
+    // let obj: Obj = Obj::load("src/monte_carlo/resources/cube.obj").expect("Unable to load obj");
+    // let obj: Obj = Obj::load("src/monte_carlo/resources/triangle.obj").expect("Unable to load obj");
 
-    construction_scene::build_from_meshes(
-        &vec![Material::new(
-            0,
-            0.0,
-            0.0,
-            Vector3::<f32>::new(1.0, 0.0, 0.0),
-        )],
-        &vec![mesh],
+    construction_scene::build_from_hittable_primitives(
+        &vec![
+            Material::new(5, 0.0, 0.0, Vector3::<f32>::new(0.0, 0.0, 0.0)),
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.7, 0.6, 0.7)),
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.9, 0.2, 0.2)),
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.0, 1.0, 0.0)),
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.0, 0.0, 1.0)),
+        ],
+        &vec![
+            // HittablePrimitive::Cuboid(Cuboid::new(
+            //     Matrix4::identity()
+            //         * Matrix4::from_translation(Vector3::new(0.0, 0.0, 0.0))
+            //         * Matrix4::from_nonuniform_scale(5.0, 5.0, 0.1),
+            //     0,
+            // )),
+            HittablePrimitive::Cuboid(Cuboid::new(
+                Matrix4::identity()
+                    * Matrix4::from_translation(Vector3::new(0.0, -0.97, 0.0))
+                    * Matrix4::from_nonuniform_scale(100.0, 1.0, 100.0),
+                1,
+            )),
+            HittablePrimitive::Mesh(Mesh::new(obj, 2)),
+            // HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(3.0, 0.0, 0.0), 0.5, 2)),
+            // HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(-3.0, 0.0, 0.0), 0.5, 3)),
+        ],
     )
 }
 
 #[allow(dead_code)]
 pub fn simple_scene() -> LinearSceneBvh {
     construction_scene::build_from_spheres(
-        Material::new(0, 0.0, 0.0, Vector3::new(0.70, 0.80, 1.00)),
         &vec![Material::new(
             0,
             0.0,

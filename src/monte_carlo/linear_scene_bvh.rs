@@ -113,7 +113,7 @@ impl LinearSceneBvh {
                 let triangle = self.tris[hittable.get_scene_index()];
                 println!("\n Triangle: {:?}", triangle);
                 println!(
-                    "\n Triangle Verts: v1: {:?}, v2: {:?}, v3: {:?}",
+                    "Triangle Verts: v1: {:?}, v2: {:?}, v3: {:?}",
                     self.tri_verts[triangle.indices[0] as usize].position,
                     self.tri_verts[triangle.indices[1] as usize].position,
                     self.tri_verts[triangle.indices[2] as usize].position

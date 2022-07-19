@@ -126,7 +126,7 @@ pub fn build_from_hittable_primitives(
     scene.check_pad_empty_arrays();
 
     // Debug - pretty print the flattened scene bvh
-    scene.debug_print();
+    // scene.debug_print();
 
     // Return the constructed scene
     scene
@@ -134,7 +134,6 @@ pub fn build_from_hittable_primitives(
 
 /// Build a LinearSceneBvh from just materials and spheres
 pub fn build_from_spheres(
-    background: Material,
     materials: &[Material],
     spheres: &[Sphere],
 ) -> LinearSceneBvh {
