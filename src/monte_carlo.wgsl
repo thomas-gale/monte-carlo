@@ -63,6 +63,10 @@ struct Constants {
 var<uniform> constants: Constants;
 
 // Utilities
+fn dot2(v: vec3<f32>) -> f32 {
+    return dot(v, v);
+}
+
 fn degrees_to_radians(degrees: f32) -> f32 {
     return degrees * constants.pi / 180.0;
 }
@@ -269,7 +273,7 @@ struct BvhNode {
 
 /// Experimental data structure to hold all bvh compatible data for a single hittable geometry to compose into the bvh tree
 struct LinearHittable {
-    /// 0: BvhNode, 1: Sphere, 2: Cuboid, 3: ConstantMedium
+    /// 0: BvhNode, 1: Sphere, 2: Cuboid, 3: ConstantMedium, 4: Triangle
     geometry_type: u32;
     /// Given the geometry type, the actual data is stored at the following index in the linear_scene_bvh vector (for the appropriate type).
     scene_index: u32;
@@ -446,7 +450,32 @@ fn cuboid_sd(cuboid_index: u32, point: vec3<f32>, hit_record: ptr<function, HitR
     return length(max(q, vec3<f32>(0.0))) + min(max(q.x, max(q.y, q.z)), 0.0);
 }
 
-fn primitive_sd(primitive_geometry_type: u32, primitive_scene_index: u32, point: vec3<f32>, hit_record: ptr<function, HitRecord>) -> f32 {
+/// Attribution: https://iquilezles.org/articles/triangledistance/
+fn triange_ud(triangle_index: u32, point: vec3<f32>, hit_record: ptr<function, HitRecord>) -> f32 {
+    var triangle = scene_triangles.vals[triangle_index];
+    var v1 = scene_triangle_verticies.vals[triangle.indicies.x].position;
+    var v2 = scene_triangle_verticies.vals[triangle.indicies.y].position;
+    var v3 = scene_triangle_verticies.vals[triangle.indicies.z].position;
+
+    var v21 = v2 - v1; var p1 = point - v1;
+    var v32 = v3 - v2; var p2 = point - v2;
+    var v13 = v1 - v3; var p3 = point - v3;
+    var nor = cross(v21, v13);
+
+    // Inside/outside test
+    if (sign(dot(cross(v21, nor), p1)) + sign(dot(cross(v32, nor), p2)) + sign(dot(cross(v13, nor), p3)) < 2.0) {
+        // 3 edges 
+        return sqrt(min( min( 
+                  dot2(v21*clamp(dot(v21,p1)/dot2(v21),0.0,1.0)-p1), 
+                  dot2(v32*clamp(dot(v32,p2)/dot2(v32),0.0,1.0)-p2)), 
+                  dot2(v13*clamp(dot(v13,p3)/dot2(v13),0.0,1.0)-p3)));
+    } else {
+        // 1 face
+        return sqrt(dot(nor,p1)*dot(nor,p1)/dot2(nor));
+    }
+}
+
+fn primitive_distance(primitive_geometry_type: u32, primitive_scene_index: u32, point: vec3<f32>, hit_record: ptr<function, HitRecord>) -> f32 {
     switch (primitive_geometry_type) {
         case 1u: {
             // Sphere
@@ -455,6 +484,10 @@ fn primitive_sd(primitive_geometry_type: u32, primitive_scene_index: u32, point:
         case 2u: {
             // Cuboid
             return cuboid_sd(primitive_scene_index, point, hit_record);
+        }
+        case 4u: {
+            // Triangle
+            return triange_ud(primitive_scene_index, point, hit_record);
         }
         default: {
             return constants.infinity; // Non-primitive geometry type - TODO - better error.
@@ -521,7 +554,7 @@ fn scene_sd(point: vec3<f32>, rec: ptr<function, HitRecord>) -> f32 {
         if (is_primitive(current_hittable.geometry_type)) {
             // Primitive
             var temp_hit_record = new_hit_record();
-            var dist = primitive_sd(current_hittable.geometry_type, scene_hittables.vals[ stack[stack_top] ].scene_index, point, &temp_hit_record);
+            var dist = primitive_distance(current_hittable.geometry_type, scene_hittables.vals[ stack[stack_top] ].scene_index, point, &temp_hit_record);
 
             // Pop the stack primitive hit check done.
             stack_top = stack_top - 1;
