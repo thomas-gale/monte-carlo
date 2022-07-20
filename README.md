@@ -24,8 +24,8 @@ https://github.com/thomas-gale/monte-carlo/blob/main/src/bvh_raytracing/constant
 - [x] Extend to https://raytracing.github.io/books/RayTracingTheNextWeek.html (focus on bvh section, rectangles/lights and volumes)
 
 ### mesh
-- [ ] Support loading of .obj / mesh files and parse into the bvh hittables with other primitives
-- [ ] Signed distance and ray intersection shader functions for triangles
+- [x] Support loading of .obj / mesh files and parse into the bvh hittables with other primitives
+- [x] Signed distance and ray intersection shader functions for triangles
 
 ### monte carlo based simulations sampling e.g. https://www.cs.cmu.edu/~kmcrane/Projects/MonteCarloGeometryProcessing/index.html & https://cs.dartmouth.edu/wjarosz/publications/sawhneyseyb22gridfree.html
 - [x] Laplace walk on spheres
