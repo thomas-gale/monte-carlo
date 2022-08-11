@@ -1,19 +1,47 @@
 use cgmath::{prelude::*, Deg, Matrix4, Vector3};
+use obj::Obj;
 
 use super::{
     constant_medium::ConstantMedium, construction_scene, cuboid::Cuboid,
     hittable_primitive::HittablePrimitive, linear_scene_bvh::LinearSceneBvh, material::Material,
-    sphere::Sphere,
+    mesh::Mesh, sphere::Sphere,
 };
 
-// pub fn test_mesh() -> LinearSceneBvh {
+#[allow(dead_code)]
+pub fn test_wos_bunny_mesh_scene() -> LinearSceneBvh {
+    let obj: Obj = Obj::load("src/monte_carlo/resources/bunny.obj").expect("Unable to load obj");
 
-// }
+    construction_scene::build_from_hittable_primitives(
+        &vec![
+            Material::new(5, 0.0, 0.0, Vector3::<f32>::new(0.0, 0.0, 0.0)),
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.8, 0.8, 0.3)),
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.9, 0.2, 0.2)),
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.2, 0.9, 0.2)),
+            Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.2, 0.2, 0.9)),
+        ],
+        &vec![
+            HittablePrimitive::Cuboid(Cuboid::new(
+                Matrix4::identity()
+                    * Matrix4::from_translation(Vector3::new(0.0, 0.0, 0.0))
+                    * Matrix4::from_nonuniform_scale(5.0, 5.0, 0.001),
+                0,
+            )),
+            HittablePrimitive::Cuboid(Cuboid::new(
+                Matrix4::identity()
+                    * Matrix4::from_translation(Vector3::new(0.0, -0.05, 0.0))
+                    * Matrix4::from_nonuniform_scale(0.2, 0.005, 0.1),
+                1,
+            )),
+            HittablePrimitive::Mesh(Mesh::new(obj, 2)),
+            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(0.2, 0.1, 0.0), 0.05, 3)),
+            HittablePrimitive::Sphere(Sphere::new(Vector3::<f32>::new(-0.2, 0.1, 0.0), 0.05, 4)),
+        ],
+    )
+}
 
 #[allow(dead_code)]
 pub fn simple_scene() -> LinearSceneBvh {
     construction_scene::build_from_spheres(
-        Material::new(0, 0.0, 0.0, Vector3::new(0.70, 0.80, 1.00)),
         &vec![Material::new(
             0,
             0.0,
@@ -27,7 +55,6 @@ pub fn simple_scene() -> LinearSceneBvh {
 #[allow(dead_code)]
 pub fn test_scene_wos() -> LinearSceneBvh {
     construction_scene::build_from_hittable_primitives(
-        Material::new(0, 0.0, 0.0, Vector3::new(0.70, 0.80, 1.00)),
         &vec![
             Material::new(5, 0.0, 0.0, Vector3::<f32>::new(0.0, 0.0, 0.0)),
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(0.7, 0.6, 0.7)),
@@ -68,7 +95,6 @@ pub fn test_scene_wos() -> LinearSceneBvh {
 #[allow(dead_code)]
 pub fn cornell_box() -> LinearSceneBvh {
     construction_scene::build_from_hittable_primitives(
-        Material::new(0, 0.0, 0.0, Vector3::new(0.0, 0.0, 0.0)),
         &vec![
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(1.0, 1.0, 1.0)),
             Material::new(0, 0.0, 0.0, Vector3::<f32>::new(1.0, 0.0, 0.0)),

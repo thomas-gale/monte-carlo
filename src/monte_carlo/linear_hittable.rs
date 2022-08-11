@@ -9,7 +9,7 @@ use super::{aabb::Aabb, linear_scene_bvh::LinearSceneBvh};
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct LinearHittable {
-    /// 0: BvhNode, 1: Sphere, 2: Cuboid, 3: ConstantMedium
+    /// 0: BvhNode, 1: Sphere, 2: Cuboid, 3: ConstantMedium, 4: Triangle
     pub geometry_type: u32,
     /// Given the geometry type, the actual data is stored at the following index in the linear_scene_bvh vector (for the appropriate type).
     pub scene_index: u32,
@@ -32,6 +32,8 @@ impl LinearHittable {
             2 => scene.cuboids[self.get_scene_index()].bounding_box(),
             // ConstantMedium
             3 => scene.constant_mediums[self.get_scene_index()].bounding_box(scene),
+            // Mesh Triangle
+            4 => scene.tris[self.get_scene_index()].bounding_box(scene),
             _ => panic!("Unsupported geometry type"),
         }
     }

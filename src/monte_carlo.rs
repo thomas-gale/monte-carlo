@@ -13,16 +13,18 @@ mod linear_constant_medium;
 mod linear_hittable;
 mod linear_scene_bvh;
 mod material;
+mod mesh;
 mod quad;
 mod result;
 mod scenes;
 mod sphere;
+mod triangle;
 mod uniforms_bindings;
 mod util;
 mod vertex;
 mod window;
 
-use cgmath::{Matrix4, Point3, Vector2, Vector3};
+use cgmath::{Point3, Vector2, Vector3};
 use winit::{event::WindowEvent, window::Window};
 
 use self::{linear_hittable::LinearHittable, linear_scene_bvh::LinearSceneBvh};
@@ -41,7 +43,7 @@ pub struct BvhRaytracing {
     render_pipeline: wgpu::RenderPipeline,
     uniforms_bindings: uniforms_bindings::UniformsBindings,
     camera: camera::Camera,
-    interactive_section: interactive_section::InteractiveSection,
+    interactive_section: Option<interactive_section::InteractiveSection>,
     scene_bvh: LinearSceneBvh,
     scene_bvh_bind_group: wgpu::BindGroup,
     result: result::Result,
@@ -96,8 +98,8 @@ impl BvhRaytracing {
         // Camera
         let camera = camera::Camera::new(
             &device,
-            Point3::<f32>::new(0.0, 0.5, 4.0),
-            Point3::<f32>::new(0.0, 0.5, 0.0),
+            Point3::<f32>::new(0.2, 0.5, 0.9),
+            Point3::<f32>::new(0.0, 0.1, 0.0),
             Vector3::<f32>::new(0.0, 1.0, 0.0),
             25.0,
             window,
@@ -107,18 +109,18 @@ impl BvhRaytracing {
         );
 
         // Scene
-        // let mut scene_bvh = scenes::cornell_box();
-        let mut scene_bvh = scenes::test_scene_wos();
+        let mut scene_bvh = scenes::test_wos_bunny_mesh_scene();
         let (scene_bvh_bind_group_layout, scene_bvh_bind_group) =
             scene_bvh.create_device_buffers(&device);
 
-        // Interactive Section
-        let interactive_section = interactive_section::InteractiveSection::new(
+        // Interactive Section (optional)
+        let interactive_section = Some(interactive_section::InteractiveSection::new(
             LinearHittable {
                 geometry_type: 2,
                 scene_index: 0,
-            }, // First Cuboid (check scene_bvh above)
-        );
+            }, // Use first cuboid (check scene_bvh above)
+        ));
+        // let interactive_section = None;
 
         // Create basic quad to render fragments onto.
         let quad = quad::Quad::new(&device);
@@ -230,7 +232,6 @@ impl BvhRaytracing {
                 self.rot_mouse_down = false;
                 self.current_rot_mouse_pos = winit::dpi::PhysicalPosition::new(0.0, 0.0);
             }
-
             WindowEvent::CursorMoved { position: pos, .. } => {
                 // If currently rotating
                 if self.rot_mouse_down {
@@ -253,8 +254,9 @@ impl BvhRaytracing {
                     // Else if we are dragging an input command (e.g. moving the interactive section)
                     if self.current_input_mouse_pos.x > 0.001
                         && self.current_input_mouse_pos.y > 0.001
+                        && self.interactive_section.is_some()
                     {
-                        self.interactive_section.translate(
+                        self.interactive_section.as_mut().unwrap().translate(
                             &self.device,
                             &self.queue,
                             &mut self.scene_bvh,
@@ -281,6 +283,20 @@ impl BvhRaytracing {
                     self.size,
                     *pos_y,
                 );
+            }
+            WindowEvent::KeyboardInput {
+                input:
+                    winit::event::KeyboardInput {
+                        virtual_keycode: Some(winit::event::VirtualKeyCode::S),
+                        state: winit::event::ElementState::Pressed,
+                        ..
+                    },
+                ..
+            } => {
+                // self.result
+                // .write_texture_to_working_dir(&self.device, &self.queue, self.size);
+                self.result
+                    .write_texture_to_working_dir(&self.device, self.size);
             }
             _ => {}
         }

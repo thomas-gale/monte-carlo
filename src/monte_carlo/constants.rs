@@ -1,3 +1,7 @@
+use cgmath::Vector3;
+
+use super::material::Material;
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Constants {
@@ -17,6 +21,10 @@ pub struct Constants {
     draw_bvh_attenuation: f32,
     /// WoS Tolerance Distance (e.g. distance to surface before the walk is halted and surface sampled)
     wos_tolerance: f32,
+    _pad1: u32,
+    _pad2: u32,
+    /// Background color
+    background: Material,
 }
 
 impl Constants {
@@ -27,11 +35,14 @@ impl Constants {
             pi: std::f32::consts::PI,
             pass_samples_per_pixel: 1,
             max_depth: 64,
-            vertical_render_slices: 32,
+            vertical_render_slices: 64,
             draw_vertical_render_slice_region: 0,
             draw_bvh: 0,
             draw_bvh_attenuation: 0.8,
-            wos_tolerance: 0.01,
+            wos_tolerance: 0.005,
+            _pad1: 0,
+            _pad2: 0,
+            background: Material::new(0, 0.0, 0.0, Vector3::new(0.70, 0.80, 1.00)),
         }
     }
 }
